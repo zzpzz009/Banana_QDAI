@@ -13,6 +13,7 @@ dist-ssr
 *.local
 .env*
 release/
+release2/
 
 # Editor directories and files
 .vscode/*

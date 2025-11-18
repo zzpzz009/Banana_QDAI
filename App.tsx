@@ -163,12 +163,17 @@ const createNewBoard = (name: string): Board => {
 
 const App: React.FC = () => {
     const [boards, setBoards] = useState<Board[]>(() => {
-        // TODO: Load from localStorage
-        return [createNewBoard('Board 1')];
+        const init = window.__BANANAPOD_INITIAL_BOARDS__
+        if (init && Array.isArray(init) && init.length > 0) return init as Board[]
+        return [createNewBoard('Board 1')]
     });
-    const [activeBoardId, setActiveBoardId] = useState<string>(boards[0].id);
+    const [activeBoardId, setActiveBoardId] = useState<string>(() => {
+        const initId = window.__BANANAPOD_INITIAL_ACTIVE_BOARD_ID__
+        if (initId && typeof initId === 'string') return initId
+        return boards[0].id
+    });
 
-    const activeBoard = useMemo(() => boards.find(b => b.id === activeBoardId)!, [boards, activeBoardId]);
+    const activeBoard = useMemo(() => boards.find(b => b.id === activeBoardId) || boards[0], [boards, activeBoardId]);
 
     const { elements, history, historyIndex, panOffset, zoom, canvasBackgroundColor } = activeBoard;
 
@@ -1742,11 +1747,14 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
     };
     
     const handleDeleteBoard = (boardId: string) => {
-        if (boards.length <= 1) return; // Can't delete the last board
-        setBoards(prev => prev.filter(b => b.id !== boardId));
-        if (activeBoardId === boardId) {
-            setActiveBoardId(boards.find(b => b.id !== boardId)!.id);
-        }
+        setBoards(prev => {
+            if (prev.length <= 1) return prev;
+            const next = prev.filter(b => b.id !== boardId);
+            if (activeBoardId === boardId && next.length > 0) {
+                setActiveBoardId(next[0].id);
+            }
+            return next;
+        });
     };
     
     const handleRenameBoard = (boardId: string, name: string) => {
@@ -1825,6 +1833,23 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
                 onDuplicateBoard={handleDuplicateBoard}
                 onDeleteBoard={handleDeleteBoard}
                 generateBoardThumbnail={(els) => generateBoardThumbnail(els, activeBoard.canvasBackgroundColor)}
+                onImportHistoryBoard={(snapshot) => {
+                    const pad = (x: number) => String(x).padStart(2, '0');
+                    const d = new Date(snapshot.savedAt);
+                    const code = `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+                    const newBoard = {
+                        id: generateId(),
+                        name: code,
+                        elements: snapshot.elements,
+                        history: [snapshot.elements],
+                        historyIndex: 0,
+                        panOffset: snapshot.panOffset || { x: 0, y: 0 },
+                        zoom: snapshot.zoom || 1,
+                        canvasBackgroundColor: snapshot.canvasBackgroundColor || activeBoard.canvasBackgroundColor,
+                    } as Board
+                    setBoards(prev => [...prev, newBoard])
+                    setActiveBoardId(newBoard.id)
+                }}
             />
             <CanvasSettings 
                 isOpen={isSettingsPanelOpen} 
