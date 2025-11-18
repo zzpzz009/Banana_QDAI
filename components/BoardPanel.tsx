@@ -1,6 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import type { Board } from '@/types';
+import type { Board, HistoryBoardSnapshot } from '@/types';
+import { getHistoryBoards, updateHistoryThumbnail } from '@/src/services/boardsStorage';
 
 interface BoardPanelProps {
     isOpen: boolean;
@@ -13,6 +14,7 @@ interface BoardPanelProps {
     onDuplicateBoard: (id: string) => void;
     onDeleteBoard: (id: string) => void;
     generateBoardThumbnail: (elements: Board['elements']) => string;
+    onImportHistoryBoard?: (snapshot: HistoryBoardSnapshot) => void;
 }
 
 const BoardItem: React.FC<{
@@ -129,8 +131,37 @@ const BoardItem: React.FC<{
 
 export const BoardPanel: React.FC<BoardPanelProps> = ({ 
     isOpen, onClose, boards, activeBoardId, onSwitchBoard, onAddBoard, 
-    onRenameBoard, onDuplicateBoard, onDeleteBoard, generateBoardThumbnail 
+    onRenameBoard, onDuplicateBoard, onDeleteBoard, generateBoardThumbnail, onImportHistoryBoard 
 }) => {
+    const [history, setHistory] = useState<HistoryBoardSnapshot[]>([]);
+    useEffect(() => { if (!isOpen) return; getHistoryBoards().then(setHistory).catch(() => setHistory([])); }, [isOpen]);
+    const [thumbs, setThumbs] = useState<Record<number, string>>({});
+    const queueRef = useRef<number[]>([]);
+    const runningRef = useRef(false);
+    useEffect(() => {
+        if (!isOpen) return;
+        const missing = history.filter(h => !h.thumbnail && !thumbs[h.savedAt]).map(h => h.savedAt);
+        if (missing.length === 0) return;
+        queueRef.current = Array.from(new Set([...queueRef.current, ...missing]));
+        if (runningRef.current) return;
+        runningRef.current = true;
+        const runNext = () => {
+            const nextId = queueRef.current.shift();
+            if (nextId == null) { runningRef.current = false; return; }
+            const h = history.find(x => x.savedAt === nextId);
+            if (!h) { runNext(); return; }
+            const doWork = () => {
+                const url = generateBoardThumbnail(h.elements);
+                setThumbs(prev => ({ ...prev, [h.savedAt]: url }));
+                updateHistoryThumbnail(h.savedAt, url).finally(() => {
+                    runNext();
+                });
+            };
+            const ric = window.requestIdleCallback;
+            if (ric) ric(() => doWork(), { timeout: 2000 }); else setTimeout(doWork, 50);
+        };
+        runNext();
+    }, [isOpen, history, generateBoardThumbnail, thumbs]);
     if (!isOpen) return null;
 
     return (
@@ -148,7 +179,8 @@ export const BoardPanel: React.FC<BoardPanelProps> = ({
                     </button>
                 </div>
             </div>
-            <div className="flex-grow p-2 overflow-y-auto grid grid-cols-2 gap-2 content-start">
+            <div className="flex-grow p-2 overflow-y-auto">
+                <div className="grid grid-cols-2 gap-2 content-start mb-3">
                  {boards.map(board => (
                      <BoardItem 
                         key={board.id}
@@ -161,6 +193,31 @@ export const BoardPanel: React.FC<BoardPanelProps> = ({
                         onDelete={() => onDeleteBoard(board.id)}
                      />
                  ))}
+                </div>
+                <div className="mt-2">
+                    <h4 className="text-sm mb-2" style={{ color: 'var(--text-heading)', fontWeight: 600 }}>历史图版（最多5个）</h4>
+                    <div className="grid grid-cols-2 gap-2 content-start">
+                        {history.slice(0,5).map(h => {
+                            const pad = (x: number) => String(x).padStart(2, '0');
+                            const d = new Date(h.savedAt);
+                            const code = `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+                            return (
+                                <div key={h.savedAt} className="group relative p-2 pod-list-item cursor-pointer" onClick={() => onImportHistoryBoard && onImportHistoryBoard(h)}>
+                                    <div className="aspect-[3/2] w-full rounded-md mb-2 overflow-hidden border">
+                                        <img src={h.thumbnail || thumbs[h.savedAt] || ''} alt={`${code} history`} className="w-full h-full object-cover" />
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-sm truncate">{code}</span>
+                                    </div>
+                                    <div className="text-[10px] text-gray-400">{d.toLocaleString()}</div>
+                                </div>
+                            );
+                        })}
+                        {history.length === 0 && (
+                            <div className="text-xs" style={{ color: 'var(--text-primary)' }}>暂无历史图版</div>
+                        )}
+                    </div>
+                </div>
             </div>
         </div>
     );

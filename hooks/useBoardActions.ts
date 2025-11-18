@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { saveLastSessionDebounced } from '@/src/services/boardsStorage';
 import type { Board, Element } from '@/types';
 
 export function useBoardActions(
@@ -6,7 +7,11 @@ export function useBoardActions(
   setBoards: React.Dispatch<React.SetStateAction<Board[]>>
 ) {
   const updateActiveBoard = useCallback((updater: (board: Board) => Board) => {
-    setBoards(prevBoards => prevBoards.map(board => (board.id === activeBoardId ? updater(board) : board)));
+    setBoards(prevBoards => {
+      const next: Board[] = prevBoards.map(board => (board.id === activeBoardId ? updater(board) : board));
+      saveLastSessionDebounced({ boards: next, activeBoardId });
+      return next;
+    });
   }, [activeBoardId, setBoards]);
 
   const setElements = useCallback((updater: (prev: Element[]) => Element[], commit: boolean = true) => {
