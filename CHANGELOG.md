@@ -76,3 +76,14 @@
   - 期望：默认值为 100，不透明；变更后图片透明度即时更新；`0` 为全透明，`100` 为不透明。
 - 合并/导出验证：合并若干元素生成图片或导出包含图片的 SVG，查看生成内容的 `<image>` 标签是否包含 `opacity="..."`，值与当前设置一致（如 `0.6`）。
 - 兼容性：已有图片若设置了圆角，仍可正常裁切；矩形仍显示圆角控制；界面文案显示“透明度/Opacity”无缺失。
+## v0.8.2 (2025-11-19)
+
+- feat(models): 接入 `nano-banana` 图像生成与编辑接口；生成调用 `/v1/images/generations`（返回 `b64_json` 或 `url`），编辑调用 `/v1/images/edits`（`multipart/form-data` 上传 `image[]`）
+- fix(aspect-ratio): 编辑时按首图比例映射到支持枚举（如 `1:1`、`4:3`、`16:9` 等），并附带 `size=WxH`；启用 `WHATAI_STRICT_SIZE=true` 时进行像素一致性校验
+- ui(settings): 设置面板模型选择更新为 `nano-banana`；价格显示调整：`gemini-2.5-flash-image` 为 `¥0.08/次`，`nano-banana` 为 `¥0.16/次`
+- compat(gemini): 保持 `gemini-2.5-flash-image` 现有聊天完成方式 `/v1/chat/completions` 不变
+- chore(version): `package.json` 版本更新至 `0.8.2`
+
+验证说明：
+- 在设置面板选择 `nano-banana`，执行编辑：输出比例与首图一致（非枚举比例将映射到就近支持项）；如需像素级一致，设置 `WHATAI_STRICT_SIZE=true`
+- 生成与编辑在服务端返回 `b64_json` 或 `url` 均可被解析显示

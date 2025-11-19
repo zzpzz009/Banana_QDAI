@@ -170,7 +170,6 @@ export const LayerPanel: React.FC<LayerPanelProps> = ({ isOpen, onClose, element
     const handleDrop = (e: React.DragEvent<HTMLDivElement>, targetId: string) => {
         e.preventDefault();
         e.currentTarget.style.background = '';
-        setDragOverId(null);
         const draggedId = e.dataTransfer.getData('text/plain');
 
         const rect = e.currentTarget.getBoundingClientRect();

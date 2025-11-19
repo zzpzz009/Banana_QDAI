@@ -138,30 +138,56 @@ export const BoardPanel: React.FC<BoardPanelProps> = ({
     const [thumbs, setThumbs] = useState<Record<number, string>>({});
     const queueRef = useRef<number[]>([]);
     const runningRef = useRef(false);
+    const workerRef = useRef<Worker | null>(null);
+    const historyRef = useRef<HistoryBoardSnapshot[]>([]);
+    useEffect(() => { historyRef.current = history; }, [history]);
     useEffect(() => {
-        if (!isOpen) return;
-        const missing = history.filter(h => !h.thumbnail && !thumbs[h.savedAt]).map(h => h.savedAt);
-        if (missing.length === 0) return;
-        queueRef.current = Array.from(new Set([...queueRef.current, ...missing]));
+        workerRef.current = new Worker(new URL('../src/workers/thumbWorker.ts', import.meta.url), { type: 'module' });
+        const w = workerRef.current;
+        w.onmessage = (e: MessageEvent) => {
+            const { savedAt, thumbnail } = e.data as { savedAt: number; thumbnail: string };
+            setThumbs(prev => ({ ...prev, [savedAt]: thumbnail }));
+            updateHistoryThumbnail(savedAt, thumbnail).finally(() => {
+                if (runningRef.current) {
+                    const next = queueRef.current.shift();
+                    if (next == null) { runningRef.current = false; return; }
+                    const h = historyRef.current.find(x => x.savedAt === next);
+                    if (!h) { w.postMessage({ elements: [], bgColor: '#000', savedAt: next }); return; }
+                    w.postMessage({ elements: h.elements, bgColor: h.canvasBackgroundColor, savedAt: h.savedAt });
+                }
+            });
+        };
+        return () => { w.terminate(); };
+    }, []);
+    const containerRef = useRef<HTMLDivElement | null>(null);
+    const elRefs = useRef<Record<number, HTMLElement>>({});
+    const visibleRef = useRef<Set<number>>(new Set());
+    const scheduleQueue = React.useCallback(() => {
+        const candidates = history.filter(h => visibleRef.current.has(h.savedAt) && !h.thumbnail && !thumbs[h.savedAt]).map(h => h.savedAt);
+        if (candidates.length === 0) return;
+        queueRef.current = Array.from(new Set([...queueRef.current, ...candidates]));
         if (runningRef.current) return;
         runningRef.current = true;
-        const runNext = () => {
-            const nextId = queueRef.current.shift();
-            if (nextId == null) { runningRef.current = false; return; }
-            const h = history.find(x => x.savedAt === nextId);
-            if (!h) { runNext(); return; }
-            const doWork = () => {
-                const url = generateBoardThumbnail(h.elements);
-                setThumbs(prev => ({ ...prev, [h.savedAt]: url }));
-                updateHistoryThumbnail(h.savedAt, url).finally(() => {
-                    runNext();
-                });
-            };
-            const ric = window.requestIdleCallback;
-            if (ric) ric(() => doWork(), { timeout: 2000 }); else setTimeout(doWork, 50);
-        };
-        runNext();
-    }, [isOpen, history, generateBoardThumbnail, thumbs]);
+        const w = workerRef.current;
+        const nextId = queueRef.current.shift();
+        if (nextId == null) { runningRef.current = false; return; }
+        const h = history.find(x => x.savedAt === nextId);
+        if (!h || !w) { runningRef.current = false; return; }
+        w.postMessage({ elements: h.elements, bgColor: h.canvasBackgroundColor, savedAt: h.savedAt });
+    }, [history, thumbs]);
+    useEffect(() => {
+        if (!isOpen) return;
+        const obs = new IntersectionObserver(entries => {
+            entries.forEach(entry => {
+                const el = entry.target as HTMLElement;
+                const id = Number(el.dataset.savedat);
+                if (entry.isIntersecting) visibleRef.current.add(id); else visibleRef.current.delete(id);
+            });
+            scheduleQueue();
+        }, { root: containerRef.current || undefined, threshold: 0.1 });
+        for (const el of Object.values(elRefs.current) as HTMLElement[]) { obs.observe(el); }
+        return () => { obs.disconnect(); };
+    }, [isOpen, history, scheduleQueue]);
     if (!isOpen) return null;
 
     return (
@@ -196,13 +222,19 @@ export const BoardPanel: React.FC<BoardPanelProps> = ({
                 </div>
                 <div className="mt-2">
                     <h4 className="text-sm mb-2" style={{ color: 'var(--text-heading)', fontWeight: 600 }}>历史图版（最多5个）</h4>
-                    <div className="grid grid-cols-2 gap-2 content-start">
+                    <div ref={containerRef} className="grid grid-cols-2 gap-2 content-start overflow-y-auto">
                         {history.slice(0,5).map(h => {
                             const pad = (x: number) => String(x).padStart(2, '0');
                             const d = new Date(h.savedAt);
                             const code = `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
                             return (
-                                <div key={h.savedAt} className="group relative p-2 pod-list-item cursor-pointer" onClick={() => onImportHistoryBoard && onImportHistoryBoard(h)}>
+                                <div
+                                    key={h.savedAt}
+                                    className="group relative p-2 pod-list-item cursor-pointer"
+                                    data-savedat={h.savedAt}
+                                    ref={el => { if (el) { elRefs.current[h.savedAt] = el; } else { delete elRefs.current[h.savedAt]; } }}
+                                    onClick={() => onImportHistoryBoard && onImportHistoryBoard(h)}
+                                >
                                     <div className="aspect-[3/2] w-full rounded-md mb-2 overflow-hidden border">
                                         <img src={h.thumbnail || thumbs[h.savedAt] || ''} alt={`${code} history`} className="w-full h-full object-cover" />
                                     </div>

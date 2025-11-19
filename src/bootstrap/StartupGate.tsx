@@ -18,6 +18,10 @@ export const StartupGate: React.FC<{ children: React.ReactNode }> = ({ children 
     window.addEventListener('beforeunload', handler)
     return () => window.removeEventListener('beforeunload', handler)
   }, [])
+  useEffect(() => {
+    const interval = setInterval(() => { flushLastSessionSave() }, 5 * 60 * 1000)
+    return () => clearInterval(interval)
+  }, [])
 
   const handleContinue = () => {
     if (last) {

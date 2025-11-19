@@ -17,7 +17,9 @@ import type { Tool, Point, Element, ImageElement, PathElement, ShapeElement, Tex
 import { rasterizeElement, rasterizeElements, flattenElementsToImage } from '@/utils/canvas';
 import { editImage, generateImageFromText, generateVideo } from './services/geminiService';
 import { fileToDataUrl } from './utils/fileUtils';
+import { resizeBase64ToMax } from './utils/image';
 import { translations } from './translations';
+import { touchLastSessionPending } from '@/src/services/boardsStorage';
 
 const generateId = () => `id_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
@@ -187,6 +189,10 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
     const [isSettingsPanelOpen, setIsSettingsPanelOpen] = useState(false);
     const [isLayerPanelOpen, setIsLayerPanelOpen] = useState(false);
     const [isBoardPanelOpen, setIsBoardPanelOpen] = useState(false);
+    const panRafRef = useRef<number | null>(null);
+    const panLastPointRef = useRef<Point | null>(null);
+    const wheelRafRef = useRef<number | null>(null);
+    const wheelLastEventRef = useRef<{ clientX: number; clientY: number; deltaX: number; deltaY: number; ctrlKey: boolean } | null>(null);
     const [wheelAction, setWheelAction] = useState<WheelAction>('zoom');
     const [croppingState, setCroppingState] = useState<{ elementId: string; originalElement: ImageElement; cropBox: Rect } | null>(null);
     const [alignmentGuides, setAlignmentGuides] = useState<Guide[]>([]);
@@ -357,7 +363,7 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
         root.style.setProperty('--bg-gradient-3', adjust(canvasBackgroundColor, -65));
     }, [uiTheme, buttonTheme, canvasBackgroundColor]);
 
-    const { updateActiveBoard, setElements, commitAction, handleUndo, handleRedo, getDescendants } = useBoardActions(activeBoardId, setBoards);
+    const { updateActiveBoard, updateActiveBoardSilent, setElements, commitAction, handleUndo, handleRedo, getDescendants } = useBoardActions(activeBoardId, setBoards);
 
     const handleMergeLayers = useCallback(async (mode: 'selected' | 'visible') => {
         const all = elementsRef.current || elements;
@@ -516,6 +522,8 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
         setError(null);
         try {
             const { dataUrl, mimeType } = await fileToDataUrl(file);
+            const resized = await resizeBase64ToMax(dataUrl, mimeType, 2048, 2048);
+            const usedDataUrl = resized && resized.scale < 1 ? `data:${mimeType};base64,${resized.base64}` : dataUrl;
             const img = new Image();
             img.onload = () => {
                 if (!svgRef.current) return;
@@ -531,7 +539,7 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
                     y: canvasPoint.y - (img.height / 2),
                     width: img.width,
                     height: img.height,
-                    href: dataUrl,
+                    href: usedDataUrl,
                     mimeType: mimeType,
                     opacity: 100,
                 };
@@ -539,7 +547,7 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
                 setSelectedElementIds([newImage.id]);
                 setActiveTool('select');
             };
-            img.src = dataUrl;
+            img.src = usedDataUrl;
         } catch (err) {
             setError('Failed to load image.');
             console.error(err);
@@ -832,10 +840,18 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
 
         switch(interactionMode.current) {
             case 'pan': {
-                const dx = e.clientX - startPoint.current.x;
-                const dy = e.clientY - startPoint.current.y;
-                updateActiveBoard(b => ({ ...b, panOffset: { x: b.panOffset.x + dx, y: b.panOffset.y + dy } }));
-                startPoint.current = { x: e.clientX, y: e.clientY };
+                panLastPointRef.current = { x: e.clientX, y: e.clientY };
+                if (panRafRef.current == null) {
+                    panRafRef.current = requestAnimationFrame(() => {
+                        panRafRef.current = null;
+                        const p = panLastPointRef.current;
+                        if (!p) return;
+                        const dx = p.x - startPoint.current.x;
+                        const dy = p.y - startPoint.current.y;
+                        updateActiveBoardSilent(b => ({ ...b, panOffset: { x: b.panOffset.x + dx, y: b.panOffset.y + dy } }));
+                        startPoint.current = { x: p.x, y: p.y };
+                    });
+                }
                 break;
             }
             case 'draw': {
@@ -1056,26 +1072,34 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
   useEffect(() => {
     const el = svgRef.current;
     if (!el) return;
-    const listener = (e: WheelEvent) => {
-      if (croppingState || editingElement) { e.preventDefault(); return; }
-      e.preventDefault();
-      const { clientX, clientY, deltaX, deltaY, ctrlKey } = e;
-      if (ctrlKey || wheelAction === 'zoom') {
-        const zoomFactor = 1.05;
-        const oldZoom = zoom;
-        const newZoom = deltaY < 0 ? oldZoom * zoomFactor : oldZoom / zoomFactor;
-        const clampedZoom = Math.max(0.1, Math.min(newZoom, 10));
-        const mousePoint = { x: clientX, y: clientY };
-        const newPanX = mousePoint.x - (mousePoint.x - panOffset.x) * (clampedZoom / oldZoom);
-        const newPanY = mousePoint.y - (mousePoint.y - panOffset.y) * (clampedZoom / oldZoom);
-        updateActiveBoard(b => ({ ...b, zoom: clampedZoom, panOffset: { x: newPanX, y: newPanY } }));
-      } else {
-        updateActiveBoard(b => ({ ...b, panOffset: { x: b.panOffset.x - deltaX, y: b.panOffset.y - deltaY } }));
-      }
-    };
+        const listener = (e: WheelEvent) => {
+          if (croppingState || editingElement) { e.preventDefault(); return; }
+          e.preventDefault();
+          const { clientX, clientY, deltaX, deltaY, ctrlKey } = e;
+          wheelLastEventRef.current = { clientX, clientY, deltaX, deltaY, ctrlKey };
+          if (wheelRafRef.current == null) {
+            wheelRafRef.current = requestAnimationFrame(() => {
+              wheelRafRef.current = null;
+              const last = wheelLastEventRef.current;
+              if (!last) return;
+              if (last.ctrlKey || wheelAction === 'zoom') {
+                const zoomFactor = 1.05;
+                const oldZoom = zoom;
+                const newZoom = last.deltaY < 0 ? oldZoom * zoomFactor : oldZoom / zoomFactor;
+                const clampedZoom = Math.max(0.1, Math.min(newZoom, 10));
+                const mousePoint = { x: last.clientX, y: last.clientY };
+                const newPanX = mousePoint.x - (mousePoint.x - panOffset.x) * (clampedZoom / oldZoom);
+                const newPanY = mousePoint.y - (mousePoint.y - panOffset.y) * (clampedZoom / oldZoom);
+                updateActiveBoardSilent(b => ({ ...b, zoom: clampedZoom, panOffset: { x: newPanX, y: newPanY } }));
+              } else {
+                updateActiveBoardSilent(b => ({ ...b, panOffset: { x: b.panOffset.x - last.deltaX, y: b.panOffset.y - last.deltaY } }));
+              }
+            });
+          }
+        };
     el.addEventListener('wheel', listener, { passive: false });
   return () => { el.removeEventListener('wheel', listener as EventListener); };
-  }, [croppingState, editingElement, wheelAction, zoom, panOffset, updateActiveBoard]);
+  }, [croppingState, editingElement, wheelAction, zoom, panOffset, updateActiveBoardSilent]);
 
     const handleDeleteElement = (id: string) => {
         commitAction(prev => {
@@ -1728,7 +1752,11 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
     // Board Management
     const handleAddBoard = () => {
         const newBoard = createNewBoard(`Board ${boards.length + 1}`);
-        setBoards(prev => [...prev, newBoard]);
+        setBoards(prev => {
+            const next = [...prev, newBoard];
+            touchLastSessionPending({ boards: next, activeBoardId: newBoard.id });
+            return next;
+        });
         setActiveBoardId(newBoard.id);
     };
 
@@ -1742,7 +1770,11 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
             history: [boardToDuplicate.elements],
             historyIndex: 0,
         };
-        setBoards(prev => [...prev, newBoard]);
+        setBoards(prev => {
+            const next = [...prev, newBoard];
+            touchLastSessionPending({ boards: next, activeBoardId: newBoard.id });
+            return next;
+        });
         setActiveBoardId(newBoard.id);
     };
     
@@ -1750,15 +1782,21 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
         setBoards(prev => {
             if (prev.length <= 1) return prev;
             const next = prev.filter(b => b.id !== boardId);
-            if (activeBoardId === boardId && next.length > 0) {
-                setActiveBoardId(next[0].id);
+            const newActiveId = activeBoardId === boardId && next.length > 0 ? next[0].id : activeBoardId;
+            if (newActiveId !== activeBoardId) {
+                setActiveBoardId(newActiveId);
             }
+            touchLastSessionPending({ boards: next, activeBoardId: newActiveId });
             return next;
         });
     };
     
     const handleRenameBoard = (boardId: string, name: string) => {
-        setBoards(prev => prev.map(b => b.id === boardId ? { ...b, name } : b));
+        setBoards(prev => {
+            const next = prev.map(b => b.id === boardId ? { ...b, name } : b);
+            touchLastSessionPending({ boards: next, activeBoardId });
+            return next;
+        });
     };
 
     const handleCanvasBackgroundColorChange = (color: string) => {
@@ -1827,7 +1865,10 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
                 onClose={() => setIsBoardPanelOpen(false)}
                 boards={boards}
                 activeBoardId={activeBoardId}
-                onSwitchBoard={setActiveBoardId}
+                onSwitchBoard={(id) => {
+                    setActiveBoardId(id);
+                    touchLastSessionPending({ boards, activeBoardId: id });
+                }}
                 onAddBoard={handleAddBoard}
                 onRenameBoard={handleRenameBoard}
                 onDuplicateBoard={handleDuplicateBoard}
@@ -1847,8 +1888,13 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
                         zoom: snapshot.zoom || 1,
                         canvasBackgroundColor: snapshot.canvasBackgroundColor || activeBoard.canvasBackgroundColor,
                     } as Board
-                    setBoards(prev => [...prev, newBoard])
+                    setBoards(prev => {
+                        const next = [...prev, newBoard];
+                        touchLastSessionPending({ boards: next, activeBoardId: newBoard.id });
+                        return next;
+                    })
                     setActiveBoardId(newBoard.id)
+                    setIsBoardPanelOpen(false)
                 }}
             />
             <CanvasSettings 
