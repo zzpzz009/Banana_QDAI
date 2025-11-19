@@ -1,21 +1,31 @@
 import { useCallback } from 'react';
-import { saveLastSessionDebounced } from '@/src/services/boardsStorage';
+import type { Dispatch, SetStateAction } from 'react';
+import { touchLastSessionPending } from '@/src/services/boardsStorage';
 import type { Board, Element } from '@/types';
 
 export function useBoardActions(
   activeBoardId: string,
-  setBoards: React.Dispatch<React.SetStateAction<Board[]>>
+  setBoards: Dispatch<SetStateAction<Board[]>>
 ) {
   const updateActiveBoard = useCallback((updater: (board: Board) => Board) => {
     setBoards(prevBoards => {
       const next: Board[] = prevBoards.map(board => (board.id === activeBoardId ? updater(board) : board));
-      saveLastSessionDebounced({ boards: next, activeBoardId });
+      touchLastSessionPending({ boards: next, activeBoardId });
+      return next;
+    });
+  }, [activeBoardId, setBoards]);
+
+  const updateActiveBoardSilent = useCallback((updater: (board: Board) => Board) => {
+    setBoards(prevBoards => {
+      const next: Board[] = prevBoards.map(board => (board.id === activeBoardId ? updater(board) : board));
+      touchLastSessionPending({ boards: next, activeBoardId });
       return next;
     });
   }, [activeBoardId, setBoards]);
 
   const setElements = useCallback((updater: (prev: Element[]) => Element[], commit: boolean = true) => {
-    updateActiveBoard(board => {
+    const apply = commit ? updateActiveBoard : updateActiveBoardSilent;
+    apply(board => {
       const newElements = updater(board.elements);
       if (commit) {
         const newHistory = [...board.history.slice(0, board.historyIndex + 1), newElements];
@@ -26,7 +36,7 @@ export function useBoardActions(
         return { ...board, elements: newElements, history: tempHistory };
       }
     });
-  }, [updateActiveBoard]);
+  }, [updateActiveBoard, updateActiveBoardSilent]);
 
   const commitAction = useCallback((updater: (prev: Element[]) => Element[]) => {
     updateActiveBoard(board => {
@@ -66,5 +76,5 @@ export function useBoardActions(
     return out;
   }, []);
 
-  return { updateActiveBoard, setElements, commitAction, handleUndo, handleRedo, getDescendants };
+  return { updateActiveBoard, updateActiveBoardSilent, setElements, commitAction, handleUndo, handleRedo, getDescendants };
 }

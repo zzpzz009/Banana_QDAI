@@ -29,6 +29,9 @@ export async function saveLastSession(payload: { boards: Board[]; activeBoardId:
 let lastSessionTimer: number | null = null
 let lastSessionPending: { boards: Board[]; activeBoardId: string } | null = null
 let lastSessionIdleHandle: number | null = null
+export function touchLastSessionPending(payload: { boards: Board[]; activeBoardId: string }) {
+  lastSessionPending = payload
+}
 export function saveLastSessionDebounced(payload: { boards: Board[]; activeBoardId: string }, delay: number = 800) {
   lastSessionPending = payload
   if (lastSessionTimer != null) {
