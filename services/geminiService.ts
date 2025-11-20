@@ -67,6 +67,40 @@ function extractInlineData(part: unknown): { base64: string; mime: string } | nu
   return { base64: b64, mime: outMime };
 }
 
+function extractFirstHttpUrl(input: string): string | null {
+  const s = String(input);
+  const m1 = s.match(/!\[[^\]]*\]\((https?:[^)\s]+)\)/i);
+  if (m1 && m1[1]) return m1[1];
+  const m2 = s.match(/!\{image\}\((https?:[^)\s]+)\)/i);
+  if (m2 && m2[1]) return m2[1];
+  const m3 = s.match(/(https?:\/\/[^\s)'"<>]+)/i);
+  if (m3 && m3[1]) return m3[1];
+  return null;
+}
+
+async function tryLoadImageBase64(url: string): Promise<{ base64: string; mime: string } | null> {
+  try {
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const i = new Image();
+      i.crossOrigin = 'anonymous';
+      i.onload = () => resolve(i);
+      i.onerror = () => reject(new Error('image load failed'));
+      i.src = url;
+    });
+    const canvas = document.createElement('canvas');
+    canvas.width = img.naturalWidth || img.width;
+    canvas.height = img.naturalHeight || img.height;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+    ctx.drawImage(img, 0, 0);
+    const dataUrl = canvas.toDataURL('image/png');
+    const base64 = normalizeBase64(dataUrl.split(',')[1] || '');
+    return { base64, mime: 'image/png' };
+  } catch {
+    return null;
+  }
+}
+
 function decodeBase64ToBytes(b64: string): Uint8Array {
   const bin = atob(b64);
   const len = bin.length;
@@ -451,41 +485,31 @@ export async function generateImageFromText(prompt: string, model?: string, opts
         if (ex) {
           return { newImageBase64: ex.base64, newImageMimeType: ex.mime, textResponse: `使用 ${usedModel} 模型成功生成图像` };
         }
-        if (s.includes('http')) {
+        const urlFromText = extractFirstHttpUrl(s);
+        if (urlFromText) {
           try {
-            const r = await fetch(s);
+            const r = await fetch(urlFromText);
             const ct = r.headers.get('content-type') || '';
-            if (!ct.startsWith('image/')) {
-              return { newImageBase64: null, newImageMimeType: null, textResponse: `图像获取失败：非图像内容(${ct || 'unknown'})` };
+            if (ct.startsWith('image/')) {
+              const blob = await r.blob();
+              const reader = new FileReader();
+              return await new Promise((resolve) => {
+                reader.onload = () => {
+                  let base64 = (reader.result as string).split(',')[1];
+                  base64 = normalizeBase64(base64);
+                  const mime = (blob.type && blob.type.startsWith('image/')) ? blob.type : detectMimeFromBase64(base64);
+                  resolve({ newImageBase64: base64, newImageMimeType: mime, textResponse: `使用 ${usedModel} 模型成功生成图像` });
+                };
+                reader.readAsDataURL(blob);
+              });
             }
-            const blob = await r.blob();
-            const reader = new FileReader();
-            return await new Promise((resolve) => {
-              reader.onload = () => {
-                let base64 = (reader.result as string).split(',')[1];
-                base64 = normalizeBase64(base64);
-                const mime = (blob.type && blob.type.startsWith('image/')) ? blob.type : detectMimeFromBase64(base64);
-                resolve({ newImageBase64: base64, newImageMimeType: mime, textResponse: `使用 ${usedModel} 模型成功生成图像` });
-              };
-              reader.readAsDataURL(blob);
-            });
-          } catch (err) {
-            const img = await new Promise<HTMLImageElement>((resolve, reject) => {
-              const i = new Image();
-              i.crossOrigin = 'anonymous';
-              i.onload = () => resolve(i);
-              i.onerror = () => reject(err instanceof Error ? err : new Error(String(err)));
-              i.src = s;
-            });
-            const canvas = document.createElement('canvas');
-            canvas.width = img.naturalWidth || img.width;
-            canvas.height = img.naturalHeight || img.height;
-            const ctx = canvas.getContext('2d');
-            if (!ctx) return { newImageBase64: null, newImageMimeType: null, textResponse: '图像获取失败：无法创建画布' };
-            ctx.drawImage(img, 0, 0);
-            const dataUrl = canvas.toDataURL('image/png');
-            const base64 = normalizeBase64(dataUrl.split(',')[1] || '');
-            return { newImageBase64: base64, newImageMimeType: 'image/png', textResponse: `使用 ${usedModel} 模型成功生成图像` };
+            const viaImg = await tryLoadImageBase64(urlFromText);
+            if (viaImg) return { newImageBase64: viaImg.base64, newImageMimeType: viaImg.mime, textResponse: `使用 ${usedModel} 模型成功生成图像` };
+            return { newImageBase64: null, newImageMimeType: null, textResponse: `图像获取失败：非图像内容(${ct || 'unknown'})` };
+          } catch {
+            const viaImg = await tryLoadImageBase64(urlFromText);
+            if (viaImg) return { newImageBase64: viaImg.base64, newImageMimeType: viaImg.mime, textResponse: `使用 ${usedModel} 模型成功生成图像` };
+            return { newImageBase64: null, newImageMimeType: null, textResponse: '图像获取失败：无法创建画布' };
           }
         }
       } else if (Array.isArray(mc)) {
@@ -503,37 +527,26 @@ export async function generateImageFromText(prompt: string, model?: string, opts
               try {
                 const r = await fetch(url);
                 const ct2 = r.headers.get('content-type') || '';
-                if (!ct2.startsWith('image/')) {
-                  return { newImageBase64: null, newImageMimeType: null, textResponse: `图像获取失败：非图像内容(${ct2 || 'unknown'})` };
+                if (ct2.startsWith('image/')) {
+                  const blob = await r.blob();
+                  const reader = new FileReader();
+                  return await new Promise((resolve) => {
+                    reader.onload = () => {
+                      let base64 = (reader.result as string).split(',')[1];
+                      base64 = normalizeBase64(base64);
+                      const mime = (blob.type && blob.type.startsWith('image/')) ? blob.type : detectMimeFromBase64(base64);
+                      resolve({ newImageBase64: base64, newImageMimeType: mime, textResponse: `使用 ${usedModel} 模型成功生成图像` });
+                    };
+                    reader.readAsDataURL(blob);
+                  });
                 }
-                const blob = await r.blob();
-                const reader = new FileReader();
-                return await new Promise((resolve) => {
-                  reader.onload = () => {
-                    let base64 = (reader.result as string).split(',')[1];
-                    base64 = normalizeBase64(base64);
-                    const mime = (blob.type && blob.type.startsWith('image/')) ? blob.type : detectMimeFromBase64(base64);
-                    resolve({ newImageBase64: base64, newImageMimeType: mime, textResponse: `使用 ${usedModel} 模型成功生成图像` });
-                  };
-                  reader.readAsDataURL(blob);
-                });
-              } catch (err) {
-                const img = await new Promise<HTMLImageElement>((resolve, reject) => {
-                  const i = new Image();
-                  i.crossOrigin = 'anonymous';
-                  i.onload = () => resolve(i);
-                  i.onerror = () => reject(err instanceof Error ? err : new Error(String(err)));
-                  i.src = url;
-                });
-                const canvas = document.createElement('canvas');
-                canvas.width = img.naturalWidth || img.width;
-                canvas.height = img.naturalHeight || img.height;
-                const ctx = canvas.getContext('2d');
-                if (!ctx) return { newImageBase64: null, newImageMimeType: null, textResponse: '图像获取失败：无法创建画布' };
-                ctx.drawImage(img, 0, 0);
-                const dataUrl = canvas.toDataURL('image/png');
-                const base64 = normalizeBase64(dataUrl.split(',')[1] || '');
-                return { newImageBase64: base64, newImageMimeType: 'image/png', textResponse: `使用 ${usedModel} 模型成功生成图像` };
+                const viaImg = await tryLoadImageBase64(url);
+                if (viaImg) return { newImageBase64: viaImg.base64, newImageMimeType: viaImg.mime, textResponse: `使用 ${usedModel} 模型成功生成图像` };
+                return { newImageBase64: null, newImageMimeType: null, textResponse: `图像获取失败：非图像内容(${ct2 || 'unknown'})` };
+              } catch {
+                const viaImg = await tryLoadImageBase64(url);
+                if (viaImg) return { newImageBase64: viaImg.base64, newImageMimeType: viaImg.mime, textResponse: `使用 ${usedModel} 模型成功生成图像` };
+                return { newImageBase64: null, newImageMimeType: null, textResponse: '图像获取失败：无法创建画布' };
               }
             }
           }
@@ -755,7 +768,8 @@ export async function editImage(
         }
         if (s.includes('http')) {
           try {
-            const r = await fetch(s);
+            const urlText = extractFirstHttpUrl(s) || s;
+            const r = await fetch(urlText);
             const blob = await r.blob();
             const reader = new FileReader();
             return await new Promise((resolve) => {
@@ -779,24 +793,11 @@ export async function editImage(
               };
               reader.readAsDataURL(blob);
             });
-          } catch (err) {
-            const img = await new Promise<HTMLImageElement>((resolve, reject) => {
-              const i = new Image();
-              i.crossOrigin = 'anonymous';
-              i.onload = () => resolve(i);
-              i.onerror = () => reject(err instanceof Error ? err : new Error(String(err)));
-              i.src = s;
-            });
-            const canvas = document.createElement('canvas');
-            canvas.width = img.naturalWidth || img.width;
-            canvas.height = img.naturalHeight || img.height;
-            const ctx = canvas.getContext('2d');
-            if (!ctx) return { newImageBase64: null, newImageMimeType: null, textResponse: '图像获取失败：无法创建画布' };
-            ctx.drawImage(img, 0, 0);
-            let base64 = normalizeBase64(canvas.toDataURL('image/png').split(',')[1] || '');
-            const mime = 'image/png';
-            
-            return { newImageBase64: base64, newImageMimeType: mime, textResponse: `使用 ${usedModel} 模型成功编辑图像` };
+          } catch {
+            const urlText = extractFirstHttpUrl(s);
+            const viaImg = urlText ? await tryLoadImageBase64(urlText) : null;
+            if (viaImg) return { newImageBase64: viaImg.base64, newImageMimeType: viaImg.mime, textResponse: `使用 ${usedModel} 模型成功编辑图像` };
+            return { newImageBase64: null, newImageMimeType: null, textResponse: '图像获取失败：无法创建画布' };
           }
         }
       }
@@ -814,37 +815,26 @@ export async function editImage(
               try {
                 const r = await fetch(url);
                 const ct3 = r.headers.get('content-type') || '';
-                if (!ct3.startsWith('image/')) {
-                  return { newImageBase64: null, newImageMimeType: null, textResponse: `图像编辑失败：非图像内容(${ct3 || 'unknown'})` };
+                if (ct3.startsWith('image/')) {
+                  const blob = await r.blob();
+                  const reader = new FileReader();
+                  return await new Promise((resolve) => {
+                    reader.onload = () => {
+                      let base64 = (reader.result as string).split(',')[1];
+                      base64 = normalizeBase64(base64);
+                      const mime = (blob.type && blob.type.startsWith('image/')) ? blob.type : detectMimeFromBase64(base64);
+                      resolve({ newImageBase64: base64, newImageMimeType: mime, textResponse: `使用 ${usedModel} 模型成功编辑图像` });
+                    };
+                    reader.readAsDataURL(blob);
+                  });
                 }
-                const blob = await r.blob();
-                const reader = new FileReader();
-                return await new Promise((resolve) => {
-                  reader.onload = () => {
-                    let base64 = (reader.result as string).split(',')[1];
-                    base64 = normalizeBase64(base64);
-                    const mime = (blob.type && blob.type.startsWith('image/')) ? blob.type : detectMimeFromBase64(base64);
-                    resolve({ newImageBase64: base64, newImageMimeType: mime, textResponse: `使用 ${usedModel} 模型成功编辑图像` });
-                  };
-                  reader.readAsDataURL(blob);
-                });
-              } catch (err) {
-                const img = await new Promise<HTMLImageElement>((resolve, reject) => {
-                  const i = new Image();
-                  i.crossOrigin = 'anonymous';
-                  i.onload = () => resolve(i);
-                  i.onerror = () => reject(err instanceof Error ? err : new Error(String(err)));
-                  i.src = url;
-                });
-                const canvas = document.createElement('canvas');
-                canvas.width = img.naturalWidth || img.width;
-                canvas.height = img.naturalHeight || img.height;
-                const ctx = canvas.getContext('2d');
-                if (!ctx) return { newImageBase64: null, newImageMimeType: null, textResponse: '图像获取失败：无法创建画布' };
-                ctx.drawImage(img, 0, 0);
-                const dataUrl = canvas.toDataURL('image/png');
-                const base64 = normalizeBase64(dataUrl.split(',')[1] || '');
-                return { newImageBase64: base64, newImageMimeType: 'image/png', textResponse: `使用 ${usedModel} 模型成功编辑图像` };
+                const viaImg = await tryLoadImageBase64(url);
+                if (viaImg) return { newImageBase64: viaImg.base64, newImageMimeType: viaImg.mime, textResponse: `使用 ${usedModel} 模型成功编辑图像` };
+                return { newImageBase64: null, newImageMimeType: null, textResponse: `图像编辑失败：非图像内容(${ct3 || 'unknown'})` };
+              } catch {
+                const viaImg = await tryLoadImageBase64(url);
+                if (viaImg) return { newImageBase64: viaImg.base64, newImageMimeType: viaImg.mime, textResponse: `使用 ${usedModel} 模型成功编辑图像` };
+                return { newImageBase64: null, newImageMimeType: null, textResponse: '图像获取失败：无法创建画布' };
               }
             }
           }
