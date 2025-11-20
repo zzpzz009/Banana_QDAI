@@ -87,3 +87,13 @@
 验证说明：
 - 在设置面板选择 `nano-banana`，执行编辑：输出比例与首图一致（非枚举比例将映射到就近支持项）；如需像素级一致，设置 `WHATAI_STRICT_SIZE=true`
 - 生成与编辑在服务端返回 `b64_json` 或 `url` 均可被解析显示
+
+## v0.9.0 (2025-11-20)
+
+- feat(models): 接入 `gemini-3-pro-image-preview`，调用方式同 `gemini-2.5-flash-image` 的多模态 `/v1/chat/completions`；设置面板新增模型选项并显示价格 `¥0.2/次`
+- fix(parse): 解析字符串结果支持 Markdown 图片与裸 URL，非 `image/*` 响应自动回退为通过 `Image` + `Canvas` 转 `base64` 显示；`image_url.url` 分支亦加入同样的容错逻辑
+- chore(lint): 修复未使用变量，`npm run lint` 通过
+- chore(version): `package.json` 升级到 `0.9.0` 并打标签
+
+验证说明：
+- 在设置面板选择 `gemini-3-pro-image-preview`，进行生成或编辑：当返回为 `!{image}(https://...)` 等字符串形式时，客户端可正确提取链接并显示图片；非 `image/*` 响应将自动回退为 `Canvas` 转图像显示
