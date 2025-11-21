@@ -252,6 +252,23 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
     const [generationMode, setGenerationMode] = useState<'image' | 'video'>('image');
     const [videoAspectRatio, setVideoAspectRatio] = useState<'16:9' | '9:16'>('16:9');
     const [progressMessage, setProgressMessage] = useState<string>('');
+    const [imageModel, setImageModel] = useState<string>(() => {
+        try {
+            return localStorage.getItem('WHATAI_IMAGE_MODEL') || (process.env.WHATAI_IMAGE_MODEL as string) || 'gemini-2.5-flash-image';
+        } catch {
+            return (process.env.WHATAI_IMAGE_MODEL as string) || 'gemini-2.5-flash-image';
+        }
+    });
+    const [imageSize, setImageSize] = useState<'1K' | '2K' | '4K'>('4K');
+    useEffect(() => {
+        const onStorage = (e: StorageEvent) => {
+            if (e.key === 'WHATAI_IMAGE_MODEL') {
+                setImageModel(e.newValue || 'gemini-2.5-flash-image');
+            }
+        };
+        window.addEventListener('storage', onStorage);
+        return () => window.removeEventListener('storage', onStorage);
+    }, []);
 
     const interactionMode = useRef<string | null>(null);
     const startPoint = useRef<Point>({ x: 0, y: 0 });
@@ -1368,7 +1385,8 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
                     const result = await editImage(
                         [{ href: baseImage.href, mimeType: baseImage.mimeType }],
                         prompt,
-                        { href: maskData.href, mimeType: maskData.mimeType }
+                        { href: maskData.href, mimeType: maskData.mimeType },
+                        imageSize
                     );
                     
                     if (result.newImageBase64 && result.newImageMimeType) {
@@ -1405,7 +1423,7 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
                     return rasterizeElement(el as Exclude<Element, ImageElement | VideoElement>);
                 });
                 const imagesToProcess = await Promise.all(imagePromises);
-                const result = await editImage(imagesToProcess, prompt);
+                const result = await editImage(imagesToProcess, prompt, undefined, imageSize);
 
                 if (result.newImageBase64 && result.newImageMimeType) {
                     const { newImageBase64, newImageMimeType } = result;
@@ -1868,6 +1886,7 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
                 onSwitchBoard={(id) => {
                     setActiveBoardId(id);
                     touchLastSessionPending({ boards, activeBoardId: id });
+                    setIsBoardPanelOpen(false);
                 }}
                 onAddBoard={handleAddBoard}
                 onRenameBoard={handleRenameBoard}
@@ -2384,6 +2403,9 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
                 setGenerationMode={setGenerationMode}
                 videoAspectRatio={videoAspectRatio}
                 setVideoAspectRatio={setVideoAspectRatio}
+                activeImageModel={imageModel}
+                imageSize={imageSize}
+                setImageSize={setImageSize}
                 containerRef={promptBarRef}
             />}
             {/* BananaSidebar: follows PromptBar width, aligns vertically with its center */}

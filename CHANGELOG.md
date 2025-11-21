@@ -97,3 +97,14 @@
 
 验证说明：
 - 在设置面板选择 `gemini-3-pro-image-preview`，进行生成或编辑：当返回为 `!{image}(https://...)` 等字符串形式时，客户端可正确提取链接并显示图片；非 `image/*` 响应将自动回退为 `Canvas` 转图像显示
+
+## v0.9.1 (2025-11-21)
+
+- feat(promptbar): 提示词输入面板新增图片尺寸选择（`1K/2K/4K`），仅在 `nano-banana-2` 且图片模式下显示
+- feat(services): 在编辑端 `/v1/images/edits` 针对 `nano-banana-2` 追加 `image_size` 参数，值来源于面板选择
+- ui(app): 新增 `imageModel` 与 `imageSize` 状态，并传入 `PromptBar`；监听 `localStorage('WHATAI_IMAGE_MODEL')` 变更以保持同步
+- fix(promptbar): 修复运行时缺少属性解构导致的异常
+- chore(version): `package.json` 与 `metadata.json` 版本更新为 `0.9.1`
+
+验证说明：
+- 在设置面板选择 `nano-banana-2`，切换到“图片”模式：提示条显示 `1K/2K/4K` 尺寸按钮；选择尺寸后进行编辑，网络请求的 `FormData` 应包含 `image_size`（仅 `nano-banana-2`）；其它模型不显示尺寸按钮且不传该参数

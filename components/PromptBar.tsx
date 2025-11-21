@@ -18,6 +18,9 @@ interface PromptBarProps {
     setGenerationMode: (mode: GenerationMode) => void;
     videoAspectRatio: '16:9' | '9:16';
     setVideoAspectRatio: (ratio: '16:9' | '9:16') => void;
+    activeImageModel: string;
+    imageSize: '1K' | '2K' | '4K';
+    setImageSize: (size: '1K' | '2K' | '4K') => void;
     containerRef?: React.Ref<HTMLDivElement>;
 }
 
@@ -36,6 +39,9 @@ export const PromptBar: React.FC<PromptBarProps> = ({
     setGenerationMode,
     videoAspectRatio,
     setVideoAspectRatio,
+    activeImageModel,
+    imageSize,
+    setImageSize,
     containerRef,
 }) => {
     const textareaRef = React.useRef<HTMLTextAreaElement>(null);
@@ -98,6 +104,13 @@ export const PromptBar: React.FC<PromptBarProps> = ({
                         <button onClick={() => setVideoAspectRatio('9:16')} aria-label={t('promptBar.aspectRatioVertical')} title={t('promptBar.aspectRatioVertical')} className="pod-icon-button" style={videoAspectRatio === '9:16' ? { backgroundColor: 'var(--text-accent)', color: 'var(--bg-page)' } : {}}>
                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="7" y="2" width="10" height="20" rx="2" ry="2"></rect></svg>
                         </button>
+                    </div>
+                )}
+                {generationMode === 'image' && activeImageModel.toLowerCase() === 'nano-banana-2' && (
+                    <div className="flex-shrink-0 flex items-center rounded-full p-1 ml-1">
+                        <button onClick={() => setImageSize('1K')} className={`pod-chip ${imageSize === '1K' ? 'active' : ''}`}>1K</button>
+                        <button onClick={() => setImageSize('2K')} className={`pod-chip ${imageSize === '2K' ? 'active' : ''}`}>2K</button>
+                        <button onClick={() => setImageSize('4K')} className={`pod-chip ${imageSize === '4K' ? 'active' : ''}`}>4K</button>
                     </div>
                 )}
                 <QuickPrompts 

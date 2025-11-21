@@ -189,6 +189,15 @@ export const CanvasSettings: React.FC<CanvasSettingsProps> = ({
                             <div className="mt-1 text-[10px] text-gray-400 h-3 flex items-end">{language === 'zho' ? '价格' : 'Price'}</div>
                             <div className="text-xs font-semibold text-gray-100 h-4">{language === 'zho' ? '¥0.16/次' : '¥0.16/call'}</div>
                         </button>
+                        <button
+                            onClick={() => handleSetModel('nano-banana-2')}
+                            className={`rounded-md border p-2 text-left bg-gray-800 hover:bg-gray-700 focus:outline-none focus:ring-1 focus:ring-yellow-300 ${imageModel === 'nano-banana-2' ? 'ring-1 ring-yellow-400 bg-gray-900 border-yellow-500' : 'border-gray-700'}`}
+                        >
+                            <div className="text-[10px] text-gray-400 h-3 flex items-end">{language === 'zho' ? '模型' : 'Model'}</div>
+                            <div className="text-xs font-semibold break-all text-gray-100 leading-snug h-10">nano-banana-2</div>
+                            <div className="mt-1 text-[10px] text-gray-400 h-3 flex items-end">{language === 'zho' ? '价格' : 'Price'}</div>
+                            <div className="text-xs font-semibold text-gray-100 h-4">{language === 'zho' ? '¥0.4/次' : '¥0.4/call'}</div>
+                        </button>
                     </div>
                 </div>
 

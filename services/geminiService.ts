@@ -388,7 +388,7 @@ type VideoGenBody = {
 
 function isNanoBananaModel(m: string): boolean {
   const x = (m || '').toLowerCase();
-  return x === 'nano-banana' || x === 'nano-banana-hd';
+  return x === 'nano-banana' || x === 'nano-banana-hd' || x === 'nano-banana-2';
 }
 
 interface ImageGenResponseItem { b64_json?: string; url?: string }
@@ -569,7 +569,8 @@ export async function generateImageFromText(prompt: string, model?: string, opts
 export async function editImage(
   images: ImageInput[], 
   prompt: string,
-  mask?: ImageInput
+  mask?: ImageInput,
+  imageSize?: '1K' | '2K' | '4K'
 ): Promise<{ 
   newImageBase64: string | null; 
   newImageMimeType: string | null; 
@@ -644,6 +645,9 @@ export async function editImage(
       const aspectToSend = isSupportedAspectRatioText(aspectRatioFromImage) ? aspectRatioFromImage : nearestSupportedAspectRatioBySize(targetW, targetH);
       if (aspectToSend) form.append('aspect_ratio', aspectToSend);
       if (targetW && targetH) form.append('size', `${targetW}x${targetH}`);
+      if ((usedModel || '').toLowerCase() === 'nano-banana-2') {
+        form.append('image_size', imageSize || '4K');
+      }
       for (let i = 0; i < preparedImagesBase64.length; i++) {
         const mime = images[i]?.mimeType || 'image/png';
         const dataUrl = `data:${mime};base64,${preparedImagesBase64[i]}`;

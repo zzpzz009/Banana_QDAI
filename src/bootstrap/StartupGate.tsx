@@ -27,16 +27,14 @@ export const StartupGate: React.FC<{ children: React.ReactNode }> = ({ children 
     if (last) {
       window.__BANANAPOD_INITIAL_BOARDS__ = last.boards
       window.__BANANAPOD_INITIAL_ACTIVE_BOARD_ID__ = last.activeBoardId
+      Promise.all(last.boards.map((b: Board) => pushHistoryBoard(b))).then(() => pruneHistory(5)).catch(() => {})
     }
     setDecision('continue')
   }
 
   const handleNew = () => {
     if (last) {
-      const active = last.boards.find((b: Board) => b.id === last.activeBoardId) || last.boards[0]
-      if (active) {
-        pushHistoryBoard(active).then(() => pruneHistory(5))
-      }
+      Promise.all(last.boards.map((b: Board) => pushHistoryBoard(b))).then(() => pruneHistory(5)).catch(() => {})
     }
     setDecision('new')
   }

@@ -1,5 +1,5 @@
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, memo, forwardRef } from 'react';
 import type { Board, HistoryBoardSnapshot } from '@/types';
 import { getHistoryBoards, updateHistoryThumbnail } from '@/src/services/boardsStorage';
 
@@ -17,7 +17,7 @@ interface BoardPanelProps {
     onImportHistoryBoard?: (snapshot: HistoryBoardSnapshot) => void;
 }
 
-const BoardItem: React.FC<{
+type BoardItemProps = {
     board: Board;
     isActive: boolean;
     thumbnail: string;
@@ -25,7 +25,10 @@ const BoardItem: React.FC<{
     onRename: (name: string) => void;
     onDuplicate: () => void;
     onDelete: () => void;
-}> = ({ board, isActive, thumbnail, onClick, onRename, onDuplicate, onDelete }) => {
+    dataBoardId: string;
+};
+
+const BoardItem = forwardRef<HTMLDivElement, BoardItemProps>(({ board, isActive, thumbnail, onClick, onRename, onDuplicate, onDelete, dataBoardId }, ref) => {
     const [isEditing, setIsEditing] = useState(false);
     const [name, setName] = useState(board.name);
     const [menuOpen, setMenuOpen] = useState(false);
@@ -79,7 +82,9 @@ const BoardItem: React.FC<{
     };
 
     return (
-        <div 
+        <div
+            ref={ref}
+            data-boardid={dataBoardId}
             onClick={onClick}
             className={`group relative p-2 pod-list-item cursor-pointer ${isActive ? 'selected' : ''}`}
         >
@@ -126,12 +131,16 @@ const BoardItem: React.FC<{
             </div>
         </div>
     );
-};
+});
+
+const MemoBoardItem = memo(BoardItem);
+BoardItem.displayName = 'BoardItem';
+MemoBoardItem.displayName = 'MemoBoardItem';
 
 
 export const BoardPanel: React.FC<BoardPanelProps> = ({ 
     isOpen, onClose, boards, activeBoardId, onSwitchBoard, onAddBoard, 
-    onRenameBoard, onDuplicateBoard, onDeleteBoard, generateBoardThumbnail, onImportHistoryBoard 
+    onRenameBoard, onDuplicateBoard, onDeleteBoard, onImportHistoryBoard 
 }) => {
     const [history, setHistory] = useState<HistoryBoardSnapshot[]>([]);
     useEffect(() => { if (!isOpen) return; getHistoryBoards().then(setHistory).catch(() => setHistory([])); }, [isOpen]);
@@ -188,6 +197,99 @@ export const BoardPanel: React.FC<BoardPanelProps> = ({
         for (const el of Object.values(elRefs.current) as HTMLElement[]) { obs.observe(el); }
         return () => { obs.disconnect(); };
     }, [isOpen, history, scheduleQueue]);
+
+    // Boards thumbnails (lazy + cached via worker)
+    const [boardThumbs, setBoardThumbs] = useState<Record<string, string>>({});
+    const boardsRef = useRef<Board[]>([]);
+    useEffect(() => { boardsRef.current = boards; }, [boards]);
+    const boardQueueRef = useRef<string[]>([]);
+    const boardRunningRef = useRef(false);
+    const boardWorkerRef = useRef<Worker | null>(null);
+    const boardReqSeqRef = useRef(1);
+    const boardReqMapRef = useRef<Record<number, string>>({});
+    useEffect(() => {
+        boardWorkerRef.current = new Worker(new URL('../src/workers/thumbWorker.ts', import.meta.url), { type: 'module' });
+        const w = boardWorkerRef.current;
+        w.onmessage = (e: MessageEvent) => {
+            const { savedAt, thumbnail } = e.data as { savedAt: number; thumbnail: string };
+            const boardId = boardReqMapRef.current[savedAt];
+            if (boardId) {
+                setBoardThumbs(prev => ({ ...prev, [boardId]: thumbnail }));
+                delete boardReqMapRef.current[savedAt];
+                if (boardRunningRef.current) {
+                    const nextBoard = boardQueueRef.current.shift();
+                    if (!nextBoard) { boardRunningRef.current = false; return; }
+                    const b = boardsRef.current.find(x => x.id === nextBoard);
+                    if (!b) { boardRunningRef.current = false; return; }
+                    const reqId = ++boardReqSeqRef.current;
+                    boardReqMapRef.current[reqId] = nextBoard;
+                    w.postMessage({ elements: b.elements, bgColor: b.canvasBackgroundColor, savedAt: reqId });
+                }
+            }
+        };
+        return () => { w.terminate(); };
+    }, []);
+    const boardsContainerRef = useRef<HTMLDivElement | null>(null);
+    const boardElRefs = useRef<Record<string, HTMLElement>>({});
+    const boardVisibleRef = useRef<Set<string>>(new Set());
+    const scheduleBoardQueue = React.useCallback(() => {
+        const candidates = boardsRef.current.filter(b => boardVisibleRef.current.has(b.id) && !boardThumbs[b.id]).map(b => b.id);
+        if (candidates.length === 0) return;
+        boardQueueRef.current = Array.from(new Set([...boardQueueRef.current, ...candidates]));
+        if (boardRunningRef.current) return;
+        boardRunningRef.current = true;
+        const w = boardWorkerRef.current;
+        const nextId = boardQueueRef.current.shift();
+        if (!nextId || !w) { boardRunningRef.current = false; return; }
+        const b = boardsRef.current.find(x => x.id === nextId);
+        if (!b) { boardRunningRef.current = false; return; }
+        const reqId = ++boardReqSeqRef.current;
+        boardReqMapRef.current[reqId] = nextId;
+        w.postMessage({ elements: b.elements, bgColor: b.canvasBackgroundColor, savedAt: reqId });
+    }, [boardThumbs]);
+    useEffect(() => {
+        if (!isOpen) return;
+        const obs = new IntersectionObserver(entries => {
+            entries.forEach(entry => {
+                const el = entry.target as HTMLElement;
+                const id = String(el.dataset.boardid || '');
+                if (!id) return;
+                if (entry.isIntersecting) boardVisibleRef.current.add(id); else boardVisibleRef.current.delete(id);
+            });
+            scheduleBoardQueue();
+        }, { root: boardsContainerRef.current || undefined, threshold: 0.1 });
+        for (const el of Object.values(boardElRefs.current) as HTMLElement[]) { obs.observe(el); }
+        return () => { obs.disconnect(); };
+    }, [isOpen, boards, scheduleBoardQueue]);
+    useEffect(() => {
+        if (!isOpen) return;
+        const firstSix = boards.slice(0, 6).map(b => b.id);
+        boardQueueRef.current = Array.from(new Set([...boardQueueRef.current, ...firstSix]));
+        scheduleBoardQueue();
+    }, [isOpen, boards, scheduleBoardQueue]);
+
+    // Throttle active board thumbnail refresh while panel open
+    const activeThumbTimerRef = useRef<number | null>(null);
+    useEffect(() => {
+        if (!isOpen) return;
+        const id = activeBoardId;
+        if (!id) return;
+        if (!boardVisibleRef.current.has(id)) return;
+        if (activeThumbTimerRef.current != null) {
+            clearTimeout(activeThumbTimerRef.current);
+            activeThumbTimerRef.current = null;
+        }
+        activeThumbTimerRef.current = window.setTimeout(() => {
+            boardQueueRef.current = Array.from(new Set([...boardQueueRef.current, id]));
+            scheduleBoardQueue();
+        }, 300);
+        return () => {
+            if (activeThumbTimerRef.current != null) {
+                clearTimeout(activeThumbTimerRef.current);
+                activeThumbTimerRef.current = null;
+            }
+        };
+    }, [isOpen, boards, activeBoardId, scheduleBoardQueue]);
     if (!isOpen) return null;
 
     return (
@@ -205,14 +307,16 @@ export const BoardPanel: React.FC<BoardPanelProps> = ({
                     </button>
                 </div>
             </div>
-            <div className="flex-grow p-2 overflow-y-auto">
+            <div className="flex-grow p-2 overflow-y-auto" ref={boardsContainerRef}>
                 <div className="grid grid-cols-2 gap-2 content-start mb-3">
                  {boards.map(board => (
-                     <BoardItem 
+                     <MemoBoardItem
                         key={board.id}
+                        ref={el => { if (el) { boardElRefs.current[board.id] = el; } else { delete boardElRefs.current[board.id]; } }}
+                        dataBoardId={board.id}
                         board={board}
                         isActive={board.id === activeBoardId}
-                        thumbnail={generateBoardThumbnail(board.elements)}
+                        thumbnail={boardThumbs[board.id] || ''}
                         onClick={() => onSwitchBoard(board.id)}
                         onRename={(name) => onRenameBoard(board.id, name)}
                         onDuplicate={() => onDuplicateBoard(board.id)}
