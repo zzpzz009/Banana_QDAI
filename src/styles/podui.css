@@ -1,13 +1,13 @@
 /* PodUI theme variables and components */
 :root {
-  --bg-page: #141218;
+  --bg-page: #0F0D13;
   --bg-component: #2a2a30;
   --text-primary: #d6d6df;
   --text-secondary: #b9bac2;
   --text-heading: #efeff6;
   --text-muted: #707070;
   --border-color: #3a3a45;
-  --brand-yellow: #F5DF4D;
+  --brand-yellow: #C5AEF6;
   --text-accent: var(--brand-yellow);
   --border-radius-lg: 0.3rem;
   --border-radius-base: 0.25rem;
@@ -96,6 +96,24 @@
   box-shadow: none;
 }
 
+.pod-toolbar-elevated {
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.04),
+    0 8px 24px rgba(0,0,0,0.32),
+    0 2px 6px rgba(0,0,0,0.24);
+}
+
+.pod-input-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 9999px;
+  background-color: #211F26;
+  border: 1px solid var(--border-color);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+}
+
 /* Elevated outline style: subtle inner highlight + outer ring */
 .pod-elevated-outline {
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -136,14 +154,30 @@
   background: transparent;
   border: 1px solid transparent;
   border-radius: 15px;
-  padding: 6px;
   transition: all var(--transition-speed-fast);
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  line-height: 1;
 }
 .pod-icon-button.active { border-radius: 15px; }
 .pod-icon-button:hover {
   background-color: rgba(255, 255, 255, 0.06);
   border-color: var(--border-color);
   color: var(--text-heading);
+}
+.pod-icon-button.no-hover-highlight:hover {
+  background-color: transparent;
+  border-color: transparent;
+}
+.quick-prompts-button:hover {
+  color: var(--text-accent);
+}
+.quick-prompts-button {
+  color: var(--border-color);
 }
 .pod-icon-button[disabled] {
   opacity: 0.5;
@@ -197,12 +231,12 @@
 }
 
 .pod-generate-button {
-  background-color: #B6F298;
-  border-color: #B6F298;
+  background-color: #ACF387;
+  border-color: #ACF387;
 }
 .pod-generate-button:hover {
-  background-color: color-mix(in srgb, #B6F298, white 15%);
-  border-color: color-mix(in srgb, #B6F298, white 15%);
+  background-color: color-mix(in srgb, #ACF387, white 15%);
+  border-color: color-mix(in srgb, #ACF387, white 15%);
 }
 
 .pod-btn-secondary {
@@ -251,11 +285,12 @@
   color: #ffffff;
 }
 .pod-chip-image.active {
-  background-color: #EADDFF;
+  background-color: #4F378B;
+  color: #ffffff;
 }
 
 .pod-textarea {
-  background: transparent;
+  background-color: #211F26;
   color: var(--text-heading);
   border: none;
   outline: none;
@@ -349,6 +384,30 @@
   background: #0c0c0c;
 }
 
+/* Vertical scrollbar styled to match current UI accent */
+.pod-scrollbar-y {
+  scrollbar-color: #4F378B transparent;
+  scrollbar-width: thin;
+}
+.pod-scrollbar-y::-webkit-scrollbar {
+  width: 8px;
+}
+.pod-scrollbar-y::-webkit-scrollbar-track {
+  background: transparent;
+}
+.pod-scrollbar-y::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #4F378B, #3E2D71);
+  border-radius: 9999px;
+}
+.pod-scrollbar-y::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #4F378B, #4F378B);
+}
+.pod-scrollbar-y::-webkit-scrollbar-button {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
 /* Banana panel overrides */
 .pod-panel.pod-panel-black { background-color: #000; }
 .pod-panel-rounded-xl { border-radius: 22px; }
@@ -385,9 +444,14 @@
   padding: 0;
   border-radius: 9999px;
   font-weight: 600;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  display: inline-grid;
+  place-items: center;
+  box-shadow: inset 0 1px 4px rgba(255,255,255,0.04), 0 3px 10px rgba(0,0,0,0.25);
+  transition: all var(--transition-speed-fast);
+}
+.pod-chip-circle:hover {
+  transform: translateY(-0.5px);
+  box-shadow: inset 0 1.5px 6px rgba(255,255,255,0.05), 0 4px 12px rgba(0,0,0,0.3);
 }
 .pod-chip-circle-sheen::after {
   content: "";
@@ -444,12 +508,16 @@
   background-color: color-mix(in srgb, var(--toolbar-bg-color, #2E243D) 85%, black 15%);
 }
 .pod-chip-image {
-  background-color: #FFFFFF;
-  color: #1D1B20;
+  background-color: #4F378B;
+  color: #ffffff;
 }
 .pod-chip-video {
-  background-color: #FFFFFF;
-  color: #1D1B20;
+  background-color: #6D35AF;
+  color: #ffffff;
+}
+.pod-chip-video.active {
+  background-color: #6D35AF;
+  color: #ffffff;
 }
 .pod-chip-outline-sheen-1k {
   position: relative;
@@ -460,15 +528,11 @@
   inset: 0;
   border-radius: inherit;
   pointer-events: none;
-  padding: 1px;
-  background: linear-gradient(135deg, rgba(255,255,255,0) 40%, rgba(255,255,255,0.85) 50%, rgba(255,255,255,0) 60%);
-  background-size: 480% auto;
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  filter: blur(1.2px);
-  opacity: 0.75;
-  animation: pod-outline-sheen 36s ease-in-out infinite;
+  background: linear-gradient(-65deg, transparent 40%, rgba(255,255,255,0.35) 50%, transparent 70%);
+  background-size: 200% 100%;
+  background-repeat: no-repeat;
+  animation: pod-chip-sheen 2.8s ease-in-out infinite;
+  mix-blend-mode: screen;
 }
 .pod-chip-outline-sheen-2k {
   position: relative;
@@ -479,15 +543,11 @@
   inset: 0;
   border-radius: inherit;
   pointer-events: none;
-  padding: 1px;
-  background: linear-gradient(135deg, rgba(238,242,247,0) 40%, rgba(238,242,247,0.9) 50%, rgba(238,242,247,0) 60%);
-  background-size: 520% auto;
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  filter: blur(1.2px);
-  opacity: 0.75;
-  animation: pod-outline-sheen 36s ease-in-out infinite;
+  background: linear-gradient(-65deg, transparent 40%, rgba(255,255,255,0.35) 50%, transparent 70%);
+  background-size: 200% 100%;
+  background-repeat: no-repeat;
+  animation: pod-chip-sheen 2.8s ease-in-out infinite;
+  mix-blend-mode: screen;
 }
 @keyframes pod-outline-sheen {
   0% { background-position: 260% 0; }
@@ -506,13 +566,9 @@
   inset: 0;
   border-radius: inherit;
   pointer-events: none;
-  padding: 1px;
-  background: linear-gradient(135deg, rgba(245,223,77,0) 40%, rgba(245,223,77,0.85) 50%, rgba(245,223,77,0) 60%);
-  background-size: 520% auto;
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  filter: blur(1.2px);
-  opacity: 0.8;
-  animation: pod-outline-sheen 36s ease-in-out infinite;
+  background: linear-gradient(-65deg, transparent 40%, rgba(255,255,255,0.35) 50%, transparent 70%);
+  background-size: 200% 100%;
+  background-repeat: no-repeat;
+  animation: pod-chip-sheen 2.8s ease-in-out infinite;
+  mix-blend-mode: screen;
 }

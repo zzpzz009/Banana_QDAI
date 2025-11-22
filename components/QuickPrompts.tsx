@@ -39,12 +39,12 @@ export const QuickPrompts: React.FC<QuickPromptsProps> = ({ t, setPrompt, disabl
                 disabled={disabled}
                 aria-label={t('quickPromptsAriaLabel')}
                 title={t('quickPromptsAriaLabel')}
-                className="pod-icon-button flex-shrink-0 w-11 h-11 flex items-center justify-center"
+                className="pod-icon-button no-hover-highlight quick-prompts-button flex-shrink-0 w-11 h-11 flex items-center justify-center"
             >
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2.69l.13.04a7.9 7.9 0 0 1 5.92 6.61 8.27 8.27 0 0 1-1.77 6.13A8.52 8.52 0 0 1 12 21.31a8.52 8.52 0 0 1-4.28-5.83 8.27 8.27 0 0 1-1.77-6.13A7.9 7.9 0 0 1 11.87 2.73L12 2.69zM12 22v-1.16"/><path d="M9 19h6"/></svg>
             </button>
             {isMenuOpen && (
-                <div className="absolute bottom-full left-0 mb-3 w-80 max-h-96 overflow-y-auto pod-panel p-2 flex flex-col gap-1">
+                <div className="absolute bottom-full left-0 mb-3 w-80 max-h-96 overflow-y-auto pod-panel pod-scrollbar-y p-2 flex flex-col gap-1">
                     <h4 className="px-2 pt-1 pb-2 text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-secondary)' }}>{t('myEffects.title')}</h4>
                     {userEffects.length > 0 ? (
                         userEffects.map((effect) => (
