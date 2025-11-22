@@ -7,6 +7,7 @@ interface BananaSidebarProps {
   disabled?: boolean;
   /** 从 PromptBar 中心到香蕉按钮的水平偏移（px），用于让面板按 PromptBar 轴居中 */
   promptBarOffsetPx?: number;
+  buttonSize?: number;
 }
 
 // Base URL helper to support dev ("/") and electron build ("./")
@@ -120,7 +121,7 @@ const getCardImageSrc = (label: string) => {
 // Local icon fallback mapping (runtime image error handler will use this)
 const getLocalIconSrc = (label: string): string | null => resolveIconUrl(label);
 
-export const BananaSidebar: React.FC<BananaSidebarProps> = ({ t, setPrompt, onGenerate, disabled = false, promptBarOffsetPx = 0 }) => {
+export const BananaSidebar: React.FC<BananaSidebarProps> = ({ t, setPrompt, onGenerate, disabled = false, promptBarOffsetPx = 0, buttonSize }) => {
   const [isOpen, setIsOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const builtInPrompts = t('bananaCards') as { name: string; value: string }[];
@@ -153,15 +154,19 @@ export const BananaSidebar: React.FC<BananaSidebarProps> = ({ t, setPrompt, onGe
         disabled={disabled}
         aria-label="Banana Presets"
         title="Banana Presets"
-        className="banana-circle"
+        className="banana-circle pod-inner-gradient-ring"
         style={{
           position: 'relative',
           cursor: disabled ? 'not-allowed' : 'pointer',
-          height: 40,
-          width: 40,
-          padding: 2,
+          height: buttonSize || 40,
+          width: buttonSize || 40,
+          aspectRatio: '1 / 1',
+          flex: '0 0 auto',
+          boxSizing: 'border-box',
+          padding: 0,
           border: 0,
           borderRadius: 9999,
+          overflow: 'hidden',
           background: 'linear-gradient(135deg, #ff6fb3 0%, #3ba6ff 50%, #ffb36b 100%)',
           boxShadow:
             '0 8px 24px rgba(59,166,255,0.35), 0 2px 6px rgba(0,0,0,0.25)',
@@ -169,6 +174,7 @@ export const BananaSidebar: React.FC<BananaSidebarProps> = ({ t, setPrompt, onGe
           alignItems: 'center',
           justifyContent: 'center',
           opacity: disabled ? 0.6 : 1,
+          ['--pod-ring-width' as unknown as string]: '1.5px',
         }}
       >
         {/* Inner glass */}
@@ -182,13 +188,13 @@ export const BananaSidebar: React.FC<BananaSidebarProps> = ({ t, setPrompt, onGe
               height: '100%',
               borderRadius: '9999px',
               overflow: 'hidden',
-              background: 'rgba(255, 255, 255, 0.10)',
-              border: '1px solid rgba(255, 255, 255, 0.28)',
+              background: 'rgba(255, 255, 255, 0.12)',
               boxShadow:
-                'inset 0 1px 0 rgba(255,255,255,0.35), inset 0 -8px 18px rgba(59, 166, 255, 0.25)',
+                'inset 0 1px 0 rgba(255,255,255,0.35), inset 0 -8px 18px rgba(59, 166, 255, 0.22)',
               backdropFilter: 'blur(8px)',
               WebkitBackdropFilter: 'blur(8px)',
-              padding: 0,
+              padding: 6,
+              boxSizing: 'border-box',
               color: 'rgba(255,255,255,0.95)',
             }}
           >
@@ -199,7 +205,7 @@ export const BananaSidebar: React.FC<BananaSidebarProps> = ({ t, setPrompt, onGe
               position: 'absolute',
               inset: 0,
               background:
-                'linear-gradient(-65deg, transparent 40%, rgba(255,255,255,0.45) 50%, transparent 70%)',
+                'linear-gradient(-65deg, transparent 40%, rgba(255,255,255,0.35) 50%, transparent 70%)',
               backgroundSize: '200% 100%',
               backgroundRepeat: 'no-repeat',
               animation: 'banana_sheen 2.8s ease-in-out infinite',
@@ -216,7 +222,7 @@ export const BananaSidebar: React.FC<BananaSidebarProps> = ({ t, setPrompt, onGe
               position: 'absolute',
               inset: 0,
               background:
-                'radial-gradient(120% 60% at 50% -10%, rgba(255,255,255,0.45), transparent 55%)',
+                'radial-gradient(120% 60% at 50% -10%, rgba(255,255,255,0.35), transparent 55%)',
               pointerEvents: 'none',
               borderRadius: 'inherit',
             }}
@@ -224,7 +230,7 @@ export const BananaSidebar: React.FC<BananaSidebarProps> = ({ t, setPrompt, onGe
 
           {/* Icon centered for circular button */}
           <span style={{ position: 'relative', zIndex: 1 }}>
-            <BananaIcon size={36} />
+            <BananaIcon size={Math.max(18, (buttonSize || 40) - 8)} />
           </span>
         </span>
       </button>
@@ -255,8 +261,8 @@ export const BananaSidebar: React.FC<BananaSidebarProps> = ({ t, setPrompt, onGe
       `}</style>
       {isOpen && (
         <div
-          className="absolute bottom-full left-1/2 mb-6 sm:w-full md:w-[48rem] lg:w-[64rem] max-w-[90vw] pod-panel pod-panel-transparent pod-panel-rounded-xl p-3 overflow-x-auto overflow-y-hidden pod-scrollbar-x"
-          style={{ transform: `translateX(calc(-50% + ${promptBarOffsetPx}px))` }}
+          className="absolute bottom-full mb-3 sm:w-full md:w-[48rem] lg:w-[64rem] max-w-[90vw] pod-panel pod-panel-transparent pod-panel-rounded-xl p-3 overflow-x-auto overflow-y-hidden pod-scrollbar-x"
+          style={{ left: '50%', transform: `translateX(calc(-50% + ${Number(promptBarOffsetPx || 0)}px))` }}
         >
           <div className="flex flex-row gap-2 justify-center flex-wrap md:flex-nowrap">
             {(builtInPrompts || []).slice(0, 7).map((item, idx) => (

@@ -1,6 +1,6 @@
 /* PodUI theme variables and components */
 :root {
-  --bg-page: #3f3f3f;
+  --bg-page: #141218;
   --bg-component: #2a2a30;
   --text-primary: #d6d6df;
   --text-secondary: #b9bac2;
@@ -90,10 +90,10 @@
 
 .pod-toolbar {
   background-color: var(--bg-component);
-  border: 1px solid transparent;
+  border: none;
   /* Corner radius for floating bars; adjustable via --pod-toolbar-radius */
   border-radius: var(--pod-toolbar-radius, 16px);
-  box-shadow: var(--shadow-lg);
+  box-shadow: none;
 }
 
 /* Elevated outline style: subtle inner highlight + outer ring */
@@ -107,10 +107,8 @@
 
 /* Soft vertical gradient background for bars */
 .pod-bar-soft-gradient {
-  background: linear-gradient(180deg,
-    rgba(255, 255, 255, 0.08) 0%,
-    rgba(255, 255, 255, 0.03) 100%
-  );
+  background-color: var(--bg-component);
+  background-image: none;
 }
 
 /* Inner gradient ring: delicate vertical glow just inside the edge */
@@ -198,6 +196,15 @@
   cursor: not-allowed;
 }
 
+.pod-generate-button {
+  background-color: #B6F298;
+  border-color: #B6F298;
+}
+.pod-generate-button:hover {
+  background-color: color-mix(in srgb, #B6F298, white 15%);
+  border-color: color-mix(in srgb, #B6F298, white 15%);
+}
+
 .pod-btn-secondary {
   background-color: rgba(255, 255, 255, 0.12);
   color: var(--text-heading);
@@ -211,10 +218,16 @@
 }
 
 .pod-chip {
-  padding: 6px 10px;
+  padding: 12px 20px;
   border-radius: 9999px;
   color: var(--text-secondary);
   transition: all var(--transition-speed-fast);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  line-height: 1;
+  min-height: 44px;
 }
 .pod-chip.active {
   background-color: var(--text-accent);
@@ -223,6 +236,22 @@
 .pod-chip:hover {
   background-color: rgba(255, 255, 255, 0.06);
   color: var(--text-heading);
+}
+.pod-chip[disabled] {
+  opacity: 0.55;
+  cursor: not-allowed;
+  background-color: rgba(255, 255, 255, 0.06);
+  color: var(--text-secondary);
+}
+
+.pod-chip-size.active {
+  background-color: color-mix(in srgb, var(--toolbar-bg-color, #2E243D) 85%, black 15%);
+}
+.pod-panel .pod-chip-size.active {
+  color: #ffffff;
+}
+.pod-chip-image.active {
+  background-color: #EADDFF;
 }
 
 .pod-textarea {
@@ -238,6 +267,10 @@
   border-radius: var(--border-radius-base);
   color: var(--text-primary);
   transition: all var(--transition-speed-fast);
+}
+.pod-menu-item.active {
+  background-color: rgba(255, 255, 255, 0.12);
+  color: var(--text-heading);
 }
 .pod-menu-item:hover {
   background-color: rgba(255, 255, 255, 0.08);
@@ -336,4 +369,150 @@
   background-image: none !important;
   border: none !important;
   box-shadow: none !important;
+}
+.pod-chip-circle-sheen {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 9999px;
+  font-weight: 600;
+  position: relative;
+  overflow: hidden;
+}
+.pod-chip-circle {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 9999px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.pod-chip-circle-sheen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(-65deg, transparent 40%, rgba(255,255,255,0.35) 50%, transparent 70%);
+  background-size: 200% 100%;
+  background-repeat: no-repeat;
+  animation: pod-chip-sheen 2.8s ease-in-out infinite;
+  pointer-events: none;
+  mix-blend-mode: screen;
+}
+@keyframes pod-chip-sheen {
+  0% { background-position: 130% 0; opacity: 1; }
+  100% { background-position: -160% 0; opacity: 0; }
+}
+
+/* Golden animated text sheen for 4K main button */
+.pod-text-gold-sheen {
+  background: linear-gradient(90deg, #FFD54F, #FFF4B3, #FFC107, #FFB300, #FFD54F);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  animation: pod-text-gold 2.8s linear infinite;
+  font-weight: 700;
+}
+@keyframes pod-text-gold {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+.pod-text-silver-sheen {
+  background: linear-gradient(90deg, #FFFFFF, #D1D5DB, #8A8F9E, #ECEFF4, #FFFFFF);
+  background-size: 220% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  animation: pod-text-silver 4.8s ease-in-out infinite;
+  font-weight: 700;
+}
+@keyframes pod-text-silver {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+.pod-text-white-bold {
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
+  font-weight: 700;
+}
+.pod-chip-size.active.size-4k {
+  background-color: color-mix(in srgb, var(--toolbar-bg-color, #2E243D) 85%, black 15%);
+}
+.pod-chip-image {
+  background-color: #FFFFFF;
+  color: #1D1B20;
+}
+.pod-chip-video {
+  background-color: #FFFFFF;
+  color: #1D1B20;
+}
+.pod-chip-outline-sheen-1k {
+  position: relative;
+}
+.pod-chip-outline-sheen-1k::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(255,255,255,0) 40%, rgba(255,255,255,0.85) 50%, rgba(255,255,255,0) 60%);
+  background-size: 480% auto;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  filter: blur(1.2px);
+  opacity: 0.75;
+  animation: pod-outline-sheen 36s ease-in-out infinite;
+}
+.pod-chip-outline-sheen-2k {
+  position: relative;
+}
+.pod-chip-outline-sheen-2k::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(238,242,247,0) 40%, rgba(238,242,247,0.9) 50%, rgba(238,242,247,0) 60%);
+  background-size: 520% auto;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  filter: blur(1.2px);
+  opacity: 0.75;
+  animation: pod-outline-sheen 36s ease-in-out infinite;
+}
+@keyframes pod-outline-sheen {
+  0% { background-position: 260% 0; }
+  24% { background-position: 260% 0; }
+  50% { background-position: 0% 0; }
+  86% { background-position: -260% 0; }
+  100% { background-position: -260% 0; }
+}
+
+.pod-chip-outline-sheen-4k {
+  position: relative;
+}
+.pod-chip-outline-sheen-4k::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(245,223,77,0) 40%, rgba(245,223,77,0.85) 50%, rgba(245,223,77,0) 60%);
+  background-size: 520% auto;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  filter: blur(1.2px);
+  opacity: 0.8;
+  animation: pod-outline-sheen 36s ease-in-out infinite;
 }

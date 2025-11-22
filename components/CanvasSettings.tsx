@@ -24,6 +24,8 @@ interface CanvasSettingsProps {
     setSystemToken: (key: string) => void;
     userId: string;
     setUserId: (id: string) => void;
+    imageModel: string;
+    setImageModel: (m: string) => void;
     
 }
 
@@ -46,17 +48,11 @@ export const CanvasSettings: React.FC<CanvasSettingsProps> = ({
     systemToken,
     setSystemToken,
     userId,
-    setUserId
+    setUserId,
+    imageModel,
+    setImageModel
 }) => {
     void uiTheme; void setUiTheme; void buttonTheme; void setButtonTheme;
-
-    const [imageModel, setImageModel] = React.useState<string>(() => {
-        try {
-            return (localStorage.getItem('WHATAI_IMAGE_MODEL') || (process.env.WHATAI_IMAGE_MODEL as string) || 'gemini-2.5-flash-image');
-        } catch {
-            return (process.env.WHATAI_IMAGE_MODEL as string) || 'gemini-2.5-flash-image';
-        }
-    });
     const handleSetModel = (m: string) => {
         setImageModel(m);
         try {

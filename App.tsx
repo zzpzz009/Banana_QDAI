@@ -8,7 +8,6 @@ import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import { useBoardActions } from '@/hooks/useBoardActions';
 import { Toolbar } from './components/Toolbar';
 import { PromptBar } from './components/PromptBar';
-import { BananaSidebar } from './components/BananaSidebar';
 import { Loader } from './components/Loader';
 import { CanvasSettings } from './components/CanvasSettings';
 import { LayerPanel } from './components/LayerPanel';
@@ -259,7 +258,10 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
             return (process.env.WHATAI_IMAGE_MODEL as string) || 'gemini-2.5-flash-image';
         }
     });
-    const [imageSize, setImageSize] = useState<'1K' | '2K' | '4K'>('4K');
+    const [imageSize, setImageSize] = useState<'1K' | '2K' | '4K'>(() => {
+        const lower = (typeof localStorage !== 'undefined' ? (localStorage.getItem('WHATAI_IMAGE_MODEL') || '') : (process.env.WHATAI_IMAGE_MODEL as string) || '').toLowerCase();
+        return lower === 'nano-banana-2' ? '2K' : '1K';
+    });
     useEffect(() => {
         const onStorage = (e: StorageEvent) => {
             if (e.key === 'WHATAI_IMAGE_MODEL') {
@@ -269,6 +271,14 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
         window.addEventListener('storage', onStorage);
         return () => window.removeEventListener('storage', onStorage);
     }, []);
+    useEffect(() => {
+        const lower = (imageModel || '').toLowerCase();
+        if (lower !== 'nano-banana-2') {
+            setImageSize('1K');
+        } else {
+            setImageSize('2K');
+        }
+    }, [imageModel]);
 
     const interactionMode = useRef<string | null>(null);
     const startPoint = useRef<Point>({ x: 0, y: 0 });
@@ -284,31 +294,9 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
     const promptBarRef = useRef<HTMLDivElement>(null);
     elementsRef.current = elements;
 
-    const [bananaLeftOffset, setBananaLeftOffset] = useState<number>(420);
-    const [bananaTopPx, setBananaTopPx] = useState<number>(0);
+    
 
-    useEffect(() => {
-        const updateBananaPosition = () => {
-            const el = promptBarRef.current;
-            if (!el) return;
-            const rect = el.getBoundingClientRect();
-            const width = rect.width;
-            const spacing = 24; // gap between PromptBar left edge and banana button
-            setBananaLeftOffset(width / 2 + spacing);
-  setBananaTopPx(rect.top + rect.height / 2 - 20); // align vertical center (button ~40px height)
-        };
-        updateBananaPosition();
-        let ro: ResizeObserver | null = null;
-        if (typeof ResizeObserver !== 'undefined' && promptBarRef.current) {
-            ro = new ResizeObserver(() => updateBananaPosition());
-            ro.observe(promptBarRef.current);
-        }
-        window.addEventListener('resize', updateBananaPosition);
-        return () => {
-            window.removeEventListener('resize', updateBananaPosition);
-            if (ro) ro.disconnect();
-        };
-    }, []);
+    
 
     useEffect(() => {
         setSelectedElementIds([]);
@@ -1936,6 +1924,8 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
                 setSystemToken={setSystemToken}
                 userId={userId}
                 setUserId={setUserId}
+                imageModel={imageModel}
+                setImageModel={setImageModel}
             />
             <Toolbar
                 t={t}
@@ -2408,21 +2398,6 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
                 setImageSize={setImageSize}
                 containerRef={promptBarRef}
             />}
-            {/* BananaSidebar: follows PromptBar width, aligns vertically with its center */}
-            {!croppingState && (
-                <div
-                    className="z-40"
-                    style={{ position: 'fixed', left: '50%', transform: `translateX(calc(-50% - ${bananaLeftOffset}px))`, top: `${bananaTopPx}px` }}
-                >
-                    <BananaSidebar 
-                        t={t}
-                        setPrompt={setPrompt}
-                        onGenerate={handleGenerate}
-                        disabled={isLoading}
-                        promptBarOffsetPx={bananaLeftOffset}
-                    />
-                </div>
-            )}
         </div>
     );
 };
