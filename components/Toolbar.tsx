@@ -126,7 +126,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
     const containerStyle: React.CSSProperties = {
         backdropFilter: 'blur(8px)',
         WebkitBackdropFilter: 'blur(8px)',
-        backgroundColor: 'rgba(46, 36, 61, 0.6)'
+        backgroundColor: 'rgba(33, 31, 38, 0.6)'
     };
 
     if (isCropping) {
@@ -171,9 +171,9 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         <div 
             style={{ 
                 ...containerStyle,
-                ['--toolbar-bg-color' as unknown as string]: 'rgba(46, 36, 61, 0.6)'
+                ['--toolbar-bg-color' as unknown as string]: 'rgba(33, 31, 38, 0.6)'
             }}
- className="absolute top-1/2 left-4 -translate-y-1/2 z-10 pod-toolbar pod-bar-soft-gradient px-2 py-4 flex flex-col items-center gap-2"
+ className="absolute top-1/2 left-4 -translate-y-1/2 z-10 pod-toolbar pod-toolbar-elevated pod-bar-soft-gradient px-2 py-4 flex flex-col items-center gap-2"
         >
             <ToolButton label="Boards" onClick={onBoardsClick} icon={<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>} />
             <ToolButton label={t('toolbar.layers')} onClick={onLayersClick} icon={<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>} />

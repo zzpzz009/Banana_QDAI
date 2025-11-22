@@ -23,7 +23,7 @@ export const SessionRestoreDialog: React.FC<Props> = ({ onContinue, onNew, lastN
         </div>
         <div className="mt-3 flex gap-2">
           <button className="pod-primary-button flex-1" onClick={onContinue}>继续上次图版</button>
-          <button className="pod-chip flex-1" onClick={onNew}>打开新图版</button>
+          <button className="pod-btn-secondary flex-1" onClick={onNew}>打开新图版</button>
         </div>
       </div>
     </div>

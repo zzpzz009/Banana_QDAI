@@ -89,7 +89,7 @@ export const PromptBar: React.FC<PromptBarProps> = ({
     const containerStyle: React.CSSProperties = {
         backdropFilter: 'blur(8px)',
         WebkitBackdropFilter: 'blur(8px)',
-        backgroundColor: 'rgba(46, 36, 61, 0.6)'
+        backgroundColor: 'rgba(33, 31, 38, 0.6)'
     };
 
     React.useEffect(() => {
@@ -141,9 +141,9 @@ export const PromptBar: React.FC<PromptBarProps> = ({
                     ...containerStyle, 
                     ['--pod-ring-width' as unknown as string]: '1px', 
                     ['--pod-toolbar-radius' as unknown as string]: '22px',
-                    ['--toolbar-bg-color' as unknown as string]: 'rgba(46, 36, 61, 0.6)'
+                    ['--toolbar-bg-color' as unknown as string]: 'rgba(33, 31, 38, 0.6)'
                 }}
-                className="flex items-center gap-2 p-2 pod-toolbar pod-bar-soft-gradient flex-wrap md:flex-nowrap"
+                className="flex items-center gap-1 p-2 pod-toolbar pod-toolbar-elevated pod-bar-soft-gradient flex-wrap md:flex-nowrap"
             >
                 {/* Left area previously hosting BananaSidebar; now empty to keep layout tight */}
                  <div className="flex-shrink-0 flex items-center rounded-full p-1">
@@ -156,7 +156,7 @@ export const PromptBar: React.FC<PromptBarProps> = ({
                 </div>
                 
                 {generationMode === 'video' && (
-                    <div className="flex-shrink-0 flex items-center rounded-full p-1 ml-1">
+                    <div className="flex-shrink-0 flex items-center rounded-full p-1">
                         <button onClick={() => setVideoAspectRatio('16:9')} aria-label={t('promptBar.aspectRatioHorizontal')} title={t('promptBar.aspectRatioHorizontal')} className="pod-icon-button" style={videoAspectRatio === '16:9' ? { backgroundColor: 'var(--text-accent)', color: 'var(--bg-page)' } : {}}>
                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="10" rx="2" ry="2"></rect></svg>
                         </button>
@@ -166,10 +166,10 @@ export const PromptBar: React.FC<PromptBarProps> = ({
                     </div>
                 )}
                 {generationMode === 'image' && activeImageModel.toLowerCase() === 'nano-banana-2' ? (
-                    <div className="relative flex-shrink-0 flex items-center rounded-full p-1 ml-1" ref={sizeMenuWrapperRef} style={{ alignSelf: 'center' }}>
+                    <div className="relative flex-shrink-0 flex items-center rounded-full p-1" ref={sizeMenuWrapperRef} style={{ alignSelf: 'center' }}>
                         <button
                             onClick={() => setIsSizeMenuOpen((v) => !v)}
-                            className={`pod-chip pod-chip-size active pod-chip-circle ${imageSize === '4K' ? 'pod-chip-outline-sheen-4k pod-text-gold-sheen' : ''} ${imageSize === '2K' ? 'pod-chip-outline-sheen-2k pod-text-silver-sheen' : ''} ${imageSize === '1K' ? 'pod-chip-outline-sheen-1k pod-text-white-bold' : ''}`}
+                            className={`pod-chip pod-chip-size active pod-chip-circle pod-inner-gradient-ring ${imageSize === '4K' ? 'pod-chip-outline-sheen-4k pod-text-gold-sheen' : ''} ${imageSize === '2K' ? 'pod-chip-outline-sheen-2k pod-text-silver-sheen' : ''} ${imageSize === '1K' ? 'pod-chip-outline-sheen-1k pod-text-white-bold' : ''}`}
                             title={imageSize}
                             aria-label={imageSize}
                             ref={sizeChipButtonRef}
@@ -177,10 +177,10 @@ export const PromptBar: React.FC<PromptBarProps> = ({
                             {imageSize}
                         </button>
                         {isSizeMenuOpen && (
-                            <div className="absolute bottom-full left-0 mb-3 pod-panel p-2 flex flex-col items-center gap-2">
+                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 pod-panel pod-panel-transparent pod-panel-rounded-xl p-2 flex flex-col items-center gap-2">
                                 <button
                                     onClick={() => { setImageSize('1K'); setIsSizeMenuOpen(false); }}
-                                    className={`pod-chip pod-chip-size pod-chip-circle ${imageSize === '1K' ? 'active' : ''}`}
+                                    className={`pod-chip pod-chip-size pod-chip-circle pod-inner-gradient-ring pod-chip-outline-sheen-1k pod-text-white-bold ${imageSize === '1K' ? 'active' : ''}`}
                                     title="1K"
                                     aria-label="1K"
                                 >
@@ -188,7 +188,7 @@ export const PromptBar: React.FC<PromptBarProps> = ({
                                 </button>
                                 <button
                                     onClick={() => { setImageSize('2K'); setIsSizeMenuOpen(false); }}
-                                    className={`pod-chip pod-chip-size pod-chip-circle ${imageSize === '2K' ? 'active' : ''}`}
+                                    className={`pod-chip pod-chip-size pod-chip-circle pod-inner-gradient-ring pod-chip-outline-sheen-2k pod-text-silver-sheen ${imageSize === '2K' ? 'active' : ''}`}
                                     title="2K"
                                     aria-label="2K"
                                 >
@@ -196,7 +196,7 @@ export const PromptBar: React.FC<PromptBarProps> = ({
                                 </button>
                                 <button
                                     onClick={() => { setImageSize('4K'); setIsSizeMenuOpen(false); }}
-                                    className={`pod-chip pod-chip-size pod-chip-circle ${imageSize === '4K' ? 'active' : ''}`}
+                                    className={`pod-chip pod-chip-size pod-chip-circle pod-inner-gradient-ring pod-chip-outline-sheen-4k pod-text-gold-sheen ${imageSize === '4K' ? 'active' : ''}`}
                                     title="4K"
                                     aria-label="4K"
                                 >
@@ -206,11 +206,11 @@ export const PromptBar: React.FC<PromptBarProps> = ({
                         )}
                     </div>
                 ) : generationMode === 'image' ? (
-                    <div className="flex-shrink-0 flex items-center rounded-full p-1 ml-1">
+                    <div className="flex-shrink-0 flex items-center rounded-full p-1">
                         <button className="pod-chip pod-chip-circle-sheen" disabled title="1K" aria-label="1K" ref={sizeChipButtonRef}>1K</button>
                     </div>
                 ) : null}
-                <div className="flex-shrink-0 flex items-center rounded-full p-1 ml-1" style={{ alignSelf: 'center' }} ref={bananaWrapperRef}>
+                <div className="flex-shrink-0 flex items-center rounded-full p-1" style={{ alignSelf: 'center' }} ref={bananaWrapperRef}>
                     <BananaSidebar 
                         t={t}
                         setPrompt={setPrompt}
@@ -220,28 +220,30 @@ export const PromptBar: React.FC<PromptBarProps> = ({
                         buttonSize={bananaButtonSize}
                     />
                 </div>
-                <QuickPrompts 
-                    t={t}
-                    setPrompt={setPrompt}
-                    disabled={!isSelectionActive || isLoading}
-                    userEffects={userEffects}
-                    onDeleteUserEffect={onDeleteUserEffect}
-                />
-                <textarea
-                    ref={textareaRef}
-                    rows={1}
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder={getPlaceholderText()}
-                    className="pod-textarea flex-grow placeholder-neutral-400 px-2 overflow-hidden max-h-32"
-                    disabled={isLoading}
-                />
+                <div className="pod-input-group flex-grow ml-3">
+                    <QuickPrompts 
+                        t={t}
+                        setPrompt={setPrompt}
+                        disabled={!isSelectionActive || isLoading}
+                        userEffects={userEffects}
+                        onDeleteUserEffect={onDeleteUserEffect}
+                    />
+                    <textarea
+                        ref={textareaRef}
+                        rows={1}
+                        value={prompt}
+                        onChange={(e) => setPrompt(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        placeholder={getPlaceholderText()}
+                        className="pod-textarea flex-grow placeholder-neutral-400 px-2 overflow-hidden max-h-32"
+                        disabled={isLoading}
+                    />
+                </div>
                 {prompt.trim() && !isLoading && (
                     <button
                         onClick={handleSaveEffect}
                         title={t('myEffects.saveEffectTooltip')}
-                        className="pod-icon-button flex-shrink-0 w-11 h-11 flex items-center justify-center"
+                        className="pod-icon-button flex-shrink-0 w-11 h-11 flex items-center justify-center ml-3"
                     >
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg>
                     </button>
@@ -251,7 +253,7 @@ export const PromptBar: React.FC<PromptBarProps> = ({
                     disabled={isLoading || !prompt.trim()}
                     aria-label={t('promptBar.generate')}
                     title={t('promptBar.generate')}
-                    className="pod-primary-button pod-generate-button flex-shrink-0 w-11 h-11"
+                    className="pod-primary-button pod-generate-button flex-shrink-0 w-11 h-11 ml-3"
                     style={{ 
                         borderRadius: '999px', 
                         padding: 0,
