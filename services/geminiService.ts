@@ -642,8 +642,12 @@ export async function editImage(
       form.append('model', usedModel);
       form.append('prompt', prompt);
       form.append('response_format', 'b64_json');
-      const aspectToSend = isSupportedAspectRatioText(aspectRatioFromImage) ? aspectRatioFromImage : nearestSupportedAspectRatioBySize(targetW, targetH);
-      if (aspectToSend) form.append('aspect_ratio', aspectToSend);
+      const aspectCandidate = isSupportedAspectRatioText(aspectRatioFromImage) ? aspectRatioFromImage : nearestSupportedAspectRatioBySize(targetW, targetH);
+      console.debug('[editImage] 选择的宽高比', { fromImage: aspectRatioFromImage, targetW, targetH, chosen: aspectCandidate });
+      const aspectNormalized = (aspectCandidate || '').trim();
+      if (isSupportedAspectRatioText(aspectNormalized)) {
+        form.append('aspect_ratio', aspectNormalized);
+      }
       if (targetW && targetH) form.append('size', `${targetW}x${targetH}`);
       if ((usedModel || '').toLowerCase() === 'nano-banana-2') {
         form.append('image_size', imageSize || '4K');
@@ -707,7 +711,9 @@ export async function editImage(
       return { newImageBase64: null, newImageMimeType: null, textResponse: '图像编辑失败：未找到输出' };
     }
     const parts: ChatContentPart[] = [];
-    const arText = aspectRatioFromImage ? `[aspect_ratio:${aspectRatioFromImage}]` : '';
+    const safeAspect = isSupportedAspectRatioText(aspectRatioFromImage) ? aspectRatioFromImage : nearestSupportedAspectRatioBySize(targetW, targetH);
+    console.debug('[editImage] chat 模式宽高比', { fromImage: aspectRatioFromImage, targetW, targetH, chosen: safeAspect });
+    const arText = safeAspect ? `[aspect_ratio:${String(safeAspect).trim()}]` : '';
     const sizeText = targetW && targetH ? `[size:${targetW}x${targetH}]` : '';
     const outputInstr = '只输出一行 data:image/png;base64,<...> 不要输出其它文字';
     const ptext = mask ? `${prompt}\n${arText} ${sizeText} [mask:provided]\n${outputInstr}` : `${prompt}\n${arText}\n${outputInstr}`;

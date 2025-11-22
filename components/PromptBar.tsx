@@ -1,5 +1,6 @@
 import React from 'react';
 import { QuickPrompts } from './QuickPrompts';
+import BananaSidebar from './BananaSidebar';
 // BananaSidebar moved to App-level overlay; keep PromptBar focused on input controls
 import type { UserEffect, GenerationMode } from '@/types';
 
@@ -45,6 +46,12 @@ export const PromptBar: React.FC<PromptBarProps> = ({
     containerRef,
 }) => {
     const textareaRef = React.useRef<HTMLTextAreaElement>(null);
+    const sizeMenuWrapperRef = React.useRef<HTMLDivElement>(null);
+    const [isSizeMenuOpen, setIsSizeMenuOpen] = React.useState(false);
+    const sizeChipButtonRef = React.useRef<HTMLButtonElement>(null);
+    const [bananaButtonSize, setBananaButtonSize] = React.useState<number>(40);
+    const bananaWrapperRef = React.useRef<HTMLDivElement>(null);
+    const [bananaPanelOffsetPx, setBananaPanelOffsetPx] = React.useState<number>(0);
 
     React.useEffect(() => {
         if (textareaRef.current) {
@@ -80,20 +87,72 @@ export const PromptBar: React.FC<PromptBarProps> = ({
     };
 
     const containerStyle: React.CSSProperties = {
-        backdropFilter: 'blur(12px)',
-        WebkitBackdropFilter: 'blur(12px)'
+        backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)',
+        backgroundColor: 'rgba(46, 36, 61, 0.6)'
     };
+
+    React.useEffect(() => {
+        const handler = (e: MouseEvent) => {
+            if (!sizeMenuWrapperRef.current) return;
+            if (!sizeMenuWrapperRef.current.contains(e.target as Node)) {
+                setIsSizeMenuOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, []);
+
+    React.useEffect(() => {
+        const el = sizeChipButtonRef.current;
+        if (!el) return;
+        let h = 0;
+        const styles = window.getComputedStyle(el);
+        const parsed = parseFloat(styles.height);
+        if (!Number.isNaN(parsed) && parsed > 0) {
+            h = Math.round(parsed);
+        } else {
+            const rect = el.getBoundingClientRect();
+            h = Math.round(rect.height || 0);
+        }
+        if (h && h > 0) setBananaButtonSize(h);
+    }, [imageSize, generationMode, activeImageModel]);
+
+    React.useEffect(() => {
+        const updateOffset = () => {
+            const pbEl = (containerRef as React.RefObject<HTMLDivElement> | undefined)?.current;
+            const bwEl = bananaWrapperRef.current;
+            if (!pbEl || !bwEl) return;
+            const pb = pbEl.getBoundingClientRect();
+            const bw = bwEl.getBoundingClientRect();
+            const centerX = pb.left + pb.width / 2;
+            const offset = Math.round(centerX - bw.left);
+            setBananaPanelOffsetPx(offset);
+        };
+        updateOffset();
+        window.addEventListener('resize', updateOffset);
+        return () => window.removeEventListener('resize', updateOffset);
+    }, [containerRef, bananaButtonSize, generationMode, activeImageModel]);
 
     return (
         <div ref={containerRef} className="absolute bottom-4 left-1/2 -translate-x-1/2 z-40 w-full sm:max-w-full md:max-w-2xl lg:max-w-3xl px-4">
             <div 
-                style={{ ...containerStyle, ['--pod-ring-width' as unknown as string]: '1px' }}
-                className="flex items-center gap-2 p-2 pod-toolbar pod-elevated-outline pod-bar-soft-gradient pod-inner-gradient-ring flex-wrap md:flex-nowrap"
+                style={{ 
+                    ...containerStyle, 
+                    ['--pod-ring-width' as unknown as string]: '1px', 
+                    ['--pod-toolbar-radius' as unknown as string]: '22px',
+                    ['--toolbar-bg-color' as unknown as string]: 'rgba(46, 36, 61, 0.6)'
+                }}
+                className="flex items-center gap-2 p-2 pod-toolbar pod-bar-soft-gradient flex-wrap md:flex-nowrap"
             >
                 {/* Left area previously hosting BananaSidebar; now empty to keep layout tight */}
                  <div className="flex-shrink-0 flex items-center rounded-full p-1">
-                    <button onClick={() => setGenerationMode('image')} className={`pod-chip ${generationMode === 'image' ? 'active' : ''}`}>{t('promptBar.imageMode')}</button>
-                    <button onClick={() => setGenerationMode('video')} className={`pod-chip ${generationMode === 'video' ? 'active' : ''}`}>{t('promptBar.videoMode')}</button>
+                    <button
+                        onClick={() => setGenerationMode(generationMode === 'image' ? 'video' : 'image')}
+                        className={`pod-chip pod-chip-image ${generationMode === 'image' ? 'active' : ''}`}
+                    >
+                        {generationMode === 'image' ? t('promptBar.imageMode') : t('promptBar.videoMode')}
+                    </button>
                 </div>
                 
                 {generationMode === 'video' && (
@@ -106,13 +165,61 @@ export const PromptBar: React.FC<PromptBarProps> = ({
                         </button>
                     </div>
                 )}
-                {generationMode === 'image' && activeImageModel.toLowerCase() === 'nano-banana-2' && (
-                    <div className="flex-shrink-0 flex items-center rounded-full p-1 ml-1">
-                        <button onClick={() => setImageSize('1K')} className={`pod-chip ${imageSize === '1K' ? 'active' : ''}`}>1K</button>
-                        <button onClick={() => setImageSize('2K')} className={`pod-chip ${imageSize === '2K' ? 'active' : ''}`}>2K</button>
-                        <button onClick={() => setImageSize('4K')} className={`pod-chip ${imageSize === '4K' ? 'active' : ''}`}>4K</button>
+                {generationMode === 'image' && activeImageModel.toLowerCase() === 'nano-banana-2' ? (
+                    <div className="relative flex-shrink-0 flex items-center rounded-full p-1 ml-1" ref={sizeMenuWrapperRef} style={{ alignSelf: 'center' }}>
+                        <button
+                            onClick={() => setIsSizeMenuOpen((v) => !v)}
+                            className={`pod-chip pod-chip-size active pod-chip-circle ${imageSize === '4K' ? 'pod-chip-outline-sheen-4k pod-text-gold-sheen' : ''} ${imageSize === '2K' ? 'pod-chip-outline-sheen-2k pod-text-silver-sheen' : ''} ${imageSize === '1K' ? 'pod-chip-outline-sheen-1k pod-text-white-bold' : ''}`}
+                            title={imageSize}
+                            aria-label={imageSize}
+                            ref={sizeChipButtonRef}
+                        >
+                            {imageSize}
+                        </button>
+                        {isSizeMenuOpen && (
+                            <div className="absolute bottom-full left-0 mb-3 pod-panel p-2 flex flex-col items-center gap-2">
+                                <button
+                                    onClick={() => { setImageSize('1K'); setIsSizeMenuOpen(false); }}
+                                    className={`pod-chip pod-chip-size pod-chip-circle ${imageSize === '1K' ? 'active' : ''}`}
+                                    title="1K"
+                                    aria-label="1K"
+                                >
+                                    1K
+                                </button>
+                                <button
+                                    onClick={() => { setImageSize('2K'); setIsSizeMenuOpen(false); }}
+                                    className={`pod-chip pod-chip-size pod-chip-circle ${imageSize === '2K' ? 'active' : ''}`}
+                                    title="2K"
+                                    aria-label="2K"
+                                >
+                                    2K
+                                </button>
+                                <button
+                                    onClick={() => { setImageSize('4K'); setIsSizeMenuOpen(false); }}
+                                    className={`pod-chip pod-chip-size pod-chip-circle ${imageSize === '4K' ? 'active' : ''}`}
+                                    title="4K"
+                                    aria-label="4K"
+                                >
+                                    4K
+                                </button>
+                            </div>
+                        )}
                     </div>
-                )}
+                ) : generationMode === 'image' ? (
+                    <div className="flex-shrink-0 flex items-center rounded-full p-1 ml-1">
+                        <button className="pod-chip pod-chip-circle-sheen" disabled title="1K" aria-label="1K" ref={sizeChipButtonRef}>1K</button>
+                    </div>
+                ) : null}
+                <div className="flex-shrink-0 flex items-center rounded-full p-1 ml-1" style={{ alignSelf: 'center' }} ref={bananaWrapperRef}>
+                    <BananaSidebar 
+                        t={t}
+                        setPrompt={setPrompt}
+                        onGenerate={onGenerate}
+                        disabled={isLoading}
+                        promptBarOffsetPx={bananaPanelOffsetPx}
+                        buttonSize={bananaButtonSize}
+                    />
+                </div>
                 <QuickPrompts 
                     t={t}
                     setPrompt={setPrompt}
@@ -144,7 +251,7 @@ export const PromptBar: React.FC<PromptBarProps> = ({
                     disabled={isLoading || !prompt.trim()}
                     aria-label={t('promptBar.generate')}
                     title={t('promptBar.generate')}
-                    className="pod-primary-button flex-shrink-0 w-11 h-11"
+                    className="pod-primary-button pod-generate-button flex-shrink-0 w-11 h-11"
                     style={{ 
                         borderRadius: '999px', 
                         padding: 0,
