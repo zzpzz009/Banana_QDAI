@@ -108,10 +108,32 @@
   align-items: center;
   gap: 8px;
   padding: 6px 10px;
-  border-radius: 9999px;
+  border-radius: var(--pod-toolbar-radius, 16px);
   background-color: #211F26;
   border: 1px solid var(--border-color);
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+  position: relative;
+  overflow: visible;
+  transition: border-radius 240ms cubic-bezier(0.4, 0, 0.2, 1), padding 240ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 240ms cubic-bezier(0.4, 0, 0.2, 1), transform 240ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.pod-input-group::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    radial-gradient(60% 50% at 12% 50%, rgba(255,255,255,0.06) 0%, transparent 60%),
+    radial-gradient(60% 50% at 88% 50%, rgba(255,255,255,0.06) 0%, transparent 60%);
+  opacity: 0.04;
+  transition: opacity 240ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.pod-input-group-expanded {
+  padding: 10px 12px;
+  transform: translateZ(0) scale(1.005);
+}
+.pod-input-group-expanded::after {
+  opacity: 0.08;
 }
 
 /* Elevated outline style: subtle inner highlight + outer ring */
@@ -316,7 +338,7 @@
   border-radius: var(--border-radius-base);
 }
 .pod-list-item.selected {
-  background-color: rgba(245, 223, 77, 0.25);
+  background-color: rgba(79, 55, 139, 0.28);
 }
 .pod-list-item:hover {
   background-color: rgba(255, 255, 255, 0.08);
@@ -510,14 +532,42 @@
 .pod-chip-image {
   background-color: #4F378B;
   color: #ffffff;
+  box-shadow: none;
 }
 .pod-chip-video {
   background-color: #6D35AF;
+  color: #ffffff;
+  box-shadow: none;
+}
+.pod-chip-image.active {
+  background-color: #4F378B;
   color: #ffffff;
 }
 .pod-chip-video.active {
   background-color: #6D35AF;
   color: #ffffff;
+}
+.pod-chip-image:hover {
+  background-color: color-mix(in srgb, #4F378B, white 6%);
+}
+.pod-chip-video:hover {
+  background-color: color-mix(in srgb, #6D35AF, white 6%);
+}
+.pod-chip-pill-sheen {
+  position: relative;
+  overflow: hidden;
+}
+.pod-chip-pill-sheen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(-65deg, transparent 45%, rgba(255,255,255,0.35) 50%, transparent 55%);
+  background-size: 200% 100%;
+  background-repeat: no-repeat;
+  animation: pod-chip-sheen 2.8s ease-in-out infinite;
+  pointer-events: none;
+  mix-blend-mode: screen;
 }
 .pod-chip-outline-sheen-1k {
   position: relative;

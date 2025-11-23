@@ -52,11 +52,14 @@ export const PromptBar: React.FC<PromptBarProps> = ({
     const [bananaButtonSize, setBananaButtonSize] = React.useState<number>(40);
     const bananaWrapperRef = React.useRef<HTMLDivElement>(null);
     const [bananaPanelOffsetPx, setBananaPanelOffsetPx] = React.useState<number>(0);
+    const [inputExpanded, setInputExpanded] = React.useState<boolean>(false);
 
     React.useEffect(() => {
         if (textareaRef.current) {
             textareaRef.current.style.height = 'auto'; // Reset height
             textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+            const h = textareaRef.current.scrollHeight;
+            setInputExpanded(h > 56);
         }
     }, [prompt]);
     
@@ -80,9 +83,15 @@ export const PromptBar: React.FC<PromptBarProps> = ({
     };
     
     const handleSaveEffect = () => {
-        const name = window.prompt(t('myEffects.saveEffectPrompt'), t('myEffects.defaultName'));
-        if (name && prompt.trim()) {
-            onAddUserEffect({ id: `user_${Date.now()}`, name, value: prompt });
+        let name: string | null = null;
+        const canPrompt = typeof window !== 'undefined' && typeof window.prompt === 'function';
+        if (canPrompt) {
+            name = window.prompt(t('myEffects.saveEffectPrompt'), t('myEffects.defaultName'));
+        }
+        const fallback = prompt.trim().slice(0, 16) || t('myEffects.defaultName');
+        const finalName = (name ?? fallback).trim();
+        if (finalName && prompt.trim()) {
+            onAddUserEffect({ id: `user_${Date.now()}`, name: finalName, value: prompt });
         }
     };
 
@@ -149,9 +158,19 @@ export const PromptBar: React.FC<PromptBarProps> = ({
                  <div className="flex-shrink-0 flex items-center rounded-full p-1">
                     <button
                         onClick={() => setGenerationMode(generationMode === 'image' ? 'video' : 'image')}
-                        className={`pod-chip pod-chip-image ${generationMode === 'image' ? 'active' : ''}`}
+                        className={`pod-chip ${generationMode === 'image' ? 'pod-chip-image' : 'pod-chip-video'} active`}
                     >
-                        {generationMode === 'image' ? t('promptBar.imageMode') : t('promptBar.videoMode')}
+                        {generationMode === 'image' ? (
+                            <>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="9" r="2"/><path d="M21 16l-6-6-4 4-2-2-4 4"/></svg>
+                                {t('promptBar.imageMode')}
+                            </>
+                        ) : (
+                            <>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><rect x="3" y="4" width="18" height="16" rx="3"/><polygon points="10,9 16,12 10,15"/></svg>
+                                {t('promptBar.videoMode')}
+                            </>
+                        )}
                     </button>
                 </div>
                 
@@ -220,7 +239,7 @@ export const PromptBar: React.FC<PromptBarProps> = ({
                         buttonSize={bananaButtonSize}
                     />
                 </div>
-                <div className="pod-input-group flex-grow ml-3">
+                <div className={`pod-input-group ${inputExpanded ? 'pod-input-group-expanded' : ''} flex-grow ml-3`}>
                     <QuickPrompts 
                         t={t}
                         setPrompt={setPrompt}
@@ -238,16 +257,16 @@ export const PromptBar: React.FC<PromptBarProps> = ({
                         className="pod-textarea flex-grow placeholder-neutral-400 px-2 overflow-hidden max-h-32"
                         disabled={isLoading}
                     />
+                    {prompt.trim() && !isLoading && (
+                        <button
+                            onClick={handleSaveEffect}
+                            title={t('myEffects.saveEffectTooltip')}
+                            className="pod-icon-button no-hover-highlight save-effect-button flex-shrink-0 w-11 h-11 flex items-center justify-center"
+                        >
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg>
+                        </button>
+                    )}
                 </div>
-                {prompt.trim() && !isLoading && (
-                    <button
-                        onClick={handleSaveEffect}
-                        title={t('myEffects.saveEffectTooltip')}
-                        className="pod-icon-button flex-shrink-0 w-11 h-11 flex items-center justify-center ml-3"
-                    >
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg>
-                    </button>
-                )}
                 <button
                     onClick={onGenerate}
                     disabled={isLoading || !prompt.trim()}
