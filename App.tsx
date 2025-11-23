@@ -194,6 +194,7 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
     const wheelLastEventRef = useRef<{ clientX: number; clientY: number; deltaX: number; deltaY: number; ctrlKey: boolean } | null>(null);
     const [wheelAction, setWheelAction] = useState<WheelAction>('zoom');
     const [croppingState, setCroppingState] = useState<{ elementId: string; originalElement: ImageElement; cropBox: Rect } | null>(null);
+    const [cropAspectRatio, setCropAspectRatio] = useState<string | null>(null);
     const [alignmentGuides, setAlignmentGuides] = useState<Guide[]>([]);
     const [contextMenu, setContextMenu] = useState<{ x: number; y: number; elementId: string | null } | null>(null);
     const [editingElement, setEditingElement] = useState<{ id: string; text: string; } | null>(null);
@@ -260,7 +261,7 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
     });
     const [imageSize, setImageSize] = useState<'1K' | '2K' | '4K'>(() => {
         const lower = (typeof localStorage !== 'undefined' ? (localStorage.getItem('WHATAI_IMAGE_MODEL') || '') : (process.env.WHATAI_IMAGE_MODEL as string) || '').toLowerCase();
-        return lower === 'nano-banana-2' ? '2K' : '1K';
+        return '1K';
     });
     useEffect(() => {
         const onStorage = (e: StorageEvent) => {
@@ -276,7 +277,7 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
         if (lower !== 'nano-banana-2') {
             setImageSize('1K');
         } else {
-            setImageSize('2K');
+            setImageSize('1K');
         }
     }, [imageModel]);
 
@@ -293,6 +294,58 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
     const spacebarDownTime = useRef<number | null>(null);
     const promptBarRef = useRef<HTMLDivElement>(null);
     elementsRef.current = elements;
+
+    const SUPPORTED_CROP_RATIOS = ['1:1','2:3','3:2','3:4','4:3','4:5','5:4','9:16','16:9','21:9'] as const;
+    const parseRatio = (r: string | null): number | null => {
+        if (!r) return null;
+        const parts = r.split(':');
+        if (parts.length !== 2) return null;
+        const a = Number(parts[0]);
+        const b = Number(parts[1]);
+        if (!a || !b) return null;
+        return a / b;
+    };
+    const nearestSupportedCropRatioBySize = (w?: number | null, h?: number | null): string | null => {
+        if (!w || !h || w <= 0 || h <= 0) return null;
+        const target = w / h;
+        let best: string | null = null;
+        let diffBest = Number.POSITIVE_INFINITY;
+        for (const cand of SUPPORTED_CROP_RATIOS) {
+            const [a, b] = cand.split(':').map(Number);
+            if (!a || !b) continue;
+            const val = a / b;
+            const d = Math.abs(val - target);
+            if (d < diffBest) { diffBest = d; best = cand; }
+        }
+        return best;
+    };
+    const fitCropToRatio = (element: ImageElement, ratioText: string): Rect => {
+        const ar = parseRatio(ratioText) || (element.width / element.height);
+        const W = element.width, H = element.height;
+        let width: number, height: number;
+        if (ar >= W / H) {
+            width = W;
+            height = Math.max(1, Math.round(width / ar));
+        } else {
+            height = H;
+            width = Math.max(1, Math.round(height * ar));
+        }
+        const x = element.x + Math.round((W - width) / 2);
+        const y = element.y + Math.round((H - height) / 2);
+        return { x, y, width, height };
+    };
+    const handleCropAspectRatioChange = (value: string | null) => {
+        setCropAspectRatio(value);
+        setCroppingState(prev => {
+            if (!prev) return prev;
+            const { originalElement } = prev;
+            if (value && SUPPORTED_CROP_RATIOS.includes(value as (typeof SUPPORTED_CROP_RATIOS)[number])) {
+                const nextBox = fitCropToRatio(originalElement, value);
+                return { ...prev, cropBox: nextBox };
+            }
+            return prev;
+        });
+    };
 
     
 
@@ -592,11 +645,17 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
         const handleName = target.getAttribute('data-handle');
 
         if (croppingState) {
-             if (handleName) {
-                 interactionMode.current = `crop-${handleName}`;
-                 cropStartInfo.current = { originalCropBox: { ...croppingState.cropBox }, startCanvasPoint: canvasStartPoint };
-             }
-             return;
+            if (handleName) {
+                interactionMode.current = `crop-${handleName}`;
+                cropStartInfo.current = { originalCropBox: { ...croppingState.cropBox }, startCanvasPoint: canvasStartPoint };
+            } else {
+                const { cropBox } = croppingState;
+                if (canvasStartPoint.x >= cropBox.x && canvasStartPoint.x <= cropBox.x + cropBox.width && canvasStartPoint.y >= cropBox.y && canvasStartPoint.y <= cropBox.y + cropBox.height) {
+                    interactionMode.current = 'crop-move';
+                    cropStartInfo.current = { originalCropBox: { ...croppingState.cropBox }, startCanvasPoint: canvasStartPoint };
+                }
+            }
+            return;
         }
          if (activeTool === 'text') {
             const newText: TextElement = {
@@ -800,6 +859,26 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
             return;
         }
 
+        if (interactionMode.current === 'crop-move') {
+            if (!croppingState || !cropStartInfo.current) return;
+            const { originalCropBox, startCanvasPoint: cropStartPoint } = cropStartInfo.current;
+            const { originalElement } = croppingState;
+            const dx = point.x - cropStartPoint.x;
+            const dy = point.y - cropStartPoint.y;
+            let x = originalCropBox.x + dx;
+            let y = originalCropBox.y + dy;
+            const width = originalCropBox.width;
+            const height = originalCropBox.height;
+
+            if (x < originalElement.x) x = originalElement.x;
+            if (y < originalElement.y) y = originalElement.y;
+            if (x + width > originalElement.x + originalElement.width) x = originalElement.x + originalElement.width - width;
+            if (y + height > originalElement.y + originalElement.height) y = originalElement.y + originalElement.height - height;
+
+            setCroppingState(prev => prev ? { ...prev, cropBox: { x, y, width, height } } : null);
+            return;
+        }
+
         if (interactionMode.current.startsWith('crop-')) {
             if (!croppingState || !cropStartInfo.current) return;
             const handle = interactionMode.current.split('-')[1];
@@ -827,6 +906,37 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
             }
             if (y + height > originalElement.y + originalElement.height) {
                 height = originalElement.y + originalElement.height - y;
+            }
+
+            const arVal = parseRatio(cropAspectRatio);
+            
+            if (arVal) {
+                if (handle.includes('r') || handle.includes('l')) {
+                    const nh = Math.max(1, Math.round(width / arVal));
+                    height = nh;
+                    if (handle.includes('t')) y = (originalCropBox.y + originalCropBox.height) - height;
+                } else {
+                    const nw = Math.max(1, Math.round(height * arVal));
+                    width = nw;
+                    if (handle.includes('l')) x = (originalCropBox.x + originalCropBox.width) - width;
+                }
+
+                if (x < originalElement.x) x = originalElement.x;
+                if (y < originalElement.y) y = originalElement.y;
+                if (x + width > originalElement.x + originalElement.width) {
+                    const maxW = (originalElement.x + originalElement.width) - x;
+                    width = Math.max(1, Math.min(width, maxW));
+                    height = Math.max(1, Math.round(width / arVal));
+                    if (handle.includes('t')) y = (originalCropBox.y + originalCropBox.height) - height;
+                    if (handle.includes('l')) x = (originalCropBox.x + originalCropBox.width) - width;
+                }
+                if (y + height > originalElement.y + originalElement.height) {
+                    const maxH = (originalElement.y + originalElement.height) - y;
+                    height = Math.max(1, Math.min(height, maxH));
+                    width = Math.max(1, Math.round(height * arVal));
+                    if (handle.includes('t')) y = (originalCropBox.y + originalCropBox.height) - height;
+                    if (handle.includes('l')) x = (originalCropBox.x + originalCropBox.width) - width;
+                }
             }
 
             if (width < 1) {
@@ -1182,10 +1292,13 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
 
     const handleStartCrop = (element: ImageElement) => {
         setActiveTool('select');
+        const auto = nearestSupportedCropRatioBySize(element.width, element.height);
+        setCropAspectRatio(auto);
+        const initialBox = auto ? fitCropToRatio(element, auto) : { x: element.x, y: element.y, width: element.width, height: element.height };
         setCroppingState({
             elementId: element.id,
             originalElement: { ...element },
-            cropBox: { x: element.x, y: element.y, width: element.width, height: element.height },
+            cropBox: initialBox,
         });
     };
 
@@ -1464,7 +1577,7 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
                     }
                     aspectRatio = best.ar;
                 }
-                const result = await generateImageFromText(prompt, undefined, aspectRatio ? { aspectRatio } : undefined);
+                const result = await generateImageFromText(prompt, undefined, { aspectRatio, imageSize });
 
                 if (result.newImageBase64 && result.newImageMimeType) {
                     const { newImageBase64, newImageMimeType } = result;
@@ -1937,6 +2050,8 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
                 isCropping={!!croppingState}
                 onConfirmCrop={handleConfirmCrop}
                 onCancelCrop={handleCancelCrop}
+                cropAspectRatio={cropAspectRatio}
+                onCropAspectRatioChange={handleCropAspectRatioChange}
                 onSettingsClick={() => setIsSettingsPanelOpen(true)}
                 onLayersClick={() => setIsLayerPanelOpen(prev => !prev)}
                 onBoardsClick={() => setIsBoardPanelOpen(prev => !prev)}

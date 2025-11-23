@@ -416,7 +416,7 @@ function nearestSupportedAspectRatioBySize(w?: number | null, h?: number | null)
 }
 
 // 文本生成图像
-export async function generateImageFromText(prompt: string, model?: string, opts?: { aspectRatio?: string }): Promise<{ 
+export async function generateImageFromText(prompt: string, model?: string, opts?: { aspectRatio?: string; imageSize?: '1K' | '2K' | '4K' }): Promise<{ 
   newImageBase64: string | null; 
   newImageMimeType: string | null; 
   textResponse: string | null; 
@@ -432,6 +432,51 @@ export async function generateImageFromText(prompt: string, model?: string, opts
   try {
     const usedModel = model || getWhataiImageModel();
     if (isNanoBananaModel(usedModel)) {
+      const lower = (usedModel || '').toLowerCase();
+      if (lower === 'nano-banana-2') {
+        const ar = (opts?.aspectRatio && isSupportedAspectRatioText(opts.aspectRatio)) ? opts.aspectRatio.trim() : '3:4';
+        const size = opts?.imageSize || '1K';
+        const form = new FormData();
+        form.append('model', usedModel);
+        form.append('prompt', prompt);
+        form.append('response_format', 'b64_json');
+        if (isSupportedAspectRatioText(ar)) {
+          form.append('aspect_ratio', ar);
+        }
+        form.append('image_size', size);
+        const resp = await whataiFetch('/v1/images/edits', { method: 'POST', body: form });
+        const ct = resp.headers.get('content-type') || '';
+        if (!ct.includes('application/json')) {
+          const tx = await resp.text();
+          throw new Error(`images/edits 返回非 JSON (${ct}): ${tx.substring(0, 200)}`);
+        }
+        const json: ImageGenResponse = await resp.json();
+        const item = json?.data && json.data[0];
+        if (item?.b64_json) {
+          const base64 = normalizeBase64(stripBase64Header(String(item.b64_json)));
+          const mime = detectMimeFromBase64(base64);
+          return { newImageBase64: base64, newImageMimeType: mime, textResponse: `使用 ${usedModel} 模型成功生成图像` };
+        }
+        if (item?.url) {
+          const r = await fetch(String(item.url));
+          const ct2 = r.headers.get('content-type') || '';
+          if (!ct2.startsWith('image/')) {
+            return { newImageBase64: null, newImageMimeType: null, textResponse: `图像获取失败：非图像内容(${ct2 || 'unknown'})` };
+          }
+          const blob = await r.blob();
+          const reader = new FileReader();
+          return await new Promise((resolve) => {
+            reader.onload = () => {
+              let base64 = (reader.result as string).split(',')[1];
+              base64 = normalizeBase64(base64);
+              const mime = (blob.type && blob.type.startsWith('image/')) ? blob.type : detectMimeFromBase64(base64);
+              resolve({ newImageBase64: base64, newImageMimeType: mime, textResponse: `使用 ${usedModel} 模型成功生成图像` });
+            };
+            reader.readAsDataURL(blob);
+          });
+        }
+        return { newImageBase64: null, newImageMimeType: null, textResponse: '图像生成失败：未找到输出' };
+      }
       const body = {
         model: usedModel,
         prompt: prompt,
@@ -638,19 +683,20 @@ export async function editImage(
 
     const usedModel = getWhataiImageModel();
     if (isNanoBananaModel(usedModel)) {
+      const lower = (usedModel || '').toLowerCase();
+      const aspectCandidate = isSupportedAspectRatioText(aspectRatioFromImage) ? aspectRatioFromImage : nearestSupportedAspectRatioBySize(targetW, targetH);
+      const aspectNormalized = (aspectCandidate || '').trim();
+      
       const form = new FormData();
       form.append('model', usedModel);
       form.append('prompt', prompt);
       form.append('response_format', 'b64_json');
-      const aspectCandidate = isSupportedAspectRatioText(aspectRatioFromImage) ? aspectRatioFromImage : nearestSupportedAspectRatioBySize(targetW, targetH);
-      console.debug('[editImage] 选择的宽高比', { fromImage: aspectRatioFromImage, targetW, targetH, chosen: aspectCandidate });
-      const aspectNormalized = (aspectCandidate || '').trim();
       if (isSupportedAspectRatioText(aspectNormalized)) {
         form.append('aspect_ratio', aspectNormalized);
       }
       if (targetW && targetH) form.append('size', `${targetW}x${targetH}`);
-      if ((usedModel || '').toLowerCase() === 'nano-banana-2') {
-        form.append('image_size', imageSize || '4K');
+      if (lower === 'nano-banana-2') {
+        form.append('image_size', imageSize || '1K');
       }
       for (let i = 0; i < preparedImagesBase64.length; i++) {
         const mime = images[i]?.mimeType || 'image/png';

@@ -13,6 +13,8 @@ interface ToolbarProps {
     isCropping: boolean;
     onConfirmCrop: () => void;
     onCancelCrop: () => void;
+    cropAspectRatio: string | null;
+    onCropAspectRatioChange: (value: string | null) => void;
     onSettingsClick: () => void;
     onLayersClick: () => void;
     onBoardsClick: () => void;
@@ -106,6 +108,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({
     isCropping,
     onConfirmCrop,
     onCancelCrop,
+    cropAspectRatio,
+    onCropAspectRatioChange,
     onSettingsClick,
     onLayersClick,
     onBoardsClick,
@@ -137,6 +141,26 @@ export const Toolbar: React.FC<ToolbarProps> = ({
             >
                 <span className="text-sm" style={{ color: 'var(--text-heading)', fontWeight: 500 }}>{t('toolbar.crop.title')}</span>
                 <div className="w-full my-2" style={{ height: '1px', backgroundColor: 'var(--border-color)' }}></div>
+                <label className="w-full text-xs" style={{ color: 'var(--text-primary)' }}>{t('toolbar.crop.aspectRatioLabel')}</label>
+                <select
+                    value={cropAspectRatio || ''}
+                    onChange={(e) => onCropAspectRatioChange(e.target.value ? e.target.value : null)}
+                    className="w-full pod-select"
+                    aria-label={t('toolbar.crop.aspectRatioLabel')}
+                    title={t('toolbar.crop.aspectRatioLabel')}
+                >
+                    <option value="">{t('toolbar.crop.free')}</option>
+                    <option value="1:1">{t('toolbar.crop.ratio_1_1')}</option>
+                    <option value="2:3">{t('toolbar.crop.ratio_2_3')}</option>
+                    <option value="3:2">{t('toolbar.crop.ratio_3_2')}</option>
+                    <option value="3:4">{t('toolbar.crop.ratio_3_4')}</option>
+                    <option value="4:3">{t('toolbar.crop.ratio_4_3')}</option>
+                    <option value="4:5">{t('toolbar.crop.ratio_4_5')}</option>
+                    <option value="5:4">{t('toolbar.crop.ratio_5_4')}</option>
+                    <option value="9:16">{t('toolbar.crop.ratio_9_16')}</option>
+                    <option value="16:9">{t('toolbar.crop.ratio_16_9')}</option>
+                    <option value="21:9">{t('toolbar.crop.ratio_21_9')}</option>
+                </select>
                 <button onClick={onCancelCrop} className="pod-btn-secondary w-full">{t('toolbar.crop.cancel')}</button>
                 <button onClick={onConfirmCrop} className="pod-primary-button w-full">{t('toolbar.crop.confirm')}</button>
             </div>

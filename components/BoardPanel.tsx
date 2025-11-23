@@ -140,7 +140,7 @@ MemoBoardItem.displayName = 'MemoBoardItem';
 
 export const BoardPanel: React.FC<BoardPanelProps> = ({ 
     isOpen, onClose, boards, activeBoardId, onSwitchBoard, onAddBoard, 
-    onRenameBoard, onDuplicateBoard, onDeleteBoard, onImportHistoryBoard 
+    onRenameBoard, onDuplicateBoard, onDeleteBoard, onImportHistoryBoard, generateBoardThumbnail 
 }) => {
     const [history, setHistory] = useState<HistoryBoardSnapshot[]>([]);
     useEffect(() => { if (!isOpen) return; getHistoryBoards().then(setHistory).catch(() => setHistory([])); }, [isOpen]);
@@ -316,7 +316,7 @@ export const BoardPanel: React.FC<BoardPanelProps> = ({
                         dataBoardId={board.id}
                         board={board}
                         isActive={board.id === activeBoardId}
-                        thumbnail={boardThumbs[board.id] || ''}
+                        thumbnail={boardThumbs[board.id] || generateBoardThumbnail(board.elements)}
                         onClick={() => onSwitchBoard(board.id)}
                         onRename={(name) => onRenameBoard(board.id, name)}
                         onDuplicate={() => onDuplicateBoard(board.id)}
@@ -340,7 +340,7 @@ export const BoardPanel: React.FC<BoardPanelProps> = ({
                                     onClick={() => onImportHistoryBoard && onImportHistoryBoard(h)}
                                 >
                                     <div className="aspect-[3/2] w-full rounded-md mb-2 overflow-hidden border">
-                                        <img src={h.thumbnail || thumbs[h.savedAt] || ''} alt={`${code} history`} className="w-full h-full object-cover" />
+                                        <img src={h.thumbnail || thumbs[h.savedAt] || generateBoardThumbnail(h.elements)} alt={`${code} history`} className="w-full h-full object-cover" />
                                     </div>
                                     <div className="flex items-center justify-between">
                                         <span className="text-sm truncate">{code}</span>
