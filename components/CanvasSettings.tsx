@@ -174,7 +174,7 @@ export const CanvasSettings: React.FC<CanvasSettingsProps> = ({
                             <div className="text-[10px] text-gray-400 h-3 flex items-end">{language === 'zho' ? '模型' : 'Model'}</div>
                             <div className="text-xs font-semibold break-all text-gray-100 leading-snug h-10">gemini-3-pro-image-preview</div>
                             <div className="mt-1 text-[10px] text-gray-400 h-3 flex items-end">{language === 'zho' ? '价格' : 'Price'}</div>
-                            <div className="text-xs font-semibold text-gray-100 h-4">{language === 'zho' ? '¥0.2/次' : '¥0.2/call'}</div>
+                            <div className="text-xs font-semibold text-gray-100 h-4">{language === 'zho' ? '¥0.3/次' : '¥0.3/call'}</div>
                         </button>
                         <button
                             onClick={() => handleSetModel('nano-banana')}

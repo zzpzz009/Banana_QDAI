@@ -260,7 +260,6 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
         }
     });
     const [imageSize, setImageSize] = useState<'1K' | '2K' | '4K'>(() => {
-        const lower = (typeof localStorage !== 'undefined' ? (localStorage.getItem('WHATAI_IMAGE_MODEL') || '') : (process.env.WHATAI_IMAGE_MODEL as string) || '').toLowerCase();
         return '1K';
     });
     useEffect(() => {

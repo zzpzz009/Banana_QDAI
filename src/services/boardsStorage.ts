@@ -105,20 +105,6 @@ async function slimElement(el: Element): Promise<Element> {
   return { ...el }
 }
 
-async function inflateElement(el: Element): Promise<Element> {
-  if ((el as ImageElement).type === 'image') {
-    const img = el as ImageElement
-    if (img.href.startsWith('image:')) {
-      const hash = img.href.slice('image:'.length)
-      const blob = await getImageBlob(hash)
-      if (blob) {
-        const url = URL.createObjectURL(blob)
-        return { ...img, href: url, mimeType: blob.type || img.mimeType }
-      }
-    }
-  }
-  return el
-}
 
 async function blobToDataUrl(blob: Blob): Promise<string> {
   const ab = await blob.arrayBuffer()
@@ -232,18 +218,18 @@ export async function flushLastSessionSave() {
 }
 export async function loadLastSession(): Promise<{ boards: Board[]; activeBoardId: string; timestamp: number } | null> {
   const db = await openDB()
-  const raw = await new Promise<any>((resolve, reject) => {
+  const raw = await new Promise<{ boards: Board[]; activeBoardId: string; timestamp: number } | null>((resolve, reject) => {
     const tx = db.transaction('lastSession', 'readonly')
     const store = tx.objectStore('lastSession')
     const req = store.get('data')
     req.onsuccess = () => {
       const data = req.result
-      if (data) { resolve(data); return }
+      if (data) { resolve(data as { boards: Board[]; activeBoardId: string; timestamp: number }); return }
       const req2 = store.get('data-json')
       req2.onsuccess = () => {
         const j = req2.result
         if (!j) { resolve(null); return }
-        try { resolve(JSON.parse(j as string)) } catch { resolve(null) }
+        try { resolve(JSON.parse(j as string) as { boards: Board[]; activeBoardId: string; timestamp: number }) } catch { resolve(null) }
       }
       req2.onerror = () => reject(req2.error)
     }
@@ -287,11 +273,11 @@ export async function pushHistoryBoard(board: Board) {
 }
 export async function getHistoryBoards(): Promise<HistoryBoardSnapshot[]> {
   const db = await openDB()
-  const raw = await new Promise<any[]>((resolve, reject) => {
+  const raw = await new Promise<HistoryBoardSnapshot[]>((resolve, reject) => {
     const tx = db.transaction('history', 'readonly')
     const store = tx.objectStore('history')
     const req = store.getAll()
-    req.onsuccess = () => resolve((req.result || []) as any[])
+    req.onsuccess = () => resolve((req.result || []) as HistoryBoardSnapshot[])
     req.onerror = () => reject(req.error)
   })
   const sorted = raw.sort((a: HistoryBoardSnapshot, b: HistoryBoardSnapshot) => b.savedAt - a.savedAt)
