@@ -451,6 +451,14 @@
   border: none !important;
   box-shadow: none !important;
 }
+.pod-panel-pill {
+  background-color: rgba(33, 31, 38, 0.58);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 9999px;
+  box-shadow: inset 0 1px 6px rgba(255,255,255,0.06), 0 10px 24px rgba(0,0,0,0.25);
+}
 .pod-chip-circle-sheen {
   width: 44px;
   height: 44px;
@@ -483,7 +491,7 @@
   background: linear-gradient(-65deg, transparent 40%, rgba(255,255,255,0.35) 50%, transparent 70%);
   background-size: 200% 100%;
   background-repeat: no-repeat;
-  animation: pod-chip-sheen 2.8s ease-in-out infinite;
+  animation: pod-chip-sheen 4.8s ease-in-out infinite;
   pointer-events: none;
   mix-blend-mode: screen;
 }
@@ -500,7 +508,7 @@
   background-clip: text;
   color: transparent;
   -webkit-text-fill-color: transparent;
-  animation: pod-text-gold 2.8s linear infinite;
+  animation: pod-text-gold 4.8s ease-in-out infinite;
   font-weight: 700;
 }
 @keyframes pod-text-gold {
@@ -518,6 +526,20 @@
   font-weight: 700;
 }
 @keyframes pod-text-silver {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+.pod-text-copper-sheen {
+  background: linear-gradient(90deg, #733A1A, #B87333, #A36B3F, #8C4A1E, #733A1A);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  animation: pod-text-copper 4.8s ease-in-out infinite;
+  font-weight: 700;
+}
+@keyframes pod-text-copper {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
@@ -565,7 +587,7 @@
   background: linear-gradient(-65deg, transparent 45%, rgba(255,255,255,0.35) 50%, transparent 55%);
   background-size: 200% 100%;
   background-repeat: no-repeat;
-  animation: pod-chip-sheen 2.8s ease-in-out infinite;
+  animation: pod-chip-sheen 4.8s ease-in-out infinite;
   pointer-events: none;
   mix-blend-mode: screen;
 }
@@ -581,7 +603,7 @@
   background: linear-gradient(-65deg, transparent 40%, rgba(255,255,255,0.35) 50%, transparent 70%);
   background-size: 200% 100%;
   background-repeat: no-repeat;
-  animation: pod-chip-sheen 2.8s ease-in-out infinite;
+  animation: pod-chip-sheen 4.8s ease-in-out infinite;
   mix-blend-mode: screen;
 }
 .pod-chip-outline-sheen-2k {
@@ -596,7 +618,7 @@
   background: linear-gradient(-65deg, transparent 40%, rgba(255,255,255,0.35) 50%, transparent 70%);
   background-size: 200% 100%;
   background-repeat: no-repeat;
-  animation: pod-chip-sheen 2.8s ease-in-out infinite;
+  animation: pod-chip-sheen 4.8s ease-in-out infinite;
   mix-blend-mode: screen;
 }
 @keyframes pod-outline-sheen {
@@ -619,6 +641,27 @@
   background: linear-gradient(-65deg, transparent 40%, rgba(255,255,255,0.35) 50%, transparent 70%);
   background-size: 200% 100%;
   background-repeat: no-repeat;
-  animation: pod-chip-sheen 2.8s ease-in-out infinite;
+  animation: pod-chip-sheen 4.8s ease-in-out infinite;
   mix-blend-mode: screen;
 }
+.pod-chip-bg-1k {
+  background-color: rgba(115, 58, 26, 0.22);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  box-shadow: inset 0 1px 4px rgba(255,255,255,0.05), 0 3px 10px rgba(0,0,0,0.25);
+}
+.pod-chip-bg-1k:hover { background-color: rgba(115, 58, 26, 0.26); }
+.pod-chip-bg-2k {
+  background-color: rgba(138, 143, 158, 0.20);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  box-shadow: inset 0 1px 4px rgba(255,255,255,0.05), 0 3px 10px rgba(0,0,0,0.25);
+}
+.pod-chip-bg-2k:hover { background-color: rgba(138, 143, 158, 0.24); }
+.pod-chip-bg-4k {
+  background-color: rgba(170, 123, 0, 0.20);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  box-shadow: inset 0 1px 4px rgba(255,255,255,0.05), 0 3px 10px rgba(0,0,0,0.25);
+}
+.pod-chip-bg-4k:hover { background-color: rgba(170, 123, 0, 0.24); }

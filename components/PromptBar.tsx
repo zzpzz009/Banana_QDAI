@@ -188,7 +188,7 @@ export const PromptBar: React.FC<PromptBarProps> = ({
                     <div className="relative flex-shrink-0 flex items-center rounded-full p-1" ref={sizeMenuWrapperRef} style={{ alignSelf: 'center' }}>
                         <button
                             onClick={() => setIsSizeMenuOpen((v) => !v)}
-                            className={`pod-chip pod-chip-size active pod-chip-circle pod-inner-gradient-ring ${imageSize === '4K' ? 'pod-chip-outline-sheen-4k pod-text-gold-sheen' : ''} ${imageSize === '2K' ? 'pod-chip-outline-sheen-2k pod-text-silver-sheen' : ''} ${imageSize === '1K' ? 'pod-chip-outline-sheen-1k pod-text-white-bold' : ''}`}
+                            className={`pod-chip pod-chip-size active pod-chip-circle pod-inner-gradient-ring ${imageSize === '4K' ? 'pod-chip-outline-sheen-4k pod-text-gold-sheen pod-chip-bg-4k' : ''} ${imageSize === '2K' ? 'pod-chip-outline-sheen-2k pod-text-silver-sheen pod-chip-bg-2k' : ''} ${imageSize === '1K' ? 'pod-chip-outline-sheen-1k pod-text-copper-sheen pod-chip-bg-1k' : ''}`}
                             title={imageSize}
                             aria-label={imageSize}
                             ref={sizeChipButtonRef}
@@ -196,10 +196,11 @@ export const PromptBar: React.FC<PromptBarProps> = ({
                             {imageSize}
                         </button>
                         {isSizeMenuOpen && (
-                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 pod-panel pod-panel-transparent pod-panel-rounded-xl p-2 flex flex-col items-center gap-2">
+                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-6 pod-panel pod-panel-pill p-2 flex flex-col items-center gap-2">
                                 <button
                                     onClick={() => { setImageSize('1K'); setIsSizeMenuOpen(false); }}
-                                    className={`pod-chip pod-chip-size pod-chip-circle pod-inner-gradient-ring pod-chip-outline-sheen-1k pod-text-white-bold ${imageSize === '1K' ? 'active' : ''}`}
+                                    className={`pod-chip pod-chip-size pod-chip-circle pod-inner-gradient-ring pod-chip-outline-sheen-1k pod-text-copper-sheen pod-chip-bg-1k ${imageSize === '1K' ? 'active' : ''}`}
+                                    style={{ backgroundColor: 'rgba(33,31,38,0.72)', border: '1px solid rgba(255,255,255,0.08)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)', boxShadow: 'inset 0 1px 4px rgba(255,255,255,0.05), 0 3px 10px rgba(0,0,0,0.25)' }}
                                     title="1K"
                                     aria-label="1K"
                                 >
@@ -207,7 +208,8 @@ export const PromptBar: React.FC<PromptBarProps> = ({
                                 </button>
                                 <button
                                     onClick={() => { setImageSize('2K'); setIsSizeMenuOpen(false); }}
-                                    className={`pod-chip pod-chip-size pod-chip-circle pod-inner-gradient-ring pod-chip-outline-sheen-2k pod-text-silver-sheen ${imageSize === '2K' ? 'active' : ''}`}
+                                    className={`pod-chip pod-chip-size pod-chip-circle pod-inner-gradient-ring pod-chip-outline-sheen-2k pod-text-silver-sheen pod-chip-bg-2k ${imageSize === '2K' ? 'active' : ''}`}
+                                    style={{ backgroundColor: 'rgba(33,31,38,0.72)', border: '1px solid rgba(255,255,255,0.08)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)', boxShadow: 'inset 0 1px 4px rgba(255,255,255,0.05), 0 3px 10px rgba(0,0,0,0.25)' }}
                                     title="2K"
                                     aria-label="2K"
                                 >
@@ -215,7 +217,8 @@ export const PromptBar: React.FC<PromptBarProps> = ({
                                 </button>
                                 <button
                                     onClick={() => { setImageSize('4K'); setIsSizeMenuOpen(false); }}
-                                    className={`pod-chip pod-chip-size pod-chip-circle pod-inner-gradient-ring pod-chip-outline-sheen-4k pod-text-gold-sheen ${imageSize === '4K' ? 'active' : ''}`}
+                                    className={`pod-chip pod-chip-size pod-chip-circle pod-inner-gradient-ring pod-chip-outline-sheen-4k pod-text-gold-sheen pod-chip-bg-4k ${imageSize === '4K' ? 'active' : ''}`}
+                                    style={{ backgroundColor: 'rgba(33,31,38,0.72)', border: '1px solid rgba(255,255,255,0.08)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)', boxShadow: 'inset 0 1px 4px rgba(255,255,255,0.05), 0 3px 10px rgba(0,0,0,0.25)' }}
                                     title="4K"
                                     aria-label="4K"
                                 >

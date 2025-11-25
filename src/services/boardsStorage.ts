@@ -266,7 +266,17 @@ export async function pushHistoryBoard(board: Board) {
   await new Promise<void>((resolve, reject) => {
     const tx = db.transaction('history', 'readwrite')
     const store = tx.objectStore('history')
-    store.put(snapshot)
+    const req = store.getAll()
+    req.onsuccess = () => {
+      const all = (req.result || []) as HistoryBoardSnapshot[]
+      for (const rec of all) {
+        if (rec && rec.id === board.id && rec.savedAt != null) {
+          store.delete(rec.savedAt)
+        }
+      }
+      store.put(snapshot)
+    }
+    req.onerror = () => reject(req.error)
     tx.oncomplete = () => resolve()
     tx.onerror = () => reject(tx.error)
   })

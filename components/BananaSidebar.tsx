@@ -17,26 +17,26 @@ const withBase = (p: string) => {
   return `${BASE_URL}${normalized}`;
 };
 
-// Inline SVG icon to avoid path issues in packaged app
-const BananaIcon: React.FC<{ size?: number }> = ({ size = 40 }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 72 72"
-    xmlns="http://www.w3.org/2000/svg"
-    style={{ display: 'block', filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.35))' }}
-    aria-hidden="true"
-    focusable="false"
-  >
-    <g>
-      <line fill="none" stroke="#000000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" strokeMiterlimit="10" x1="41.2" y1="13.8" x2="38.5" y2="10.5"/>
-      <path fill="#FFEC00" stroke="#FFEC00" strokeWidth="0.75" strokeLinecap="round" strokeLinejoin="round" strokeMiterlimit="10" d="M52,52.3c-8.3,9.9-23.1,11.2-33,2.8c-4.1-3.5-6.8-8.1-7.8-13l1.6-1.3c0.7,0.9,1.6,1.8,2.6,2.6c7.9,6.7,19.7,5.7,26.4-2.3c5.8-6.9,5.8-16.6,0.6-23.5c-0.1-0.1,2.2-1.5,2.2-1.5l0,0c1.6,0.8,3.2,1.8,4.7,3.1C59,27.6,60.3,42.4,52,52.3z"/>
-      <path fill="#F1B31C" stroke="#F1B31C" strokeWidth="0.75" strokeLinecap="round" strokeLinejoin="round" strokeMiterlimit="10" d="M11.1,42.1c25.1,27.4,54.4-4.7,33.3-25.9c1.6,0.8,3.2,1.8,4.7,3.1c9.9,8.3,11.2,23.1,2.8,33c-8.3,9.9-23.1,11.2-33,2.8 C14.8,51.6,12.2,47,11.1,42.1"/>
-      <path fill="none" stroke="#000000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" strokeMiterlimit="10" d="M20.4,49.5c18.7,10.3,36-7.1,30.2-23.9"/>
-      <path fill="none" stroke="#000000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" strokeMiterlimit="10" d="M52,52.3c-8.3,9.9-23.1,11.2-33,2.8c-4.1-3.5-6.8-8.1-7.8-13l1.6-1.3c0.7,0.9,1.6,1.8,2.6,2.6c7.9,6.7,19.7,5.7,26.4-2.3 c5.8-6.9,5.8-16.6,0.6-23.5c-0.1-0.1,2.2-1.5,2.2-1.5l0,0c1.6,0.8,3.2,1.8,4.7,3.1C59,27.6,60.3,42.4,52,52.3z"/>
-    </g>
-  </svg>
-);
+const BananaIcon: React.FC<{ size?: number }> = ({ size = 40 }) => {
+  const primary = withBase('logo/icons8-banana-100.png');
+  const fallback = withBase('logo/BA-color.png');
+  const svgFallback = withBase('logo/OpenMoji-color_1F34C.svg');
+  return (
+    <img
+      src={primary}
+      width={size}
+      height={size}
+      alt="banana"
+      style={{ display: 'block' }}
+      onError={(e) => {
+        const t = e.currentTarget;
+        t.onerror = null;
+        t.src = fallback;
+        setTimeout(() => { if (t.naturalWidth === 0) t.src = svgFallback; }, 0);
+      }}
+    />
+  );
+};
 
 // Create a simple SVG data URL thumbnail using the preset name
 const makeSvgDataUrl = (label: string) => {
@@ -208,7 +208,7 @@ export const BananaSidebar: React.FC<BananaSidebarProps> = ({ t, setPrompt, onGe
                 'linear-gradient(-65deg, transparent 40%, rgba(255,255,255,0.35) 50%, transparent 70%)',
               backgroundSize: '200% 100%',
               backgroundRepeat: 'no-repeat',
-              animation: 'banana_sheen 2.8s ease-in-out infinite',
+              animation: 'banana_sheen 4.8s ease-in-out infinite',
               pointerEvents: 'none',
               borderRadius: 'inherit',
               mixBlendMode: 'screen',
