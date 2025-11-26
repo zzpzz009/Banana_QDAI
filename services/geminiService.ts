@@ -544,28 +544,24 @@ export async function generateImageFromText(prompt: string, model?: string, opts
       if (lower === 'nano-banana-2') {
         const ar = (opts?.aspectRatio && isSupportedAspectRatioText(opts.aspectRatio)) ? opts.aspectRatio.trim() : '3:4';
         const size = opts?.imageSize || '1K';
-        const form = new FormData();
-        form.append('model', usedModel);
-        form.append('prompt', prompt);
-        form.append('response_format', 'url');
-        form.append('aspect_ratio', ar);
+        const body = {
+          model: usedModel,
+          prompt: prompt,
+          response_format: 'url',
+          aspect_ratio: ar,
+          image_size: size
+        } as Record<string, unknown>;
         try {
-          console.debug('[generateImage] Nano-banana-2 edits', { model: usedModel, aspect_ratio: ar, image_size: size });
+          console.debug('[generateImage] Nano-banana-2 generations', { model: usedModel, aspect_ratio: ar, image_size: size });
         } catch { void 0; }
-        form.append('image_size', size);
-        const resp = await whataiFetch('/v1/images/edits', { method: 'POST', body: form });
+        const resp = await whataiFetch('/v1/images/generations', { method: 'POST', body: JSON.stringify(body) });
         const ct = resp.headers.get('content-type') || '';
         if (!ct.includes('application/json')) {
           const tx = await resp.text();
-          throw new Error(`images/edits 返回非 JSON (${ct}): ${tx.substring(0, 200)}`);
+          throw new Error(`images/generations 返回非 JSON (${ct}): ${tx.substring(0, 200)}`);
         }
         const json: ImageGenResponse = await resp.json();
         const item = json?.data && json.data[0];
-        if (item?.b64_json) {
-          const base64 = normalizeBase64(stripBase64Header(String(item.b64_json)));
-          const mime = detectMimeFromBase64(base64);
-          return { newImageBase64: base64, newImageMimeType: mime, textResponse: `使用 ${usedModel} 模型成功生成图像` };
-        }
         if (item?.url) {
           const r = await fetch(String(item.url));
           const ct2 = r.headers.get('content-type') || '';
@@ -583,6 +579,11 @@ export async function generateImageFromText(prompt: string, model?: string, opts
             };
             reader.readAsDataURL(blob);
           });
+        }
+        if (item?.b64_json) {
+          const base64 = normalizeBase64(stripBase64Header(String(item.b64_json)));
+          const mime = detectMimeFromBase64(base64);
+          return { newImageBase64: base64, newImageMimeType: mime, textResponse: `使用 ${usedModel} 模型成功生成图像` };
         }
         return { newImageBase64: null, newImageMimeType: null, textResponse: '图像生成失败：未找到输出' };
       }
