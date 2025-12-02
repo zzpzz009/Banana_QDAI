@@ -427,7 +427,7 @@ const App: React.FC = () => {
     const [editingElement, setEditingElement] = useState<{ id: string; text: string; } | null>(null);
     const [lassoPath, setLassoPath] = useState<Point[] | null>(null);
 
-    const [language, setLanguage] = useState<'en' | 'zho'>('en');
+    const [language, setLanguage] = useState<'en' | 'ZH'>('en');
     const [uiTheme, setUiTheme] = useState({ color: '#171717', opacity: 0.7 });
     
     const [userEffects, setUserEffects] = useState<UserEffect[]>(() => {

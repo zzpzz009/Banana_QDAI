@@ -214,7 +214,7 @@ export const translations = {
         },
     }
   },
-  zho: {
+  ZH: {
     toolbar: {
       undo: '撤销',
       redo: '重做',

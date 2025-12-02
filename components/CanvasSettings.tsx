@@ -9,8 +9,8 @@ interface CanvasSettingsProps {
     onClose: () => void;
     canvasBackgroundColor: string;
     onCanvasBackgroundColorChange: (color: string) => void;
-    language: 'en' | 'zho';
-    setLanguage: (lang: 'en' | 'zho') => void;
+    language: 'en' | 'ZH';
+    setLanguage: (lang: 'en' | 'ZH') => void;
     uiTheme: { color: string; opacity: number };
     setUiTheme: (theme: { color: string; opacity: number }) => void;
     buttonTheme: { color: string; opacity: number };
@@ -140,59 +140,59 @@ export const CanvasSettings: React.FC<CanvasSettingsProps> = ({
                     />
                     <div className="flex items-center gap-1 mt-1">
                         <button onClick={handleCheckBalance} className="pod-chip text-sm">
-                            {balanceLoading ? (language === 'zho' ? '查询中...' : 'Checking...') : t('settings.checkBalance')}
+                            {balanceLoading ? (language === 'ZH' ? '查询中...' : 'Checking...') : t('settings.checkBalance')}
                         </button>
                     </div>
                     {balanceData && (
                         <div className="mt-1 space-y-1">
                             <div className="text-xs" style={{ color: 'var(--text-primary)' }}>
-                                {t('settings.siteBalancePrefix')}{new Intl.NumberFormat(language === 'zho' ? 'zh-CN' : 'en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(balanceData.quota / 500000)}
+                                {t('settings.siteBalancePrefix')}{new Intl.NumberFormat(language === 'ZH' ? 'zh-CN' : 'en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(balanceData.quota / 500000)}
                             </div>
                             <div className="text-xs" style={{ color: 'var(--text-primary)' }}>
-                                {t('settings.siteUsedPrefix')}{new Intl.NumberFormat(language === 'zho' ? 'zh-CN' : 'en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(balanceData.used / 500000)}
+                                {t('settings.siteUsedPrefix')}{new Intl.NumberFormat(language === 'ZH' ? 'zh-CN' : 'en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(balanceData.used / 500000)}
                             </div>
                         </div>
                     )}
                 </div>
 
                 <div className="space-y-2">
-                    <label className="text-xs" style={{ color: 'var(--text-heading)', fontWeight: 500 }}>{language === 'zho' ? '图像模型' : 'Image Model'}</label>
+                    <label className="text-xs" style={{ color: 'var(--text-heading)', fontWeight: 500 }}>{language === 'ZH' ? '图像模型' : 'Image Model'}</label>
                     <div className="grid grid-cols-2 gap-2">
                         <button
                             onClick={() => handleSetModel('gemini-2.5-flash-image')}
                             className={`rounded-md border p-2 text-left bg-[#211F26] hover:bg-[#211F26] focus:outline-none focus:ring-1 focus:ring-[var(--text-accent)] ${imageModel === 'gemini-2.5-flash-image' ? 'ring-1 ring-[var(--text-accent)] bg-[#211F26] border-[var(--text-accent)]' : 'border-gray-700'}`}
                         >
-                            <div className="text-[10px] text-gray-400 h-3 flex items-end">{language === 'zho' ? '模型' : 'Model'}</div>
+                            <div className="text-[10px] text-gray-400 h-3 flex items-end">{language === 'ZH' ? '模型' : 'Model'}</div>
                             <div className="text-xs font-semibold break-all text-gray-100 leading-snug h-10">gemini-2.5-flash-image</div>
-                            <div className="mt-1 text-[10px] text-gray-400 h-3 flex items-end">{language === 'zho' ? '价格' : 'Price'}</div>
-                            <div className="text-xs font-semibold text-gray-100 h-4">{language === 'zho' ? '¥0.08/次' : '¥0.08/call'}</div>
+                            <div className="mt-1 text-[10px] text-gray-400 h-3 flex items-end">{language === 'ZH' ? '价格' : 'Price'}</div>
+                            <div className="text-xs font-semibold text-gray-100 h-4">{language === 'ZH' ? '¥0.08/次' : '¥0.08/call'}</div>
                         </button>
                         <button
                             onClick={() => handleSetModel('gemini-3-pro-image-preview')}
                             className={`rounded-md border p-2 text-left bg-[#211F26] hover:bg-[#211F26] focus:outline-none focus:ring-1 focus:ring-[var(--text-accent)] ${imageModel === 'gemini-3-pro-image-preview' ? 'ring-1 ring-[var(--text-accent)] bg-[#211F26] border-[var(--text-accent)]' : 'border-gray-700'}`}
                         >
-                            <div className="text-[10px] text-gray-400 h-3 flex items-end">{language === 'zho' ? '模型' : 'Model'}</div>
+                            <div className="text-[10px] text-gray-400 h-3 flex items-end">{language === 'ZH' ? '模型' : 'Model'}</div>
                             <div className="text-xs font-semibold break-all text-gray-100 leading-snug h-10">gemini-3-pro-image-preview</div>
-                            <div className="mt-1 text-[10px] text-gray-400 h-3 flex items-end">{language === 'zho' ? '价格' : 'Price'}</div>
-                            <div className="text-xs font-semibold text-gray-100 h-4">{language === 'zho' ? '¥0.3/次' : '¥0.3/call'}</div>
+                            <div className="mt-1 text-[10px] text-gray-400 h-3 flex items-end">{language === 'ZH' ? '价格' : 'Price'}</div>
+                            <div className="text-xs font-semibold text-gray-100 h-4">{language === 'ZH' ? '¥0.3/次' : '¥0.3/call'}</div>
                         </button>
                         <button
                             onClick={() => handleSetModel('nano-banana')}
                             className={`rounded-md border p-2 text-left bg-[#211F26] hover:bg-[#211F26] focus:outline-none focus:ring-1 focus:ring-[var(--text-accent)] ${imageModel === 'nano-banana' ? 'ring-1 ring-[var(--text-accent)] bg-[#211F26] border-[var(--text-accent)]' : 'border-gray-700'}`}
                         >
-                            <div className="text-[10px] text-gray-400 h-3 flex items-end">{language === 'zho' ? '模型' : 'Model'}</div>
+                            <div className="text-[10px] text-gray-400 h-3 flex items-end">{language === 'ZH' ? '模型' : 'Model'}</div>
                             <div className="text-xs font-semibold break-all text-gray-100 leading-snug h-10">nano-banana</div>
-                            <div className="mt-1 text-[10px] text-gray-400 h-3 flex items-end">{language === 'zho' ? '价格' : 'Price'}</div>
-                            <div className="text-xs font-semibold text-gray-100 h-4">{language === 'zho' ? '¥0.16/次' : '¥0.16/call'}</div>
+                            <div className="mt-1 text-[10px] text-gray-400 h-3 flex items-end">{language === 'ZH' ? '价格' : 'Price'}</div>
+                            <div className="text-xs font-semibold text-gray-100 h-4">{language === 'ZH' ? '¥0.16/次' : '¥0.16/call'}</div>
                         </button>
                         <button
                             onClick={() => handleSetModel('nano-banana-2')}
                             className={`rounded-md border p-2 text-left bg-[#211F26] hover:bg-[#211F26] focus:outline-none focus:ring-1 focus:ring-[var(--text-accent)] ${imageModel === 'nano-banana-2' ? 'ring-1 ring-[var(--text-accent)] bg-[#211F26] border-[var(--text-accent)]' : 'border-gray-700'}`}
                         >
-                            <div className="text-[10px] text-gray-400 h-3 flex items-end">{language === 'zho' ? '模型' : 'Model'}</div>
+                            <div className="text-[10px] text-gray-400 h-3 flex items-end">{language === 'ZH' ? '模型' : 'Model'}</div>
                             <div className="text-xs font-semibold break-all text-gray-100 leading-snug h-10">nano-banana-2</div>
-                            <div className="mt-1 text-[10px] text-gray-400 h-3 flex items-end">{language === 'zho' ? '价格' : 'Price'}</div>
-                            <div className="text-xs font-semibold text-gray-100 h-4">{language === 'zho' ? '¥0.4/次' : '¥0.4/call'}</div>
+                            <div className="mt-1 text-[10px] text-gray-400 h-3 flex items-end">{language === 'ZH' ? '价格' : 'Price'}</div>
+                            <div className="text-xs font-semibold text-gray-100 h-4">{language === 'ZH' ? '¥0.4/次' : '¥0.4/call'}</div>
                         </button>
                     </div>
                 </div>
@@ -208,8 +208,8 @@ export const CanvasSettings: React.FC<CanvasSettingsProps> = ({
                             English
                         </button>
                         <button 
-                            onClick={() => setLanguage('zho')}
-                            className={`flex-1 text-sm pod-chip ${language === 'zho' ? 'active' : ''}`}
+                            onClick={() => setLanguage('ZH')}
+                            className={`flex-1 text-sm pod-chip ${language === 'ZH' ? 'active' : ''}`}
                         >
                             中文
                         </button>

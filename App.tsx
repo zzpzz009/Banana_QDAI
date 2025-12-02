@@ -200,7 +200,7 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
     const [editingElement, setEditingElement] = useState<{ id: string; text: string; } | null>(null);
     const [lassoPath, setLassoPath] = useState<Point[] | null>(null);
 
-    const [language, setLanguage] = useState<'en' | 'zho'>('zho');
+    const [language, setLanguage] = useState<'en' | 'ZH'>('ZH');
     const [apiKey, setApiKey] = useState<string>(() => {
         try {
             return localStorage.getItem('WHATAI_API_KEY') || '';
