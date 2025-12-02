@@ -1,7 +1,7 @@
 import React from 'react';
 import { QuickPrompts } from './QuickPrompts';
-import BananaSidebar from './BananaSidebar';
-// BananaSidebar moved to App-level overlay; keep PromptBar focused on input controls
+import { BananaSidebar } from '@/features/sidebar/BananaSidebar';
+import { Panel, IconButton, Chip, Button, Toolbar, Textarea } from '../../ui';
 import type { UserEffect, GenerationMode } from '@/types';
 
 interface PromptBarProps {
@@ -56,7 +56,7 @@ export const PromptBar: React.FC<PromptBarProps> = ({
 
     React.useEffect(() => {
         if (textareaRef.current) {
-            textareaRef.current.style.height = 'auto'; // Reset height
+            textareaRef.current.style.height = 'auto';
             textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
             const h = textareaRef.current.scrollHeight;
             setInputExpanded(h > 56);
@@ -145,20 +145,22 @@ export const PromptBar: React.FC<PromptBarProps> = ({
 
     return (
         <div ref={containerRef} className="absolute bottom-4 left-1/2 -translate-x-1/2 z-40 w-full sm:max-w-full md:max-w-2xl lg:max-w-3xl px-4">
-            <div 
+            <Toolbar 
                 style={{ 
                     ...containerStyle, 
                     ['--pod-ring-width' as unknown as string]: '1px', 
                     ['--pod-toolbar-radius' as unknown as string]: '22px',
                     ['--toolbar-bg-color' as unknown as string]: 'rgba(33, 31, 38, 0.6)'
                 }}
-                className="flex items-center gap-1 p-2 pod-toolbar pod-toolbar-elevated pod-bar-soft-gradient flex-wrap md:flex-nowrap"
+                elevated
+                softGradient
+                className="flex items-center gap-1 p-2 flex-wrap md:flex-nowrap"
             >
-                {/* Left area previously hosting BananaSidebar; now empty to keep layout tight */}
-                 <div className="flex-shrink-0 flex items-center rounded-full p-1">
-                    <button
+                <div className="flex-shrink-0 flex items-center rounded-full p-1">
+                    <Chip
                         onClick={() => setGenerationMode(generationMode === 'image' ? 'video' : 'image')}
-                        className={`pod-chip ${generationMode === 'image' ? 'pod-chip-image' : 'pod-chip-video'} active`}
+                        className={`${generationMode === 'image' ? 'pod-chip-image' : 'pod-chip-video'}`}
+                        active
                     >
                         {generationMode === 'image' ? (
                             <>
@@ -171,65 +173,69 @@ export const PromptBar: React.FC<PromptBarProps> = ({
                                 {t('promptBar.videoMode')}
                             </>
                         )}
-                    </button>
+                    </Chip>
                 </div>
                 
                 {generationMode === 'video' && (
                     <div className="flex-shrink-0 flex items-center rounded-full p-1">
-                        <button onClick={() => setVideoAspectRatio('16:9')} aria-label={t('promptBar.aspectRatioHorizontal')} title={t('promptBar.aspectRatioHorizontal')} className="pod-icon-button" style={videoAspectRatio === '16:9' ? { backgroundColor: 'var(--text-accent)', color: 'var(--bg-page)' } : {}}>
+                        <IconButton onClick={() => setVideoAspectRatio('16:9')} aria-label={t('promptBar.aspectRatioHorizontal')} title={t('promptBar.aspectRatioHorizontal')} style={videoAspectRatio === '16:9' ? { backgroundColor: 'var(--text-accent)', color: 'var(--bg-page)' } : {}}>
                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="10" rx="2" ry="2"></rect></svg>
-                        </button>
-                        <button onClick={() => setVideoAspectRatio('9:16')} aria-label={t('promptBar.aspectRatioVertical')} title={t('promptBar.aspectRatioVertical')} className="pod-icon-button" style={videoAspectRatio === '9:16' ? { backgroundColor: 'var(--text-accent)', color: 'var(--bg-page)' } : {}}>
+                        </IconButton>
+                        <IconButton onClick={() => setVideoAspectRatio('9:16')} aria-label={t('promptBar.aspectRatioVertical')} title={t('promptBar.aspectRatioVertical')} style={videoAspectRatio === '9:16' ? { backgroundColor: 'var(--text-accent)', color: 'var(--bg-page)' } : {}}>
                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="7" y="2" width="10" height="20" rx="2" ry="2"></rect></svg>
-                        </button>
+                        </IconButton>
                     </div>
                 )}
                 {generationMode === 'image' && activeImageModel.toLowerCase() === 'nano-banana-2' ? (
                     <div className="relative flex-shrink-0 flex items-center rounded-full p-1" ref={sizeMenuWrapperRef} style={{ alignSelf: 'center' }}>
-                        <button
+                        <Chip
                             onClick={() => setIsSizeMenuOpen((v) => !v)}
-                            className={`pod-chip pod-chip-size active pod-chip-circle pod-inner-gradient-ring ${imageSize === '4K' ? 'pod-chip-outline-sheen-4k pod-text-gold-sheen pod-chip-bg-4k' : ''} ${imageSize === '2K' ? 'pod-chip-outline-sheen-2k pod-text-silver-sheen pod-chip-bg-2k' : ''} ${imageSize === '1K' ? 'pod-chip-outline-sheen-1k pod-text-copper-sheen pod-chip-bg-1k' : ''}`}
+                            className={`pod-chip-size pod-chip-circle pod-inner-gradient-ring ${imageSize === '4K' ? 'pod-chip-outline-sheen-4k pod-text-gold-sheen pod-chip-bg-4k' : ''} ${imageSize === '2K' ? 'pod-chip-outline-sheen-2k pod-text-silver-sheen pod-chip-bg-2k' : ''} ${imageSize === '1K' ? 'pod-chip-outline-sheen-1k pod-text-copper-sheen pod-chip-bg-1k' : ''}`}
                             title={imageSize}
                             aria-label={imageSize}
                             ref={sizeChipButtonRef}
+                            active
                         >
                             {imageSize}
-                        </button>
+                        </Chip>
                         {isSizeMenuOpen && (
-                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-6 pod-panel pod-panel-pill p-2 flex flex-col items-center gap-2">
-                                <button
+                            <Panel className="absolute bottom-full left-1/2 -translate-x-1/2 mb-6 pod-panel-pill p-2 flex flex-col items-center gap-2">
+                                <Chip
                                     onClick={() => { setImageSize('1K'); setIsSizeMenuOpen(false); }}
-                                    className={`pod-chip pod-chip-size pod-chip-circle pod-inner-gradient-ring pod-chip-outline-sheen-1k pod-text-copper-sheen pod-chip-bg-1k ${imageSize === '1K' ? 'active' : ''}`}
+                                    className={`pod-chip-size pod-chip-circle pod-inner-gradient-ring pod-chip-outline-sheen-1k pod-text-copper-sheen pod-chip-bg-1k`}
                                     style={{ backgroundColor: 'rgba(33,31,38,0.72)', border: '1px solid rgba(255,255,255,0.08)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)', boxShadow: 'inset 0 1px 4px rgba(255,255,255,0.05), 0 3px 10px rgba(0,0,0,0.25)' }}
                                     title="1K"
                                     aria-label="1K"
+                                    active={imageSize === '1K'}
                                 >
                                     1K
-                                </button>
-                                <button
+                                </Chip>
+                                <Chip
                                     onClick={() => { setImageSize('2K'); setIsSizeMenuOpen(false); }}
-                                    className={`pod-chip pod-chip-size pod-chip-circle pod-inner-gradient-ring pod-chip-outline-sheen-2k pod-text-silver-sheen pod-chip-bg-2k ${imageSize === '2K' ? 'active' : ''}`}
+                                    className={`pod-chip-size pod-chip-circle pod-inner-gradient-ring pod-chip-outline-sheen-2k pod-text-silver-sheen pod-chip-bg-2k`}
                                     style={{ backgroundColor: 'rgba(33,31,38,0.72)', border: '1px solid rgba(255,255,255,0.08)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)', boxShadow: 'inset 0 1px 4px rgba(255,255,255,0.05), 0 3px 10px rgba(0,0,0,0.25)' }}
                                     title="2K"
                                     aria-label="2K"
+                                    active={imageSize === '2K'}
                                 >
                                     2K
-                                </button>
-                                <button
+                                </Chip>
+                                <Chip
                                     onClick={() => { setImageSize('4K'); setIsSizeMenuOpen(false); }}
-                                    className={`pod-chip pod-chip-size pod-chip-circle pod-inner-gradient-ring pod-chip-outline-sheen-4k pod-text-gold-sheen pod-chip-bg-4k ${imageSize === '4K' ? 'active' : ''}`}
+                                    className={`pod-chip-size pod-chip-circle pod-inner-gradient-ring pod-chip-outline-sheen-4k pod-text-gold-sheen pod-chip-bg-4k`}
                                     style={{ backgroundColor: 'rgba(33,31,38,0.72)', border: '1px solid rgba(255,255,255,0.08)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)', boxShadow: 'inset 0 1px 4px rgba(255,255,255,0.05), 0 3px 10px rgba(0,0,0,0.25)' }}
                                     title="4K"
                                     aria-label="4K"
+                                    active={imageSize === '4K'}
                                 >
                                     4K
-                                </button>
-                            </div>
+                                </Chip>
+                            </Panel>
                         )}
                     </div>
                 ) : generationMode === 'image' ? (
                     <div className="flex-shrink-0 flex items-center rounded-full p-1">
-                        <button className="pod-chip pod-chip-circle-sheen" disabled title="1K" aria-label="1K" ref={sizeChipButtonRef}>1K</button>
+                        <Chip className="pod-chip-circle-sheen" disabled title="1K" aria-label="1K" ref={sizeChipButtonRef}>1K</Chip>
                     </div>
                 ) : null}
                 <div className="flex-shrink-0 flex items-center rounded-full p-1" style={{ alignSelf: 'center' }} ref={bananaWrapperRef}>
@@ -250,32 +256,33 @@ export const PromptBar: React.FC<PromptBarProps> = ({
                         userEffects={userEffects}
                         onDeleteUserEffect={onDeleteUserEffect}
                     />
-                    <textarea
+                    <Textarea
                         ref={textareaRef}
                         rows={1}
                         value={prompt}
-                        onChange={(e) => setPrompt(e.target.value)}
+                        onChange={(e) => setPrompt((e.target as HTMLTextAreaElement).value)}
                         onKeyDown={handleKeyDown}
                         placeholder={getPlaceholderText()}
-                        className="pod-textarea flex-grow placeholder-neutral-400 px-2 overflow-hidden max-h-32"
+                        className="flex-grow placeholder-neutral-400 px-2 overflow-hidden max-h-32"
                         disabled={isLoading}
                     />
                     {prompt.trim() && !isLoading && (
-                        <button
+                        <IconButton
                             onClick={handleSaveEffect}
                             title={t('myEffects.saveEffectTooltip')}
-                            className="pod-icon-button no-hover-highlight save-effect-button flex-shrink-0 w-11 h-11 flex items-center justify-center"
+                            noHoverHighlight
+                            className="save-effect-button flex-shrink-0 w-11 h-11 flex items-center justify-center"
                         >
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg>
-                        </button>
+                        </IconButton>
                     )}
                 </div>
-                <button
+                <Button
                     onClick={onGenerate}
                     disabled={isLoading || !prompt.trim()}
                     aria-label={t('promptBar.generate')}
                     title={t('promptBar.generate')}
-                    className="pod-primary-button pod-generate-button flex-shrink-0 w-11 h-11 ml-3"
+                    className="pod-generate-button flex-shrink-0 w-11 h-11 ml-3"
                     style={{ 
                         borderRadius: '999px', 
                         padding: 0,
@@ -294,8 +301,8 @@ export const PromptBar: React.FC<PromptBarProps> = ({
                         ? <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
                         : <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m22 8-6 4 6 4V8Z"/><rect x="2" y="6" width="14" height="12" rx="2" ry="2"/></svg>
                     )}
-                </button>
-            </div>
+                </Button>
+            </Toolbar>
         </div>
     );
 };

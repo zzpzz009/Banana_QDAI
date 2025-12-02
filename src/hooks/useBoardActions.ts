@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
-import { touchLastSessionPending } from '@/src/services/boardsStorage';
+import { touchLastSessionPending } from '@/services/boardsStorage';
 import type { Board, Element } from '@/types';
 
 export function useBoardActions(

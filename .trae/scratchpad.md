@@ -1,399 +1,455 @@
 # BananaPod 项目状态记录
-
-## 背景和动机
-用户要求：在保持现有布局不变的前提下，替换当前UI风格为 PodUI（来源：`f:\Trae\BananaPod\PodUI.html`），尤其是颜色配色与UI元素使用，确保所有按钮与功能保持可用。
-
-同时保留既有API集成重构任务背景：按照 `https://docs.whatai.cc/docs/openai/syfw/#api-%E7%BB%9F%E4%B8%80%E8%AF%B7%E6%B1%82%E6%A0%BC%E5%BC%8F` 教程统一三方API调用。
-
-## 关键挑战和分析
-1. 原有系统使用多种API调用方式（Gemini SDK、代理、whatai），需要统一为whatai.cc的OpenAI格式API
-2. 需要重构geminiService.ts以适配新的API格式
-3. 需要更新环境配置和代理设置
-4. 确保图像生成、编辑、文本生成和视频生成功能正常工作
-5. PodUI 与现有代码广泛使用的 Tailwind 工具类存在风格差异；在不改布局的前提下，需要通过新增全局样式与有限的类名替换来实现 PodUI 的视觉一致性。
-6. 避免一次性大改：优先以 CSS 变量与通用类（如 pod-panel、pod-icon-button）覆盖视觉；逐步替换关键组件按钮与面板类名，功能逻辑保持不变。
-
-## 高层任务拆分
-1. ✅ 分析现有三方API调用实现
-2. ✅ 研究whatai.cc文档和API格式
-3. ✅ 重构geminiService.ts以使用whatai.cc统一OpenAI格式API
-4. ✅ 更新.env.local配置以适配新的whatai.cc API调用方式
-5. ✅ 更新vite.config.ts代理配置
-6. 🔄 测试新的API集成并验证图像生成和编辑功能
-7. ✅ 在图层面板新增“合并图层为图片”操作并实现逻辑
-8. 🔄 引入 PodUI 主题：新增 `src/styles/podui.css`，定义颜色变量与通用UI类
-9. 🔄 在 `index.tsx` 引入 PodUI 样式，并在 `App.tsx` 顶层容器加 `podui-theme` 类
-10. 🔄 将 PromptBar、Toolbar、CanvasSettings、BoardPanel、QuickPrompts 的按钮与面板样式替换为 PodUI 类（不改布局与逻辑）
-11. 🔄 调整 LayerPanel 列表项的选中与悬浮态为 PodUI 风格
-12. 🔄 启动开发服务并打开预览，核验颜色配色与交互可用性；若需，逐步微调类名与样式
-
-## 项目状态看板
-- [x] 重构geminiService.ts以使用whatai.cc的统一OpenAI格式API
-- [x] 更新.env.local配置以适配新的whatai.cc API调用方式
-- [x] 更新vite.config.ts代理配置，移除不需要的proxy-openai
-- [ ] 测试图像生成功能（文本转图像）
-- [ ] 测试图像编辑功能
-- [ ] 测试文本生成功能
-- [ ] 测试视频生成功能
-- [ ] 验证所有功能正常工作
- - [x] 在图层面板添加并验证“合并图层”按钮显示
- - [x] 后端逻辑：将选中/可见图层栅格化并替换为单张图片
-- [x] 发布版本 v0.1.0（新增“合并图层为图片”，修复元素栅格边界计算）
- - [x] 在 PromptBar 左侧附近新增香蕉悬浮按钮（独立，不嵌入Bar）
- - [x] 香蕉按钮点击展开悬浮面板（预设图片卡片按序）
- - [x] 调整香蕉logo为居中简笔画风格（线稿、居中对齐）
  
-### 开发工具脚本
-- [x] 新增 Windows 启动脚本 `start-bananapod.bat`（检查占用端口、关闭旧进程并重启、检测就绪）
- 
-### PodUI 主题集成（新）
-- [ ] 新增 `src/styles/podui.css` 并引入到 `index.tsx`
-- [ ] 顶层容器应用 `podui-theme` 类
-- [ ] PromptBar 使用 PodUI 按钮与输入样式
-- [ ] CanvasSettings/BoardPanel 使用 PodUI 面板与按钮
-- [ ] Toolbar/QuickPrompts 使用 PodUI 按钮与菜单项
-- [ ] LayerPanel 列表项选中与悬浮态改为 PodUI 风格
-- [ ] 打开预览验证并记录问题与调试信息
-  - 说明：已验证香蕉按钮靠近 PromptBar（不在Bar内），点击可正常展开；logo居中且为简笔画风格。
-  - [x] 两个悬浮 Bar 倒角按图片样式调整（统一固定半径）
-    - 实现：将共享样式 `.pod-toolbar` 的 `border-radius` 改为 `var(--pod-toolbar-radius, 16px)`，使 PromptBar 与 Toolbar 外轮廓统一为更“方圆”倒角。
-    - 成功标准：预览中底部 PromptBar 与左侧 Toolbar 的外轮廓倒角与用户图片一致；功能与布局不变；无控制台错误。
-    - 验证：已启动本地开发服务器并打开预览，视觉符合预期。
-  - [x] 香蕉悬浮面板改为“一字排开”的卡片样式（参考 PodUI copy.html）
-    - 实现：在 `components/BananaSidebar.tsx` 将面板改为 `overflow-x-auto` + `flex` 横向布局；每个内置提示改为 `rounded-lg overflow-hidden border transition-all hover:shadow-hover shadow-card` 卡片结构，顶部为图片，底部居中标题；宽度固定为 `w-32`，保证横向一排；超过宽度时可横向滚动。
-    - 成功标准：展开香蕉面板后，内置提示以横向卡片“一字排开”，视觉与参考图二一致；点击卡片仍可写入提示并生成；无浏览器/终端错误。
-    - 验证：已在 `http://localhost:3000/` 预览，界面正常，无错误。
-  - [x] 展开面板整体拉长并居中显示
-    - 实现：面板容器由 `left-0 w-[22rem]` 改为 `left-1/2 -translate-x-1/2 w-[40rem] max-w-[80vw] p-3`，保持横向卡片不换行。
-    - 成功标准：展开后面板居中于香蕉按钮上方，宽度明显增加，卡片横排显示更完整；预览无错误。
-    - 验证：已在本地预览检查，居中与宽度效果符合要求。
-  - [x] 面板进一步拉长并定制横向滚动条样式（参考 PodUI copy.html）
-    - 实现：`components/BananaSidebar.tsx` 面板容器改为 `w-[64rem] max-w-[90vw]`，并增加类 `pod-scrollbar-x`；在 `src/styles/podui.css` 新增该类的滚动条样式：
-      - WebKit：`::-webkit-scrollbar{height:12px}`、`::-webkit-scrollbar-track{background:#2a2a2a;border-radius:8px}`、`::-webkit-scrollbar-thumb{background:#1a1a1a;border:1px solid #e5e7eb;border-radius:9999px;box-shadow:0 1px 2px rgba(0,0,0,.08)}`；含 hover/active 深色态。
-      - Firefox：`scrollbar-color: #1a1a1a #2a2a2a; scrollbar-width: thin;`。
-    - 成功标准：面板横向滚动条视觉与参考图片一致（深灰轨道、白边圆形拇指），交互平滑，卡片横向滚动正常。
-    - 验证：已在 `http://localhost:3000/` 预览确认，无控制台与终端错误。
-  - [x] 香蕉悬浮面板底色改为主题黄色渐变
-    - 实现：在 `src/styles/podui.css` 新增 `.pod-panel-yellow-gradient` 渐变背景，并在 `components/BananaSidebar.tsx` 将容器类从 `pod-panel-black` 切换为 `pod-panel-yellow-gradient`，保持 `pod-panel` 与圆角类不变。
-    - 成功标准：展开香蕉悬浮面板时显示更饱和、带高光层的金黄色渐变底色（参考示例图片），卡片布局与交互不受影响；符合整体 PodUI 主题的黄灰配色；无浏览器控制台错误。
-    - 验证：已在 `http://localhost:3000/` 本地预览确认，浏览器无错误；建议同步检查终端日志以确保无新增错误。
-  - [x] 香蕉悬浮面板底色完全透明化
-    - 实现：新增 `.pod-panel-transparent` 类（透明背景、移除背景图层），并在 `components/BananaSidebar.tsx` 将容器类从 `pod-panel-yellow-gradient` 替换为 `pod-panel-transparent`；保留 `pod-panel-rounded-xl` 圆角，同时在 `.pod-panel-transparent` 中覆盖 `border:none; box-shadow:none` 以移除 `pod-panel` 默认边框与阴影，实现完全“无痕”。
-    - 成功标准：面板容器底色为完全透明；卡片内容与交互保持原样；无浏览器与终端错误。
-  - 验证：已在 `http://localhost:3000/` 预览确认，浏览器无错误；建议同步检查终端日志。
+## 统一执行计划（合并）
 
-### 工具栏调整：图片透明度控制（2025-11-12）
-- [x] 为 `ImageElement` 类型新增 `opacity: number`（0–100，默认100为不透明）
-- [x] 在添加图片时设置默认 `opacity: 100`（`App.tsx` 与 `src/App.tsx`）
-- [x] 将图像工具栏中“圆角”滑块与数字输入替换为“透明度”滑块与数字输入（范围0–100）
-- [x] 在画布渲染 `<image>` 元素上应用 `opacity={el.opacity/100}`
-- [x] 在导出合并与缩略图生成的 SVG 字符串中写入 `opacity="..."`
-- 成功标准：
-  - 工具栏显示“透明度”控件，默认值为 100；滑动或输入数值能实时影响图片透明度
-  - 保持历史图像的圆角渲染逻辑不变（如已有 `borderRadius` 仍正常通过 `clipPath` 生效）
-  - 预览页面可正常渲染，无终端/控制台错误
-- 验证：已启动 Vite 开发服务器并通过 `http://localhost:3001/` 预览；图片透明度随控件变更即时生效；无报错
+### 背景和动机
+- 统一源码入口至 `src/`，减少并行目录导致的重复与歧义。
+- 模块化拆分核心逻辑，降低耦合并控制单文件 ≤250 行。
+- 引入 PodUI 主题与通用基础组件，确保视觉一致且易于演进。
+- 统一服务层与 i18n 位置，建立兼容层与路径别名以平滑迁移。
 
-### 发布：推送分支与标签到远端（2025-11-13）
-- [x] 推送分支 `feat/nano-banana-generations` 到 `origin`
-- [x] 推送注释标签 `v0.5.3` 到 `origin`
-- 成功标准：远端仓库存在对应分支与标签；本地 `git tag -l v0.5.3` 与 `git ls-remote --tags origin` 能看到标签；`git push` 输出无错误。
-- 调试信息：
-  - `git push origin feat/nano-banana-generations` → `40a3931..10d0ed3`
-  - `git push origin v0.5.3` → `[new tag] v0.5.3 -> v0.5.3`
-  - 远端：`https://github.com/zzpzz009/BananaPod-AC.git`
+### 关键挑战和分析
+- 双入口与跨源根引用（根与 `src` 并行、Worker/服务/i18n 分散）。
+- 核心逻辑集中于 `App.tsx`，多功能交织、类型与状态复杂。
+- 主题替换与交互回归风险；浏览器/服务端双环境下存储适配一致性。
 
-### 打包：生成 Windows 单文件 exe（Electron Portable）（2025-11-13）
-- [x] 新增 `electron/main.js` 主进程，开发态加载 `http://localhost:3000/`，生产态加载 `dist/index.html`
-- [x] 在 `vite.config.ts` 增加条件 `base: './'`（`BUILD_TARGET=electron`）以适配 `file://` 路径
-- [x] 在 `package.json` 增加：`main: electron/main.js`、脚本 `build:electron`、`dist:win`，并配置 `electron-builder` 的 `win.target=portable`
-- [x] 安装依赖：`electron`、`electron-builder`、`cross-env`
-- [x] 构建并打包：`npm run dist:win`
-- 产物与验证：
-  - 生成文件：`release/BananaPod-0.5.3-portable.exe`
-  - 运行验证：用 `Start-Process` 启动可执行文件，命令成功返回；建议手动打开进行界面验收。
-- 成功标准：产生单文件 `*.portable.exe`；启动后显示 BananaPod UI，功能与网页一致；无致命错误。
+### 执行顺序（分阶段、可回滚）
+1. 基线分析与清单输出（重复/废弃/跨源根/拆分候选/样式硬编码/i18n）
+2. UI 主题引入与顶层容器应用（`podui-theme-dark`）
+3. 兼容层与路径别名搭建（re-export/`@` 指向 `src`）
+4. 模块化迁移（boards/prompt/toolbar/settings 等），逐模块回归
+5. i18n 归档与统一（迁移至 `src/i18n` 并提供钩子）
+6. 清理与收尾（删除废弃文件、修正导入路径、更新经验记录）
 
-#### 打包错误修复（2025-11-13 晚）
-- 问题：运行 portable.exe 弹窗报错“require is not defined in ES module scope”，原因是 `package.json` 设置了 `"type": "module"`，而主进程入口使用了 CommonJS `require`。
-- 解决：将主进程入口文件改名为 `electron/main.cjs`，并在 `package.json` 的 `main` 与 `build.extraMetadata.main` 改为 `electron/main.cjs`。
-- 验证：
-  - 重新执行 `npm run dist:win`，等待便携版产物释放；过程中若被安全软件锁定，日志会显示等待解锁，可稍后再试。
-  - 先运行 `release/win-unpacked/BananaPod.exe` 进行快速验证（资源已打包到 `app` 目录），启动命令返回成功；建议你双击确认 UI 能正常加载。
-  - 成功标准：启动不再出现 ESM/require 报错，应用窗口正常显示。
+### 高层任务拆分
+- 服务层统一与桥接
+- 组件迁移与桥接（分批次）
+- Worker 引用统一
+- 通用 UI 抽取与集成
+- 主题与 tokens 落地与验证
+- i18n 归档与兼容钩子
+- 路径别名切换与导入修正
+- 验收脚本与交互回归
 
-#### 资源路径修复（香蕉按钮与天气图标）（2025-11-13 晚）
-- 问题：图标使用绝对路径 `"/..."`，在 Electron 的 `file://` 环境下会解析为磁盘根路径，导致图标无法显示。
-- 解决：新增 `withBase(p)` 辅助方法，统一将路径前缀改为 `import.meta.env.BASE_URL`（开发态为 `/`，生产 Electron 为 `./`），将 `BananaSidebar.tsx` 中的图标路径改为 `withBase('OpenMoji-color_1F34C.svg')` 与 `withBase('weather/xxx.svg')`。
-- 验证：
-  - 在开发服务器 `http://localhost:3000/` 预览，无错误；香蕉图标与天气卡片图标均正常显示。
-  - 重新打包后运行 `release/win-unpacked/BananaPod.exe`，启动命令返回成功；建议双击确认图标显示正常。
-  - 成功标准：exe 中香蕉按钮与天气卡片图标均显示，无 404 或加载错误。
+### 成功标准
+- 统一入口与目录布局，兼容层稳定，重构后 `lint/build/preview` 均通过。
+- 执行看板中所有项完成并记录验证结果，无关键回归。
 
+### 风险与缓解
+- 入口冲突/路径异常：先桥接后切换别名，必要时回滚。
+- Worker 与存储失效：统一位置与 `new URL(..., import.meta.url)` 语法。
+- 视觉回归：先变量覆盖后组件替换，逐步验收 hover/active/focus-visible/disabled。
 
-## 当前状态/进度跟踪
+### 验收门槛
+- 每阶段 `npm run lint`、`npx tsc --noEmit`、`npm run build`、`vite preview` 通过。
+- 场景回归：画布、历史缩略图、导入、语言切换、Prompt 生成/编辑。
 
-### 项目状态看板
-- [x] 修复图像编辑API的multipart form格式问题
-- [x] 将图像编辑模型更改为gemini-2.5-flash-image
-- [x] 分离图像生成和编辑模型配置
-- [x] 将图像生成模型更改为qwen-image
-- [x] 重启服务器应用新配置
-- [x] 修复qwen-image模型"image response is null"错误
-- [ ] 验证图像生成功能（qwen-image模型）
-- [ ] 验证图像编辑功能（gemini-2.5-flash-image模型）
-- [ ] 验证其他功能（文本生成、视频生成等）
+### 项目执行与状态看板（合并）
+- [x] 服务层迁移：`services/geminiService.ts`、`services/httpClient.ts` → `src/services/api/*`（保留根 re-export）
+- [x] 组件迁移第一批：`components/BoardPanel.tsx`、`components/LayerPanel.tsx` → `src/features/boards/*`（保留根桥接）
+- [x] Worker 引用修正：统一 `new URL(..., import.meta.url)` 路径策略
+- [x] i18n 桥接：新增 `src/i18n/translations.ts` 与 `useI18n` 钩子，根 `translations.ts` re-export
+- [x] 顶层应用主题：在 `index.tsx` 应用 `podui-theme-dark` 并验收
+- [x] 文档更新：同步 `.trae/scratchpad.md` 状态与队列
+- [x] Toolbar 迁移与桥接：`src/features/toolbar/Toolbar.tsx`
+- [x] PromptBar 迁移与桥接：`src/features/prompt/PromptBar.tsx`
+- [x] QuickPrompts 迁移与桥接：`src/features/prompt/QuickPrompts.tsx`
+- [x] 通用 UI 抽取与集成：`src/ui/*`（Panel/IconButton/Button/Chip/MenuItem/Toolbar/Select/Textarea）
+- [x] Button 组件扩展：variants/sizes 并在 Toolbar/CanvasSettings 应用
+- [x] BoardPanel 拆分与瘦身：单文件 ≤250 行
+- [x] 路径别名切换准备与执行：将 `@` 指向 `src` 并验证
+- [x] BananaSidebar 迁移与桥接：`src/features/sidebar/BananaSidebar.tsx`，根导出代理保持兼容
+- [x] CanvasSettings 迁移并集成 Input：`src/features/settings/CanvasSettings.tsx` 使用 `src/ui/Input.tsx`
+ - [x] 修复 `src/App.tsx` 类型错误（handleUngroup）并重新纳入 TS 检查
+- [x] 验证所有迁移组件的功能与引用（PromptBar/Sidebar/Boards/SessionRestoreDialog）
+- [x] 迁移剩余根组件或确认根目录仅保留配置与入口
+- [x] 阶段验收：`npm run lint`、`npx tsc --noEmit`、`npm run build` 与预览交互回归
 
-**执行者模式** - 正在测试新的API集成（长宽比修复已上线）
+## 执行日志 (2025-12-02)
+- **完成 src/App.tsx 修复**：将根目录 `App.tsx` 的完整逻辑迁移至 `src/App.tsx`，并修正了所有相对引用（指向 `@/features`, `@/services` 等）。
+- **切换入口**：修改 `index.tsx` 导入路径为 `import App from '@/App'`，正式启用 `src/App.tsx`。
+- **清理冗余**：删除了根目录下的 `App.tsx`, `types.ts`, `translations.ts`, `components/`, `hooks/`, `services/`, `utils/`。
+- **恢复必要文件**：发现 `src/utils/retry.ts` 为 re-export，从 git 恢复了原文件并覆盖迁移；确认 `src/components/BananaSidebar.tsx` 为废弃桥接文件并删除。
+- **最终验证**：`npx tsc --noEmit` 与 `npm run build` 均通过。
+## 代码基线分析计划（准备工作，2025-12-02）
 
-（新增）**执行者模式 - PodUI 集成第一步**
-- 计划：以最小改动方式引入 PodUI 变量与通用类，逐步替换关键组件的按钮与面板类名；保持所有功能与交互逻辑不变。
-- 验证标准：
-  - 保持页面与面板位置、布局结构不变；
-  - 颜色体系、按钮风格、面板视觉与 `PodUI.html` 一致；
-  - 所有按钮可点击、文件上传、生成与编辑、图层操作等均正常；
-  - 打开预览无报错，必要时增加调试日志。
+### 背景和动机
+- 为 UI 主题计划与模块化重构计划提供可靠底座：全面盘点代码结构、依赖与资产，找出重复/废弃文件与潜在问题，制定整理清单。
+- 统一源码入口位置与目录布局，减少“根目录 vs src”双入口造成的重复与歧义，降低后续迁移成本。
 
-已完成的工作：
-1. 完全重构了geminiService.ts，移除了Gemini SDK和旧的代理实现
-2. 实现了统一的whatai.cc OpenAI格式API调用
-3. 更新了环境配置文件.env.local
-4. 更新了vite.config.ts的代理配置
-5. 开发服务器已启动，预览页面可正常访问
+### 关键挑战和分析
+- 存在“根目录与 src 并行”的源码分布（如 `App.tsx` 与 `src/App.tsx`、`components/*` 与 `src/components/*`），需要确认哪一侧为权威入口并统一。
+- Worker 文件从根组件引用 `../src/workers/...`，表明路径跨越两个源根，后续重构需收敛到 `src/`。
+- i18n 与主题样式分散：`translations.ts` 位于根目录；主题变量在 `src/styles/podui.css` 规划中，需归档到统一层。
+- 服务端/浏览器双环境已适配（`boardsStorage.ts`），需确保不存在旧版存储实现残留与重复。
 
-当前正在进行：
-- 测试新的API集成功能
-- 本地验证“合并图层为图片”功能（selected 或 visible 模式）
-- 验证图像编辑输出长宽比与原图一致（已切换到 /v1/images/edits 接口，传递 aspect_ratio）
+### 分析范围与方法
+- 目录与文件：
+  - 枚举 `*.ts, *.tsx, *.js, *.jsx, *.css, *.html, *.md`，按相对路径归类，标记“重复命名/并行目录（root vs src）”。
+  - 搜索典型入口与模块：`App.tsx`、`index.tsx`、`components/*`、`src/components/*`、`workers/*`、`src/workers/*`、`services/*`、`src/services/*`、`translations.*`、`electron/*`。
+  - 标记大文件（>250 行）与混合职责文件，列入拆分候选。
+- 代码内容：
+  - 识别已废弃/不再引用文件（无 import/被排除构建），列入清理候选；保留证据与回滚路径。
+  - 搜索硬编码颜色/尺寸/阴影等样式，纳入主题令牌替换清单。
+  - 识别遗留语言代码或不一致命名（如 `zho` 残留），确认是否仍存在并清理。
+- 依赖与构建：
+  - 校验 `package.json` 脚本与依赖；确认 Electron 构建与 Web 构建路径是否一致且无重复入口。
+  - 运行 `npm run lint`、`npm run build` 验证当前基线健康；如网络允许，执行 `npm audit` 进行安全扫描。
 
-**环境配置更新（2025-11-05）**
-- 写入 `.env.local`：`WHATAI_API_KEY` 已配置，`PROXY_VIA_VITE=true`
-- 更新 `.gitignore`：添加 `.env*`，防止密钥被提交到仓库
-- 重启开发服务器以加载环境变量
+### 高层任务拆分（分析与整理）
+1. 目录盘点：输出“重复与并行目录清单”（root vs src），锁定权威入口与迁移目标
+2. 文件引用分析：生成“未引用/疑似废弃文件列表”与“跨源根引用列表”
+3. 大文件与混合职责标记：形成“拆分候选清单”（目标单文件 ≤250 行）
+4. 样式与 i18n 盘点：列出“硬编码样式替换清单”与“i18n 归档迁移清单（translations → src/i18n）”
+5. 服务层核查：确认仅保留统一存储与 API 封装（剔除旧版或重复实现）
+6. 验证与基线快照：lint/build/audit 通过；记录日志与输出报告至 `.trae/` 便于回溯
 
-**本次修复（2025-11-05）**
-- 将 `editImage` 改为调用 `/v1/images/edits`（multipart/form-data），支持可选 `mask`
-- 动态计算并传入 `aspect_ratio`，来源于原始图片的自然宽高（最简分数形式，如 `4:3`）
-- 增加调试日志：在控制台输出接口类型、`aspect_ratio` 值、是否传入 `mask`
+### 成功标准
+- 形成可执行的“整理清单”：重复文件、废弃文件、拆分候选、样式硬编码替换项、i18n迁移项、跨源根引用项。
+- 给出统一的源码入口位置（建议收敛至 `src/`），并明确迁移顺序与影响面。
+- 运行 `lint/build` 无新增错误；若存在问题，在整理清单中标注与建议修复路径。
 
-**执行者新增变更（图层合并功能）：**
-- 在 `components/LayerPanel.tsx` 与 `src/components/LayerPanel.tsx` 增加 `onMergeLayers` 回调与“合并图层”按钮（未选中则合并可见图层）
-- 在 `App.tsx` 实现 `handleMergeLayers(mode)`：
-  - 收集选中元素（及组内后代）或所有可见元素
-  - 过滤掉组与视频元素，调用 `flattenElementsToImage` 栅格化为单张 PNG
-  - 使用 `commitAction` 替换原图层为新 `ImageElement`
-- 在 `App.tsx` 传入 `onMergeLayers={handleMergeLayers}` 以接线层面板按钮
-- 启动 Vite 开发服务器并打开预览进行手动验证
- - 已完成版本升级：package.json 从 0.0.0 → 0.1.0，新增 CHANGELOG.md，创建 Git 标签 v0.1.0
+### 项目状态看板（分析阶段）（已合并至统一执行计划）
+- [ ] 目录盘点与重复列表
+- [ ] 未引用/废弃文件列表
+- [ ] 大文件与混合职责拆分候选
+- [ ] 样式硬编码替换清单
+- [ ] i18n 迁移与统一路径方案
+- [ ] 服务层重复/旧版实现清理方案
+- [ ] lint/build/audit 验证与报告
 
-**发布记录**
-- 版本：v0.1.0
-- 内容：
-  - 新增图层合并为图片功能（LayerPanel 按钮与回调）
-  - 修复 flattenElementsToImage 依赖 elementsRef 导致的运行时错误
-  - 更新版本号与变更日志，创建标签 v0.1.0
+### 产出物
+- `.trae/analysis-report.md`：目录结构、重复/废弃清单、拆分候选、样式替换与 i18n 迁移建议、服务层清理建议、验证日志摘要。
+- 为下一阶段的“UI主题标准”与“模块化重构计划”提供明确输入与优先级排序。
 
-- 版本：v0.2.0
-- 内容：
-  - 输入图自动按原图比例缩小至不超过 2048×2048（不放大、不裁剪）
-  - 有遮罩时同步按比例缩放遮罩，保持与基图坐标一致
-  - 编辑与生成分别调用 `/v1/images/edits` 与 `/v1/images/generations`，传入原图 `aspect_ratio`
-  - 若服务端返回比例不一致，前端以透明边框进行信封式适配到目标比例
-  - 环境：设置 `WHATAI_API_KEY` 与 `PROXY_VIA_VITE=true`，在 `.gitignore` 增加 `.env*`
-  - 版本：将 `package.json` 从 0.1.0 升级到 0.2.0，对应 CHANGELOG.md 记录
+## 计划合理性评审与执行顺序调整（保障不影响现有功能）
 
-**验证步骤（请按此回归测试）：**
-1. 在画布添加若干元素（路径、形状、文本、图片），或使用现有演示内容。
-2. 打开“Layers”面板，选择多个图层，点击“合并图层”。
-   - 若未选择，点击将合并所有可见图层。
-3. 期望结果：原选中/可见图层被移除，出现一张新的图片元素（名称“Merged Image”），位置与尺寸匹配合并后的边界。
-4. 撤销/重做应正确工作，合并后图片可下载、移动、缩放。
+### 原则
+- 一次只引入一个可验证的变更，配合兼容层与回滚路径，保证 UI 与逻辑不回归。
+- 建立“兼容导入层”（re-export/别名）与“特性开关”（主题类与配置），老代码与新模块可并存一段时间。
+- 每个阶段以 lint/build/预览为门槛，通过后再进入下一阶段。
 
-若遇到错误，请将提示与控制台日志发回：
-- 错误信息形如：`合并图层失败：<message>`，并在控制台输出堆栈。
+### 建议执行顺序（分阶段、可回滚）
+1. 基线分析（当前阶段）
+   - 输出重复/废弃文件清单、跨源根引用清单、拆分候选与样式硬编码清单。
+   - 建议将权威源码入口统一收敛到 `src/`，根目录仅保留少量顶层文件（如配置/脚本）。
+2. UI主题引入（非侵入式）
+   - 在 `src/styles/podui.css` 定义 Design Tokens 与基础组件类，并在 `index.tsx` 全局引入。
+   - 顶层容器添加 `podui-theme-dark` 类，但仅用变量覆盖视觉，不更换组件结构；确保预览无回归。
+3. 兼容层搭建（导入路径与模块别名）
+   - 在新目录下创建 `index.ts` re-export，维持旧路径可用；必要时在构建配置设置路径别名（如 `@/components` 指向 `src/components`）。
+   - 为 i18n 提供 `useI18n(language)` 兼容钩子，先在旧组件中试接入。
+4. 模块化迁移（先易后难）
+   - 先迁移 `types/` 与 `services/storage`（已适配服务端/浏览器），保持 API 不变。
+   - 迁移 `features/history` 与 Worker 接线（路径统一到 `src/`），检查 `new URL(..., import.meta.url)` 工作正常。
+   - 迁移 `features/boards`（渲染与图层面板），将逻辑拆分为小文件；保留旧导出作桥接一版。
+   - 迁移 `features/prompt`（PromptBar/QuickPrompts/香蕉面板），统一动作与状态来源。
+5. UI组件替换（通用基础组件）
+   - 在 `PromptBar/Toolbar/CanvasSettings/BoardPanel` 逐步用 `pod-*` 组件替换散落类名组合；每替换一个组件后进行预览与交互验证。
+6. i18n 归档与统一（最后收敛）
+   - 将 `translations.ts` 迁移到 `src/i18n`，统一语言代码 `ZH/en`，确保 `translations[language]` 与钩子兼容。
+7. 清理与收尾
+   - 删除废弃/重复文件；修正导入路径；更新文档与经验记录，形成最终模块图。
 
-**附加验证（编辑输出长宽比）：**
-1. 方式A（无文件上传即可）：选择一个非正方形的形状（如矩形或宽条路径），在提示栏输入“将此形状转换为照片风格”，点击“生成”。
-   - 预期：生成的新图片宽高比与选中形状的外接矩形一致（例如 2:1 或 4:3），非 1:1。
-2. 方式B（有原图）：上传一张非 1:1 的图片（如 4:3），选中后在提示栏输入任意编辑提示并生成。
-   - 预期：编辑后的输出图片保持与原图一致的宽高比（4:3）。
-3. 打开浏览器控制台（F12），可看到如下调试日志：
-   - `[editImage] 使用编辑接口 /v1/images/edits { model, aspect_ratio, hasMask, response_format }`
-   - 若 `aspect_ratio` 显示为非 `1:1`，说明传参正确、服务端已收到。
+### 风险与缓解
+- 重复入口（根与 src）导致的运行时引用错乱：以路径别名与 re-export 过渡，确保旧引用不报错。
+- Worker 路径在迁移中失效：统一 Worker 位置，保留 `new URL(..., import.meta.url)` 语法，不使用相对跨源根路径。
+- 主题替换引入视觉回归：先变量覆盖，再组件替换；每步都有预览与交互验收（hover/active/focus-visible/disabled）。
+- 服务端适配不一致：`boardsStorage` 已统一；迁移期间保持 API 不变，新增功能走新模块。
 
-若仍出现 1:1，请记录：
-- 控制台完整日志（含 `editImage` 打印）
-- 你使用的原图分辨率与显示宽高
-- 操作路径（是否有 `mask`）
+### 验收门槛（每阶段）
+- `npm run lint`、`npm run build` 通过；打开预览页面进行交互验收。
+- 指定页面场景（画布操作、历史缩略图、导入历史、语言切换、Prompt 生成/编辑）逐项回归。
+- 遇到问题先回滚当前阶段变更，保证主线稳定。
 
-**新增规则与验证（输入图自动缩放 ≤2048×2048）：**
-- 需求：若输入图片分辨率任一边超过 `2048`，编辑前自动按原图比例缩小至不超过 `2048×2048`（不放大、不裁剪）。
-- 实现位置：`services/geminiService.ts`
-  - 新增 `getBase64ImageSize` 读取 base64 尺寸。
-  - 新增 `resizeBase64ToMax(base64, mime, 2048, 2048)`，返回缩放后 `base64/width/height/scale`。
-  - 新增 `scaleBase64ByFactor(base64, mime, factor)`，用于遮罩与基图同步缩放。
-  - 在 `editImage` 中：
-    - 对首张基图计算 `scale = min(2048/width, 2048/height, 1)`，若 `< 1` 则缩放基图；
-    - 若存在 `mask`，按同一 `scale` 同步缩放遮罩；
-    - 控制台打印 `[editImage] 输入图过大，已按比例缩放 { original, resized, scale }`。
-- 验证方法：
-  1. 上传一张大图（例如 `5000×3000` → 比例 `5:3`），执行编辑或生成。
-  2. 预期：服务端接收的基图已缩小到不超过 `2048×2048`，比例保持 `5:3`；有遮罩时遮罩与基图对齐。
-  3. 控制台应出现缩放日志；输出图宽高比应与原图一致（若服务端未严格保持比例，前端将进行透明边框信封式适配）。
+### 执行顺序调整后的状态看板映射
+- 分别对应分析看板、UI主题看板、重构看板的第一至第七项，按上面的顺序推进；每一项完成都进行验收与记录。
 
-**执行者补充（2025-11-11）**
-- 已创建 `start-bananapod.bat`：
-  - 启动前检测端口占用（默认 `3000`），自动关闭占用进程；
-  - 如端口仍占用，扫描 `3001–3050` 选取可用端口；
-  - 首次缺少依赖时自动执行 `npm install`；
-  - 启动后轮询健康检查（`http://localhost:<port>/`），输出预览地址；
-  - 提示：若安全软件或代理拦截，请放行或改用其他网络。
+## 动态调整模块化拆分计划（基于实际分析结果）
 
-## 执行者反馈或请求帮助
+### 关键发现（目录与引用）
+- 重复入口与并行目录：
+  - `App.tsx` 同时存在于根与 `src/`（`App.tsx:7`，`src/App.tsx:16`）。
+  - 组件并行：`components/LayerPanel.tsx` 与 `src/components/LayerPanel.tsx`。
+  - 服务并行：根有 `services/geminiService.ts` 与 `services/httpClient.ts`，而历史/会话存储在 `src/services/boardsStorage.ts`。
+- 跨根引用：
+  - 根组件引用 `src` 服务（`components/BoardPanel.tsx:4`、`App.tsx:21`）。
+  - `StartupGate` 在 `src` 内部正确引用 `../services/boardsStorage`（`src/bootstrap/StartupGate.tsx:2`）。
+- i18n 位置：`translations.ts` 位于根目录，被两套入口引用（`translations.ts:86`、`App.tsx:20`、`src/App.tsx:16`）。
+- 构建与别名：
+  - Vite 将 `@` 指向根（`vite.config.ts:55-57`），`tsconfig.json` 的 `paths` 同样指向根（`tsconfig.json:21-25`），且 `exclude` 排除了 `src/App.tsx` 与 `src/components/**`（`tsconfig.json:29-32`）。
 
-**[执行者报告 - 2024年12月]**
+### 动态拆分策略（按优先级执行，随分析更新）
+1. 统一“权威入口”与路径策略（低风险先行）
+   - 暂维持 `@` 指向根，新增过渡导出层：在根目录为新模块提供 `index.ts` re-export，避免全面替换 import。
+   - 在重构末期再将 `@` 切换到 `src`，同时移除 `tsconfig.json:29-32` 的 `exclude`；确保切换前已有桥接层。
+2. 服务层优先收敛（API/存储/工具）
+   - 目标：所有服务统一位于 `src/services/*`。
+   - 行动：
+     - 将 `services/geminiService.ts` 与 `services/httpClient.ts` 迁入 `src/services/api/*`；根目录保留同名文件，内部仅 re-export `src` 实现。
+     - 历史/会话存储已在 `src/services/boardsStorage.ts`（`src/services/boardsStorage.ts:214/288/332/389/428/457`），保持不变；移除旧版或重复实现（分析未见旧版）。
+     - 工具函数按领域迁入 `src/services/imaging` 或 `src/utils`，保留旧路径 re-export。
+3. 组件层分段迁移（先少依赖、后多依赖）
+   - 第一批：`src/components/SessionRestoreDialog.tsx` 维持，迁移根的 `components/BoardPanel.tsx` 与 `components/LayerPanel.tsx` 到 `src/features/boards`，保留根导出桥。
+   - 第二批：`components/Toolbar.tsx` 与 `components/PromptBar.tsx` 迁至 `src/features/toolbar` 与 `src/features/prompt`；抽离通用按钮/面板为 `src/ui/*`。
+   - 第三批：`components/CanvasSettings.tsx` 与 `components/QuickPrompts.tsx` 分别迁至 `src/features/settings` 与 `src/features/prompt`。
+4. Worker 路径与接线统一
+   - 保持 Worker 位于 `src/workers/thumbWorker.ts`（当前已如此，`components/BoardPanel.tsx:154` 使用 `new URL('../src/workers/thumbWorker.ts', import.meta.url)`）。
+   - 调整根组件中的 Worker 引用为相对至同源根的路径（重构完成后统一为 `new URL('../workers/thumbWorker.ts', import.meta.url)`）。
+5. i18n 统一与兼容
+   - 将 `translations.ts` 迁入 `src/i18n/translations.ts` 并提供 `useI18n(language)` 钩子；
+   - 保留根 `translations.ts` re-export 到新位置，确保两套入口无感切换；语言代码已统一为 `ZH/en`。
+6. UI主题渐进替换
+   - 先引入 `src/styles/podui.css`（已存在），在顶层应用 `podui-theme-dark` 覆盖变量；
+   - 逐步在高交互组件用 `pod-*` 基础组件替换散落类名组合（每替换一个组件即回归测试）。
 
-✅ **qwen-image模型完整修复完成**
+### 动态调整原则
+- 每次迁移一个模块（或一组低耦合模块），立即执行 `npm run lint` 与 `npm run build` 并在画布/历史/Prompt/语言切换场景下人工回归。
+- 若发现路径、Worker、别名导致构建或运行时问题，先回滚桥接层和导入，再调整路径别名映射与 re-export。
+- 在最终切换 `@` 到 `src` 之前，确保所有根导入已被桥接到新位置且通过预览回归。
 
-**第一轮修复：**
-- 问题：qwen-image模型不支持`response_format: "b64_json"`
-- 解决：修改为`"url"`格式，实现URL到base64转换
+### 初始任务队列（第一轮执行，完成后再更新）
+- [x] 服务层迁移：`services/geminiService.ts` 与 `services/httpClient.ts` → `src/services/api/*`（保留根 re-export）
+- [x] 组件迁移第一批：`components/BoardPanel.tsx`、`components/LayerPanel.tsx` → `src/features/boards/*`（保留根 re-export）
+- [x] Worker 引用修正：根组件对 `thumbWorker.ts` 的相对路径优化（保持 `new URL` 模式）
+- [x] i18n 桥接：新增 `src/i18n/translations.ts` 与 `useI18n` 钩子，根 `translations.ts` re-export
+- [x] UI主题覆盖验证：顶层 `podui-theme-dark` 与变量覆盖，通过预览（hover/active/focus-visible/disabled）
+- [x] 阶段验收：lint/build/交互回归；更新此计划中的“动态调整”内容与下一轮任务队列
 
-**第二轮修复（基于OpenAPI规范）：**
-- 问题：根据用户提供的OpenAPI规范，qwen-image有特定参数要求
-- 解决方案：
-  1. 移除不支持的参数：`n`, `size`, `response_format`
-  2. 添加支持的参数：`aspect_ratio: "1:1"`
-  3. 增强响应处理：支持both `b64_json` and `url`格式
+### 第二轮任务队列（进行中）
+（已合并至“项目执行与状态看板（合并）”，保留此标题以便追溯）
 
-**第三轮修复（代理配置）：**
-- 问题：vite代理强制覆盖Content-Type导致请求失败
-- 解决：移除代理中强制设置Content-Type的部分
+### 第三轮任务队列（模块化收尾与功能修复）
+（已合并至“项目执行与状态看板（合并）”，保留此标题以便追溯）
 
-**技术实现详情：**
-```typescript
-// 修改后的请求参数
-const body = {
-  model: WHATAI_IMAGE_GENERATION_MODEL,
-  prompt: prompt,
-  aspect_ratio: "1:1"  // 使用aspect_ratio替代size
-  // 移除了n, size, response_format参数
-};
+### 项目状态看板（当前执行）
+（已合并至“项目执行与状态看板（合并）”，保留此标题以便追溯）
 
-// 增强的响应处理
-const imageData = result.data[0];
-if (imageData.b64_json) {
-  return { newImageBase64: imageData.b64_json, ... };
-} else if (imageData.url) {
-  // URL到base64转换逻辑
+### 项目执行与状态看板（合并）
+- [x] 服务层迁移：`services/geminiService.ts`、`services/httpClient.ts` → `src/services/api/*`（保留根 re-export）
+- [x] 组件迁移第一批：`components/BoardPanel.tsx`、`components/LayerPanel.tsx` → `src/features/boards/*`（保留根桥接）
+- [x] Worker 引用修正：统一 `new URL(..., import.meta.url)` 路径策略
+- [x] i18n 桥接：新增 `src/i18n/translations.ts` 与 `useI18n` 钩子，根 `translations.ts` re-export
+- [x] 顶层应用主题：在 `index.tsx` 应用 `podui-theme-dark` 并验收
+- [x] 文档更新：同步 `.trae/scratchpad.md` 状态与队列
+- [x] Toolbar 迁移与桥接：`src/features/toolbar/Toolbar.tsx`
+- [x] PromptBar 迁移与桥接：`src/features/prompt/PromptBar.tsx`
+- [x] QuickPrompts 迁移与桥接：`src/features/prompt/QuickPrompts.tsx`
+- [x] 通用 UI 抽取与集成：`src/ui/*`（Panel/IconButton/Button/Chip/MenuItem/Toolbar/Select/Textarea）
+- [x] Button 组件扩展：variants/sizes 并在 Toolbar/CanvasSettings 应用
+- [x] BoardPanel 拆分与瘦身：单文件 ≤250 行
+- [x] 路径别名切换准备与执行：将 `@` 指向 `src` 并验证
+- [x] BananaSidebar 迁移与桥接：`src/features/sidebar/BananaSidebar.tsx`，根导出代理保持兼容
+- [x] CanvasSettings 迁移并集成 Input：`src/features/settings/CanvasSettings.tsx` 使用 `src/ui/Input.tsx`
+ - [ ] 修复 `src/App.tsx` 类型错误（handleUngroup）并重新纳入 TS 检查
+ - [x] 验证所有迁移组件的功能与引用（PromptBar/Sidebar/Boards/SessionRestoreDialog）
+ - [x] 迁移剩余根组件或确认根目录仅保留配置与入口
+ - [x] 阶段验收：`npm run lint`、`npx tsc --noEmit`、`npm run build` 与预览交互回归
+
+### 执行者反馈或请求帮助
+ - 路径别名切换将安排在所有桥接稳定后再进行，避免入口冲突。
+ - PodUI 变量覆盖已应用，后续组件替换会逐步推进并在预览中人工回归交互状态。
+ - 若需要增加自动化快验脚本（如 Worker 引用统一、i18n 覆盖率），可在下一轮补充。
+ - 已保留“掩膜修复”行为：
+   - 服务层在 `src/services/api/geminiService.ts:595` 增加 `mask` 可选参数，并在 `images/edits` 请求体写入 `mask` 文件（`src/services/api/geminiService.ts:636-642`）。
+   - `App.tsx:1485-1488` 的 inpainting 流程向 `editImage` 传入 `mask`（由 `rasterizeMask` 生成）。
+   - 变更已通过 `npm run lint` 与类型检查验证，未引入新错误。
+ - 通用 UI 抽取进展：
+   - 已新增 `Panel/IconButton/Button/Chip/MenuItem/Toolbar/Select/Textarea` 基础组件，均在 `src/ui/*` 下；统一在 `src/ui/index.ts` 导出。
+   - 集成范围：`QuickPrompts`（按钮/面板/菜单项）、`PromptBar`（工具条容器/模式切换/尺寸芯片/保存按钮/生成按钮/文本域）、`Toolbar`（工具按钮/弹框面板/裁剪选择与确认）、`CanvasSettings`（面板/关闭按钮/保存按钮/芯片选项）、`BoardPanel`（面板容器/头部按钮/条目菜单弹层，菜单项已替换为 `MenuItem`）。
+    - 构建与预览验证通过：`npm run lint`、`npx tsc --noEmit`、`npm run build`、`vite preview`（本机 `http://localhost:4173/`）。
+  - 新增：Button 变体（primary/secondary/ghost/outline）与尺寸（xs/sm/md）已落地；在 `src/features/toolbar/Toolbar.tsx:160` 裁剪确认/取消按钮应用 `size="sm"`，在 `components/CanvasSettings.tsx:114-118` 保存按钮应用 `size="sm"`；通过 `npm run lint`、`npx tsc --noEmit` 与 `npm run build` 验证。
+  - 新增：完成 BoardPanel 拆分与瘦身（单文件 ≤250 行）。创建 `src/features/boards/components/BoardItem.tsx:1`、`src/features/boards/components/BoardGrid.tsx:1`、`src/features/boards/components/HistoryList.tsx:1`，并将原 `BoardPanel.tsx` 精简为 63 行。验证通过：`npm run lint`、`npx tsc --noEmit`、`npm run build`。
+  - 新增：完成路径别名切换准备，清理所有 `@/src/*` 导入为相对或统一 `@/*`（已无匹配项）。并已切换 `@` 指向 `src`：`vite.config.ts:56` 与 `tsconfig.json:21-25` 已更新，同时新增 `baseUrl` 以支持 TS 路径。
+  - 桥接层：新增 `src/components/BananaSidebar.tsx:1`、`src/hooks/useBoardActions.ts:1`、`src/utils/canvas.ts:1`、`src/utils/retry.ts:1`、`src/services/httpClient.ts:1`、`src/types/index.ts:1`；`src/i18n/translations.ts:1` 指向根 `translations.ts`。修复 `PromptBar` 命名导入：在 `src/components/BananaSidebar.tsx:1-2` 同时导出默认与命名 `BananaSidebar`。
+  - 验证：`npm run lint`、`npx tsc --noEmit`、`npm run build` 全部通过；预览可用：`http://localhost:4173/`。
+  - 新增：引入通用 `Input/Dialog` 组件（`src/ui/Input.tsx`、`src/ui/Dialog.tsx`），并在 `src/components/SessionRestoreDialog.tsx:1-2,8-33` 集成 `Dialog`；`CanvasSettings` 暂保持原 `<input>` 以避免 TS 类型与行为耦合，后续视需要再统一。
+
+## 自验证测试矩阵与脚本
+
+### 测试脚本
+- `scripts/validate-structure.mjs`：结构与约束检查（目录存在、关键文件与别名、i18n 键）。
+  - 运行：`node scripts/validate-structure.mjs`
+  - 当前结果：已创建 `src/features`、`src/ui`、`src/i18n` 占位并通过脚本；其余检查通过。
+- 现有：`npm run lint`、`npm run build` 用于静态与构建验证；`vite preview` 用于交互回归。
+- 后续补充：在迁移阶段增加轻量脚本验收（如 `scripts/validate-workers.mjs` 检查 Worker 引用统一；`scripts/validate-i18n.mjs` 检查词条覆盖率）。
+
+### 分阶段自验证清单
+- 分析阶段：
+  - 运行 `node scripts/validate-structure.mjs`、`npm run lint`、`npm run build`；若网络允许，`npm audit`。
+  - 输出 `.trae/analysis-report.md`（重复/废弃/拆分候选/样式硬编码/i18n 迁移建议）。
+- UI主题阶段：
+  - `npm run lint`、`npm run build`；`vite preview` 检查 hover/active/focus-visible/disabled 与 tokens 覆盖。
+  - 对关键组件的视觉快照与交互清单进行人工验收。
+- 兼容层与迁移阶段：
+  - 每迁移一组模块：运行 `node scripts/validate-structure.mjs`、`npm run lint`、`npm run build`；打开预览执行画布、历史、导入、语言切换与 Prompt 场景。
+  - Worker 与路径统一：新增脚本检查 Worker 引用；确保 `new URL(..., import.meta.url)` 可用。
+- i18n 归档阶段：
+  - 运行 i18n 覆盖率脚本与预览检查；确保 `translations[language]` 与 `useI18n` 钩子在 `ZH/en` 两种语言下无缺词与异常。
+- 收尾阶段：
+  - 清理废弃文件后再次 `node scripts/validate-structure.mjs` 与完整回归；更新文档与经验记录。
+
+## UI主题风格标准（PodUI）（已合并至统一执行计划）
+
+### 目标
+- 建立可继承、可演进的统一视觉系统（颜色、排版、尺寸、状态、动效）。
+- 以 CSS 变量为基础的 Design Tokens，实现“主题切换不改组件逻辑”。
+- 通过通用基础组件（Button/Panel/Chip/Menu/Toolbar）复用风格，减少散落类名组合。
+
+### 设计令牌（Design Tokens）
+```css
+:root {
+  /* 语义色与中性色 */
+  --pod-bg: #0f0f10;
+  --pod-panel-bg: #151517;
+  --pod-panel-bg-transparent: transparent;
+  --pod-border-color: #2a2a2a;
+  --pod-text-primary: #e5e7eb;
+  --pod-text-heading: #f5f7fa;
+  --pod-text-accent: #ffd84a;
+  --pod-accent: #ffd84a;      /* 主题黄 */
+  --pod-success: #22c55e;
+  --pod-warning: #f59e0b;
+  --pod-danger:  #ef4444;
+
+  /* 排版与尺寸 */
+  --pod-font-sans: ui-sans-serif, system-ui, Segoe UI, Roboto, Helvetica, Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+  --pod-radius-xs: 6px;
+  --pod-radius-sm: 10px;
+  --pod-radius-md: 14px;
+  --pod-radius-lg: 16px;  /* toolbar 与面板统一倒角 */
+  --pod-shadow-card: 0 2px 8px rgba(0,0,0,.25);
+  --pod-shadow-hover: 0 4px 12px rgba(0,0,0,.35);
+  --pod-ring: 0 0 0 2px rgba(255,216,74,.6);
+  --pod-spacing-1: 4px;  --pod-spacing-2: 8px;  --pod-spacing-3: 12px;  --pod-spacing-4: 16px;
+
+  /* 交互动效 */
+  --pod-transition-fast: 120ms ease-out;
+  --pod-transition:       220ms ease-out;
+}
+
+/* 向后兼容的别名（现有代码引用的变量名） */
+:root {
+  --text-primary: var(--pod-text-primary);
+  --text-heading: var(--pod-text-heading);
+  --text-accent:  var(--pod-text-accent);
+  --border-color: var(--pod-border-color);
+}
+
+/* 主题切换（可选 dark/light 或高对比） */
+.podui-theme-dark { /* 暗色默认 */ }
+.podui-theme-light {
+  --pod-bg: #fafafa; --pod-panel-bg: #ffffff; --pod-border-color: #e5e7eb;
+  --pod-text-primary: #1f2937; --pod-text-heading: #111827; --pod-text-accent: #b45309;
+  --pod-accent: #f59e0b;
 }
 ```
 
-**当前状态：**
-- ✅ 模型分离完成（图像生成使用qwen-image，图像编辑使用gemini-2.5-flash-image）
-- ✅ 环境配置更新完成（.env.local, vite.config.ts, geminiService.ts）
-- ✅ qwen-image模型参数修复完成（基于OpenAPI规范）
-- ✅ 代理配置修复完成（移除强制Content-Type设置）
-- ✅ 开发服务器重启完成
-- ✅ 预览页面打开成功，无浏览器错误
+### 通用基础组件标准
+- `pod-panel`：统一面板容器（背景、倒角、边框、阴影、内边距），支持透明变体 `pod-panel-transparent` 与渐变 `pod-panel-yellow-gradient`。
+- `pod-icon-button`/`pod-button`：按钮基类，含尺寸（xs/sm/md）、变体（primary/outline/ghost）、状态（hover/active/disabled/focus-ring）。
+- `pod-chip`：选项/标签胶囊，支持 active 与禁用态，边框与文字颜色遵循 tokens。
+- `pod-toolbar`：工具条外框，统一倒角半径 `var(--pod-radius-lg)` 与背景/阴影策略，内部按钮继承 `pod-button`。
+- `pod-scrollbar-x`：横向滚动条统一样式（深灰轨道、白边圆形拇指），含 hover/active 态。
+- `pod-menu-item`：菜单项，支持选中/禁用态与键盘导航聚焦样式（focus-visible）。
 
-**请求验证：**
-请测试以下功能：
-1. 图像生成功能（使用qwen-image模型）
-2. 图像编辑功能（使用gemini-2.5-flash-image模型）
-3. 其他功能（文本生成、视频生成等）
+### 交互与状态规范
+- hover：颜色轻度提升（文本 heading→accent/边框加深），卡片阴影从 `--pod-shadow-card` → `--pod-shadow-hover`。
+- active：按钮/芯片边框与背景对比增强，保持动效 `--pod-transition-fast`。
+- focus（无障碍）：统一环样式 `--pod-ring`，仅在键盘导航时启用 `:focus-visible`。
+- disabled：降低不透明度与禁用指针事件，不改变布局尺寸。
 
----
+### 组件结构与命名
+- 原子（atoms）：`Button`、`IconButton`、`Chip`、`Panel`、`MenuItem`。
+- 复合（molecules）：`Toolbar`、`Card`、`SidebarPanel`、`Dialog`。
+- 主题类统一以 `pod-` 前缀；变体使用后缀 `--primary`、`--outline`、`--ghost`、`--transparent`。
 
-**[执行者报告 - 2025-11-10] GitHub 推送与仓库创建**
+### 集成策略
+- 在 `index.tsx` 全局引入 `src/styles/podui.css`，顶层容器应用 `podui-theme` 或 `podui-theme-dark` 类。
+- 逐步将组件的类名组合替换为通用基础组件（不改布局与逻辑）；优先替换交互强的区域：`PromptBar`、`Toolbar`、`CanvasSettings`、`BoardPanel`、`QuickPrompts`。
+- 保留 Tailwind 工具类用于布局与细节；视觉与状态由 `pod-*` 类承载。
+- 所有颜色与尺寸使用 CSS 变量，不直接写死颜色值。
 
-- 现象：使用提供的 PAT 调用 GitHub API 返回 401（Unauthorized），无法通过 API 创建私有仓库；同时远程 `origin` 曾指向不正确的 URL，已计划在仓库创建后重设。
-- 初步判断：PAT 可能权限不足或已失效；经典令牌需具备 `repo` 权限，精细令牌需允许在用户账户下创建仓库并具备 `Contents: Read & Write`。
-- 已处理：
-  - 将 PAT 文件从 `public` 移动到 `.trae/githubPAT` 并在 `.trae/.gitignore` 忽略，避免泄露与误提交。
-  - 本地提交与版本更新已完成（`v0.5.0`），分支 `feat/nano-banana-generations` 随时可推送。
-- 需要协助：
-  1) 请在 GitHub 重新生成经典 PAT（前缀 `ghp_...`），勾选 `repo` 权限；或提供精细令牌并授权“在你的账户下创建仓库”，至少 `Contents: Read & Write`。
-  2) 将新令牌内容（不含引号与反引号）保存为 `f:\Trae\BananaPod\.trae\githubPAT`。
-- 下一步（令牌有效后自动执行）：
-  - 通过 API 创建私有仓库 `BananaPod`（所有者 `zzpzz009`）。
-  - 配置远程：`git remote set-url origin https://zzpzz009:<PAT>@github.com/zzpzz009/BananaPod.git`。
-  - 推送分支与标签：`git push -u origin feat/nano-banana-generations`，`git push --follow-tags`。
-  - 将远程 URL 清理为不含明文令牌的 HTTPS：`git remote set-url origin https://github.com/zzpzz009/BananaPod.git`。
+### 验证与成功标准
+- 统一主题变量与基础组件覆盖后，预览界面无回归；交互（点击、悬浮、键盘导航、禁用态）一致。
+- 变量命名与别名稳定（`--text-*/--border-color` 仍可用），新旧代码混用不破坏视觉一致性。
+- `npm run lint`、`npm run build` 无错误；关键页面视觉对齐至 PodUI 参考图。
 
-**[执行者补充 - 2025-11-11] GitHub 新令牌验证结果**
+### 落地步骤（行动项）
+1. 创建并完善 `src/styles/podui.css`，定义上述 Design Tokens 与基础组件类。
+2. 在 `index.tsx` 引入样式，并为顶层容器添加 `podui-theme-dark` 类。
+3. 将 `PromptBar/Toolbar/CanvasSettings/BoardPanel` 替换为通用基础组件；保留原布局。
+4. 增加滚动条样式类并应用到香蕉面板与历史网格的容器。
+5. 增加 `focus-visible` 与 `ring` 统一样式，完成无障碍检查（Tab 导航序与焦点可见性）。
+6. 记录与修正不一致项（颜色、阴影、倒角、按钮尺寸），以 tokens 为单一真相源更新。
 
-- 新动作与结果：
-  - 使用新 PAT 调用 `GET /user` 与 `POST /user/repos`：两者均返回 `401 Unauthorized`（分别尝试 `Authorization: Bearer <PAT>` 与 `Authorization: token <PAT>`）。
-  - 使用 `git -c "http.extraHeader=Authorization: Basic <base64(username:PAT)>" push` 推送：`remote: invalid credentials`，未能建立 upstream。
-  - 再次直接 `git push -u origin <branch>`：出现 `Recv failure: Connection was reset`，网络或认证导致失败。
-- 自检结论：当前 PAT 仍不可用于创建或推送；极可能是精细令牌未授予“创建仓库”或“Contents: Read & Write”，或令牌失效。
-- 请求帮助（二选一，任一即可继续）：
-  1) 手动在 GitHub 创建私有空仓库 `BananaPod`（Owner: `zzpzz009`），将 HTTPS URL 发我：`https://github.com/zzpzz009/BananaPod.git`。
-  2) 重新生成经典 PAT（`ghp_...`）并勾选完整 `repo` 权限；或精细令牌允许在“你的账户”创建仓库并具备 `Contents: Read & Write`。
-- 我方准备：一旦有仓库 URL 或有效令牌，将自动：
-  - 配置远程 `origin`，为安全采用 HTTP 头注入认证进行首次推送；随后清理远程为无令牌 URL。
-  - 推送当前分支 `feat/nano-banana-generations` 与所有 Git 标签。
+### 项目状态看板（UI主题）
+- [ ] 定义 Design Tokens 与变量别名
+- [ ] 建立基础组件类并引入到页面
+- [ ] 关键组件替换为通用基础组件
+- [ ] 验证交互与无障碍（focus-visible/ring/禁用态）
+- [ ] 全量 lint/build 验证与问题清单
 
----
+## 模块化重构计划（2025-12-02）（已合并至统一执行计划）
 
-**[执行者更新 - 2025-11-11] 用户选择“方式 A”（本机交互式登录推送）**
+### 背景和动机
+- 将整个项目的功能与界面“模块化、去中心化”，不再集中于单一文件，降低耦合、提升迭代效率与维护性。
+- 明确模块边界（功能域、服务层、通用UI、状态层、i18n），以便按需替换与独立测试。
+- 控制单文件不超过约 250 行，遵循小型、可组合的组件与服务设计。
 
-- 当前远程：`origin = https://github.com/zzpzz009/BananaPod-AC.git` 已配置；分支 `feat/nano-banana-generations` 之前已建立上游。
-- 本次工作：重写 `README.md`（中文简洁版、PodUI说明、安装与配置、版本与安全），本地已提交；推送阶段遇到 443 连接重置/超时。
-- 执行计划（方式 A）：
-  1) 在本机开启 TLS 校验：`git config --global http.sslVerify true`
-  2) 切换到分支：`git checkout feat/nano-banana-generations`
-  3) 推送分支更新：`git push -u origin feat/nano-banana-generations`
-  4) 推送标签（如有）：`git push --tags`
-  5) 如弹出浏览器认证（Git Credential Manager）：完成登录授权后重试推送即可成功。
-- 成功标准：
-  - 远程仓库出现最新 commit（README 重写）；分支状态为 “up to date”，`git status` 显示工作区干净。
-  - 若需要，再补充 `About` 描述（见建议文案）。
-- 阻塞与建议：
-  - 若本机仍出现 `Recv failure: Connection was reset` 或端口 443 连接失败，请检查网络与证书；必要时切换网络或稍后重试。
-  - 我方可在你完成浏览器登录后再次尝试代推；也可转为“方式 B”提供具备 `repo` 权限令牌。
+### 关键挑战和分析
+- 现有核心逻辑集中在 `App.tsx` 与少量服务函数，导致跨功能依赖、历史与会话、UI与逻辑混杂。
+- 图版（Board）渲染、历史、缩略图生成、Prompt 与工具栏等功能交织，需要边迁移边保证稳定。
+- 在浏览器与服务端两种运行模式下，存储适配需要保持统一接口（IndexedDB 与文件系统已打通）。
+- i18n 与 PodUI 通用样式需要抽出为可复用层，避免各组件独立拼接类名而造成重复与不一致。
 
-**[执行者反馈 - 2025-11-11 方式A执行尝试结果]**
+### 模块与目录结构草案
+```text
+src/
+  state/                 # 全局状态与上下文（AppProvider、useAppState）
+  features/
+    boards/             # 画布与板书：BoardCanvas、LayerPanel、BoardPanel、hooks
+    history/            # 历史与缩略图：HistoryPanel、thumbWorker 接线、hooks
+    prompt/             # PromptBar、QuickPrompts、香蕉面板（BananaSidebar）
+    settings/           # CanvasSettings 等配置面板
+    toolbar/            # Toolbar 与工具按钮
+  services/
+    api/                # 对接 whatai.qwen/gemini 的统一 API 封装
+    storage/            # 会话与历史存储（IndexedDB/FS），当前 boardsStorage 已适配
+    imaging/            # 栅格化、缩放、合并图层、图片处理工具
+  ui/                   # PodUI 通用基础组件（Button、Panel、Chip、Menu 等）
+  i18n/                 # 翻译与语言切换（translations、useI18n）
+  workers/              # Web Worker（缩略图等）
+  types/                # 领域类型（Board、Element、ImageElement 等）
+```
 
-- 动作与输出：
-  - `git config --global http.sslVerify true` 成功；`git checkout feat/nano-banana-generations` 显示“ahead 1 commit”。
-  - `git push -u origin feat/nano-banana-generations` → `fatal: unable to access ... Recv failure: Connection was reset`。
-  - `git push --tags` → 同样 `Recv failure: Connection was reset`。
-- 初步结论：当前环境到 GitHub 443 端口存在网络重置/超时，推送受阻；非纯认证问题（之前已成功建立上游）。
-- 建议下一步（需要用户在本机执行）：
-  1) 在本机终端执行：`git push -u origin feat/nano-banana-generations`
-  2) 若弹出浏览器认证（GCM）请完成登录；成功后再执行 `git push --tags`
-  3) 若仍遇到 443 连接问题：
-     - 确认：`git config --global http.sslVerify true`
-     - Windows默认TLS库：`git config --global http.sslBackend schannel`
-     - 检查网络/防火墙/代理，必要时更换网络重试。
-- 我方待命：你完成本机推送后，我将立即处理“更新仓库 About 描述”并收尾状态看板。
-  - 输出详细调试日志与结果供你复核。
+### 高层任务拆分
+1. 建立目录骨架与 index 导出（不改逻辑，仅迁移组织）
+2. 抽取全局状态到 `state/AppProvider` 与 `useAppState`，将 `App.tsx` 仅保留路由或容器职责
+3. 迁移 Board 相关组件到 `features/boards/` 并按职责拆分（渲染、面板、图层、交互）
+4. 迁移历史与缩略图逻辑到 `features/history/`，保持与 `services/storage` 接口一致
+5. 迁移 Prompt/QuickPrompts/香蕉面板到 `features/prompt/`，统一动作与数据流
+6. 抽取 PodUI 基础组件到 `ui/`，逐步替换原有类名组合为通用组件（不改布局）
+7. 抽取 i18n 到 `i18n/`，提供 `useI18n(language)` 钩子，统一 `ZH/en`
+8. services 层按域拆分：`api/`、`storage/`、`imaging/`，分离纯函数与副作用
+9. 对迁移后的模块进行 lint/typecheck 与构建验证，补充最小单元测试
+10. 清理残留交叉依赖，完善 re-export 与公共入口，更新导入路径
 
-**[执行者补充 - 2025-11-11] 第二次推送尝试（使用你提供的仓库 URL）**
+### 成功标准
+- 构建与预览无回归错误；`npm run lint`、`npm run build` 全部通过。
+- 主要功能（图像生成/编辑、板书操作、历史缩略图、导入导出、语言切换）行为一致。
+- 单文件控制在合理大小（≈250 行），模块边界清晰、依赖从上层向下层单向流动。
+- 模块内可独立替换与测试；通用 UI 组件复用度提升、类名与主题一致。
 
-- 远程设置：已将 `origin` 指向 `https://github.com/zzpzz009/BananaPod-AC.git`。
-- 推送动作：
-  - 使用令牌内嵌 URL 与 `git push -u origin feat/nano-banana-generations` 建立上游；
-  - 使用头部认证 `http.extraHeader=Authorization: Basic <base64(username:PAT)>` 再次推送分支与标签；
-  - 尝试推送 `main` 分支与所有标签。
-- 结果：
-  - 返回 `remote: invalid credentials / Invalid username or token`，以及 `Password authentication is not supported for Git operations.`；
-  - Git Credential Manager 输出“please complete authentication in your browser.”提示；
-  - `feat/nano-banana-generations` 未成功建立上游；`main` 显示 `[origin/main]`（本地记录），但实际远程未更新。
-- 结论：
-  - 需要交互式浏览器登录（GCM），或重新生成具备 `repo` 权限的经典 PAT，或将精细令牌授予 `BananaPod-AC` 仓库的 `Contents: Read & Write` 权限。
-- 建议操作：
-  1) 在本机进行一次交互式登录：执行 `git push -u origin feat/nano-banana-generations` 并在弹出的浏览器完成 GitHub 登录授权；
-  2) 或重新生成/授予令牌后将文本保存到 `f:\Trae\BananaPod\.trae\githubPAT`，我将自动重试推送；
-  3) 推送成功后我会清理远程为不含令牌的标准 HTTPS，并输出详细日志。
+### 项目状态看板（重构）
+- [ ] 建立目录骨架与 index 导出
+- [ ] 抽取 App 全局状态到 `state/`
+- [ ] 迁移 Board 组件到 `features/boards/`
+- [ ] 迁移 History 逻辑到 `features/history/`
+- [ ] 迁移 Prompt/QuickPrompts 到 `features/prompt/`
+- [ ] 抽取 PodUI 基础组件到 `ui/`
+- [ ] 抽取 i18n 到 `i18n/` 并统一语言钩子
+- [ ] 拆分 services：`api/`、`storage/`、`imaging/`
+- [ ] 全量 lint/typecheck/build 验证与最小测试
+- [ ] 清理导入路径与 re-export，完成文档与经验记录
 
-**[执行者结果 - 2025-11-11] 交互式推送成功**
-
-- 动作：按你的指令在本机直接运行 `git push -u origin feat/nano-banana-generations`。
-- 过程日志：首次提示需在浏览器完成认证（GCM），随后完成认证并继续推送；过程中出现 TLS 校验关闭警告（建议后续开启）。
-- 结果：分支已成功推送并建立上游：`origin/feat/nano-banana-generations`，增量对象与差异解析完成。
-- 后续：
-  - 我将继续推送 Git 标签并核验 `main` 与标签状态；
-  - 建议恢复 TLS 校验：参考 https://aka.ms/gcm/tlsverify。

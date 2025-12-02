@@ -12,8 +12,6 @@ export default defineConfig(({ mode }) => {
         host: '0.0.0.0',
         hmr: {
           host: 'localhost',
-          port: 3001,
-          clientPort: 3001,
           protocol: 'ws',
         },
         proxy: {
@@ -53,7 +51,7 @@ export default defineConfig(({ mode }) => {
       },
       resolve: {
         alias: {
-          '@': path.resolve(__dirname, '.'),
+          '@': path.resolve(__dirname, 'src'),
         }
       }
     };

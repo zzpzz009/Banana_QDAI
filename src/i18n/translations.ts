@@ -152,6 +152,7 @@ export const translations = {
     },
     settings: {
         title: 'Settings',
+        close: 'Close',
         language: 'Language',
         uiTheme: 'UI Theme',
         color: 'Color',
@@ -281,7 +282,8 @@ export const translations = {
         defaultName: '我的自定义效果',
     },
     settings: {
-        title: '设置',
+        title: '画布设置',
+        close: '关闭',
         language: '语言',
         uiTheme: '界面主题',
         color: '颜色',
