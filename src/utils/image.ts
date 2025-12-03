@@ -263,3 +263,20 @@ export async function letterboxToFixedSize(base64: string, mimeType: string, tar
   const out = canvas.toDataURL(mimeType).split(',')[1] || base64;
   return out;
 }
+
+export async function loadImageWithFallback(base64: string, mimeType: string): Promise<{ img: HTMLImageElement; href: string }> {
+  const raw = stripBase64Header(base64);
+  const norm = normalizeBase64(raw);
+  const primaryUrl = `data:${mimeType};base64,${norm}`;
+  const tryLoad = (src: string) => new Promise<HTMLImageElement>((resolve, reject) => { const i = new Image(); i.crossOrigin = 'anonymous'; i.onload = () => resolve(i); i.onerror = () => reject(new Error('Image load failed')); i.src = src; });
+  try {
+    const img = await tryLoad(primaryUrl);
+    return { img, href: primaryUrl };
+  } catch {
+    const resized = await resizeBase64ToMax(base64, mimeType);
+    if (!resized) throw new Error('Fallback load failed');
+    const fallbackUrl = `data:${mimeType};base64,${resized.base64}`;
+    const img = await tryLoad(fallbackUrl);
+    return { img, href: fallbackUrl };
+  }
+}

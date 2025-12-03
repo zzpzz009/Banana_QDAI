@@ -22,6 +22,10 @@
   /* Bridge for existing components */
   --ui-bg-color: var(--bg-component);
   --button-bg-color: var(--text-accent);
+  
+  /* Standard UI Colors */
+  --ui-green-color: #10b981; /* Emerald 500 */
+  --ui-green-hover-color: #059669; /* Emerald 600 */
 
   --bg-gradient-1: #787777;
   --bg-gradient-2: #787777;
@@ -381,7 +385,7 @@
 }
 
 .pod-textarea {
-  background-color: #211F26;
+  background-color: transparent;
   color: var(--text-heading);
   border: none;
   outline: none;

@@ -16,7 +16,7 @@ import type { Tool, Point, Element, ImageElement, PathElement, ShapeElement, Tex
 import { rasterizeElement, rasterizeElements, flattenElementsToImage } from '@/utils/canvas';
 import { editImage, generateImageFromText, generateVideo } from '@/services/api/geminiService';
 import { fileToDataUrl } from '@/utils/fileUtils';
-import { resizeBase64ToMax } from '@/utils/image';
+import { resizeBase64ToMax, loadImageWithFallback } from '@/utils/image';
 import { translations } from '@/i18n/translations';
 import { touchLastSessionPending } from '@/services/boardsStorage';
 
@@ -83,18 +83,18 @@ const isPointInPolygon = (point: Point, polygon: Point[]): boolean => {
 
 // moved to '@/utils/canvas'
 
-        
-        
 
-        
 
-        
 
-        
 
-        
-        
- 
+
+
+
+
+
+
+
+
 
 
 const rasterizeMask = (
@@ -128,7 +128,7 @@ const rasterizeMask = (
         maskPaths.forEach(path => {
             ctx.lineWidth = path.strokeWidth;
             ctx.beginPath();
-            
+
             if (path.points.length === 1) {
                 const point = path.points[0];
                 ctx.arc(point.x - imageX, point.y - imageY, path.strokeWidth / 2, 0, 2 * Math.PI);
@@ -179,7 +179,7 @@ const App: React.FC = () => {
     const { elements, history, historyIndex, panOffset, zoom, canvasBackgroundColor } = activeBoard;
 
     const [activeTool, setActiveTool] = useState<Tool>('select');
-const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', strokeWidth: 5 });
+    const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', strokeWidth: 5 });
     const [selectedElementIds, setSelectedElementIds] = useState<string[]>([]);
     const [selectionBox, setSelectionBox] = useState<Rect | null>(null);
     const [prompt, setPrompt] = useState('');
@@ -238,7 +238,7 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
     }, [userId]);
     const [uiTheme, setUiTheme] = useState({ color: '#171717', opacity: 0.7 });
     const [buttonTheme, setButtonTheme] = useState({ color: '#374151', opacity: 0.8 });
-    
+
     const [userEffects, setUserEffects] = useState<UserEffect[]>(() => {
         try {
             const saved = localStorage.getItem('userEffects');
@@ -248,9 +248,10 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
             return [];
         }
     });
-    
+
     const [generationMode, setGenerationMode] = useState<'image' | 'video'>('image');
     const [videoAspectRatio, setVideoAspectRatio] = useState<'16:9' | '9:16'>('16:9');
+    const [imageAspectRatio, setImageAspectRatio] = useState<string>('auto');
     const [progressMessage, setProgressMessage] = useState<string>('');
     const [imageModel, setImageModel] = useState<string>(() => {
         try {
@@ -262,6 +263,11 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
     const [imageSize, setImageSize] = useState<'1K' | '2K' | '4K'>(() => {
         return '1K';
     });
+    useEffect(() => {
+        try {
+            localStorage.setItem('WHATAI_IMAGE_MODEL', imageModel);
+        } catch { void 0; }
+    }, [imageModel]);
     useEffect(() => {
         const onStorage = (e: StorageEvent) => {
             if (e.key === 'WHATAI_IMAGE_MODEL') {
@@ -285,7 +291,7 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
     const currentDrawingElementId = useRef<string | null>(null);
     const resizeStartInfo = useRef<{ originalElement: ImageElement | ShapeElement | TextElement | VideoElement; startCanvasPoint: Point; handle: string; shiftKey: boolean } | null>(null);
     const cropStartInfo = useRef<{ originalCropBox: Rect, startCanvasPoint: Point } | null>(null);
-    const dragStartElementPositions = useRef<Map<string, {x: number, y: number} | Point[]>>(new Map());
+    const dragStartElementPositions = useRef<Map<string, { x: number, y: number } | Point[]>>(new Map());
     const elementsRef = useRef(elements);
     const svgRef = useRef<SVGSVGElement>(null);
     const editingTextareaRef = useRef<HTMLTextAreaElement>(null);
@@ -294,7 +300,7 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
     const promptBarRef = useRef<HTMLDivElement>(null);
     elementsRef.current = elements;
 
-    const SUPPORTED_CROP_RATIOS = ['1:1','2:3','3:2','3:4','4:3','4:5','5:4','9:16','16:9','21:9'] as const;
+    const SUPPORTED_CROP_RATIOS = ['1:1', '2:3', '3:2', '3:4', '4:3', '4:5', '5:4', '9:16', '16:9', '21:9'] as const;
     const parseRatio = (r: string | null): number | null => {
         if (!r) return null;
         const parts = r.split(':');
@@ -346,9 +352,9 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
         });
     };
 
-    
 
-    
+
+
 
     useEffect(() => {
         setSelectedElementIds([]);
@@ -357,7 +363,7 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
         setSelectionBox(null);
         setPrompt('');
     }, [activeBoardId]);
-    
+
     useEffect(() => {
         try {
             localStorage.setItem('userEffects', JSON.stringify(userEffects));
@@ -482,7 +488,7 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
                 ? { ...el, text: editingElement.text }
                 // Persist auto-height change on blur
                 : el.id === editingElement.id && el.type === 'text' && editingTextareaRef.current ? { ...el, text: editingElement.text, height: editingTextareaRef.current.scrollHeight }
-                : el
+                    : el
         ));
         setEditingElement(null);
     }, [commitAction, editingElement]);
@@ -490,7 +496,7 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (editingElement) {
-                if(e.key === 'Escape') handleStopEditing();
+                if (e.key === 'Escape') handleStopEditing();
                 return;
             }
 
@@ -499,7 +505,7 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
 
             if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); handleUndo(); return; }
             if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.shiftKey && e.key === 'z'))) { e.preventDefault(); handleRedo(); return; }
-            
+
             if (!isTyping && (e.key === 'Delete' || e.key === 'Backspace') && selectedElementIds.length > 0) {
                 e.preventDefault();
                 commitAction(prev => {
@@ -528,12 +534,12 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
                 const target = e.target as HTMLElement;
                 const isTyping = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA';
                 if (isTyping || spacebarDownTime.current === null) return;
-                
+
                 e.preventDefault();
 
                 const duration = Date.now() - spacebarDownTime.current;
                 spacebarDownTime.current = null;
-                
+
                 const toolBeforePan = previousToolRef.current;
 
                 if (duration < 200) { // Tap
@@ -558,13 +564,13 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
             window.removeEventListener('keyup', handleKeyUp);
         };
     }, [handleUndo, handleRedo, selectedElementIds, editingElement, activeTool, commitAction, getDescendants, handleStopEditing]);
-    
+
     const getCanvasPoint = useCallback((screenX: number, screenY: number): Point => {
         if (!svgRef.current) return { x: 0, y: 0 };
         const svgBounds = svgRef.current.getBoundingClientRect();
         const xOnSvg = screenX - svgBounds.left;
         const yOnSvg = screenY - svgBounds.top;
-        
+
         return {
             x: (xOnSvg - panOffset.x) / zoom,
             y: (yOnSvg - panOffset.y) / zoom,
@@ -611,7 +617,7 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
         }
     }, [getCanvasPoint, setElements]);
 
-     const getSelectableElement = (elementId: string, allElements: Element[]): Element | null => {
+    const getSelectableElement = (elementId: string, allElements: Element[]): Element | null => {
         const element = allElements.find(el => el.id === elementId);
         if (!element) return null;
         if (element.isLocked) return null;
@@ -625,7 +631,7 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
         }
         return current;
     };
-    
+
     const handleMouseDown = (e: React.MouseEvent<SVGSVGElement>) => {
         if (editingElement) return;
         if (contextMenu) setContextMenu(null);
@@ -656,7 +662,7 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
             }
             return;
         }
-         if (activeTool === 'text') {
+        if (activeTool === 'text') {
             const newText: TextElement = {
                 id: generateId(), type: 'text', name: 'Text',
                 x: canvasStartPoint.x, y: canvasStartPoint.y,
@@ -674,7 +680,7 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
             interactionMode.current = 'pan';
             return;
         }
-        
+
         if (handleName && activeTool === 'select' && selectedElementIds.length === 1) {
             interactionMode.current = `resize-${handleName}`;
             const element = elements.find(el => el.id === selectedElementIds[0]) as ImageElement | ShapeElement | TextElement | VideoElement;
@@ -696,7 +702,7 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
                 strokeColor: drawingOptions.strokeColor,
                 strokeWidth: drawingOptions.strokeWidth,
                 strokeOpacity: activeTool === 'highlighter' ? 0.5 : 1,
-                x: 0, y: 0 
+                x: 0, y: 0
             };
             currentDrawingElementId.current = newPath.id;
             setElements(prev => [...prev, newPath], false);
@@ -748,14 +754,14 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
 
             if (selectableElementId) {
                 if (e.detail === 2 && elements.find(el => el.id === selectableElementId)?.type === 'text') {
-                     const textEl = elements.find(el => el.id === selectableElementId) as TextElement;
-                     setEditingElement({ id: textEl.id, text: textEl.text });
-                     return;
+                    const textEl = elements.find(el => el.id === selectableElementId) as TextElement;
+                    setEditingElement({ id: textEl.id, text: textEl.text });
+                    return;
                 }
                 if (!e.shiftKey && !selectedElementIds.includes(selectableElementId)) {
-                     setSelectedElementIds([selectableElementId]);
+                    setSelectedElementIds([selectableElementId]);
                 } else if (e.shiftKey) {
-                    setSelectedElementIds(prev => 
+                    setSelectedElementIds(prev =>
                         prev.includes(selectableElementId) ? prev.filter(id => id !== selectableElementId) : [...prev, selectableElementId]
                     );
                 }
@@ -779,10 +785,10 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
                     }
                 }
 
-                 const initialPositions = new Map<string, {x: number, y: number} | Point[]>();
+                const initialPositions = new Map<string, { x: number, y: number } | Point[]>();
                 elementsRef.current.forEach(el => {
                     if (idsToDrag.has(el.id)) {
-                         if (el.type !== 'path' && el.type !== 'arrow' && el.type !== 'line') {
+                        if (el.type !== 'path' && el.type !== 'arrow' && el.type !== 'line') {
                             initialPositions.set(el.id, { x: el.x, y: el.y });
                         } else {
                             initialPositions.set(el.id, el.points);
@@ -891,7 +897,7 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
             if (handle.includes('l')) { width = originalCropBox.width - dx; x = originalCropBox.x + dx; }
             if (handle.includes('b')) { height = originalCropBox.height + dy; }
             if (handle.includes('t')) { height = originalCropBox.height - dy; y = originalCropBox.y + dy; }
-            
+
             if (x < originalElement.x) {
                 width += x - originalElement.x;
                 x = originalElement.x;
@@ -908,7 +914,7 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
             }
 
             const arVal = parseRatio(cropAspectRatio);
-            
+
             if (arVal) {
                 if (handle.includes('r') || handle.includes('l')) {
                     const nh = Math.max(1, Math.round(width / arVal));
@@ -952,7 +958,7 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
         }
 
 
-        switch(interactionMode.current) {
+        switch (interactionMode.current) {
             case 'pan': {
                 panLastPointRef.current = { x: e.clientX, y: e.clientY };
                 if (panRafRef.current == null) {
@@ -984,14 +990,14 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
                 break;
             }
             case 'drawShape': {
-                 if (currentDrawingElementId.current) {
+                if (currentDrawingElementId.current) {
                     setElements(prev => prev.map(el => {
                         if (el.id === currentDrawingElementId.current && el.type === 'shape') {
                             let newWidth = Math.abs(point.x - startCanvasPoint.x);
                             let newHeight = Math.abs(point.y - startCanvasPoint.y);
                             let newX = Math.min(point.x, startCanvasPoint.x);
                             let newY = Math.min(point.y, startCanvasPoint.y);
-                            
+
                             if (e.shiftKey) {
                                 if (el.shapeType === 'rectangle' || el.shapeType === 'circle') {
                                     const side = Math.max(newWidth, newHeight);
@@ -1000,12 +1006,12 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
                                 } else if (el.shapeType === 'triangle') {
                                     newHeight = newWidth * (Math.sqrt(3) / 2);
                                 }
-                                
+
                                 if (point.x < startCanvasPoint.x) newX = startCanvasPoint.x - newWidth;
                                 if (point.y < startCanvasPoint.y) newY = startCanvasPoint.y - newHeight;
                             }
 
-                            return {...el, x: newX, y: newY, width: newWidth, height: newHeight};
+                            return { ...el, x: newX, y: newY, width: newWidth, height: newHeight };
                         }
                         return el;
                     }), false);
@@ -1037,7 +1043,7 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
             case 'dragElements': {
                 const dx = point.x - startCanvasPoint.x;
                 const dy = point.y - startCanvasPoint.y;
-                
+
                 const movingElementIds = Array.from(dragStartElementPositions.current.keys());
                 const movingElements = elements.filter(el => movingElementIds.includes(el.id));
                 const otherElements = elements.filter(el => !movingElementIds.includes(el.id));
@@ -1059,22 +1065,22 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
                     getSnapPoints(bounds).v.forEach(p => staticSnapPoints.v.add(p));
                     getSnapPoints(bounds).h.forEach(p => staticSnapPoints.h.add(p));
                 });
-                
+
                 let bestSnapX = { dist: Infinity, val: finalDx, guide: null as Guide | null };
                 let bestSnapY = { dist: Infinity, val: finalDy, guide: null as Guide | null };
-                
+
                 movingElements.forEach(movingEl => {
                     const startPos = dragStartElementPositions.current.get(movingEl.id);
                     if (!startPos) return;
 
                     let movingBounds: Rect;
-                     if (movingEl.type !== 'path' && movingEl.type !== 'arrow' && movingEl.type !== 'line') {
-                        movingBounds = getElementBounds({...movingEl, x: (startPos as Point).x, y: (startPos as Point).y });
+                    if (movingEl.type !== 'path' && movingEl.type !== 'arrow' && movingEl.type !== 'line') {
+                        movingBounds = getElementBounds({ ...movingEl, x: (startPos as Point).x, y: (startPos as Point).y });
                     } else { // path or arrow or line
                         if (movingEl.type === 'arrow' || movingEl.type === 'line') {
-                            movingBounds = getElementBounds({...movingEl, points: startPos as [Point, Point]});
+                            movingBounds = getElementBounds({ ...movingEl, points: startPos as [Point, Point] });
                         } else {
-                            movingBounds = getElementBounds({...movingEl, points: startPos as Point[]});
+                            movingBounds = getElementBounds({ ...movingEl, points: startPos as Point[] });
                         }
                     }
 
@@ -1084,7 +1090,7 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
                         staticSnapPoints.v.forEach(staticP => {
                             const dist = Math.abs((p + finalDx) - staticP);
                             if (dist < snapThresholdCanvas && dist < bestSnapX.dist) {
-                                bestSnapX = { dist, val: staticP - p, guide: { type: 'v', position: staticP, start: movingBounds.y, end: movingBounds.y + movingBounds.height }};
+                                bestSnapX = { dist, val: staticP - p, guide: { type: 'v', position: staticP, start: movingBounds.y, end: movingBounds.y + movingBounds.height } };
                             }
                         });
                     });
@@ -1092,26 +1098,26 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
                         staticSnapPoints.h.forEach(staticP => {
                             const dist = Math.abs((p + finalDy) - staticP);
                             if (dist < snapThresholdCanvas && dist < bestSnapY.dist) {
-                                bestSnapY = { dist, val: staticP - p, guide: { type: 'h', position: staticP, start: movingBounds.x, end: movingBounds.x + movingBounds.width }};
+                                bestSnapY = { dist, val: staticP - p, guide: { type: 'h', position: staticP, start: movingBounds.x, end: movingBounds.x + movingBounds.width } };
                             }
                         });
                     });
                 });
-                
+
                 if (bestSnapX.guide) { finalDx = bestSnapX.val; activeGuides.push(bestSnapX.guide); }
                 if (bestSnapY.guide) { finalDy = bestSnapY.val; activeGuides.push(bestSnapY.guide); }
-                
+
                 setAlignmentGuides(activeGuides);
 
                 setElements(prev => prev.map(el => {
                     if (movingElementIds.includes(el.id)) {
                         const startPos = dragStartElementPositions.current.get(el.id);
                         if (!startPos) return el;
-                        
+
                         if (el.type !== 'path' && el.type !== 'arrow' && el.type !== 'line') {
                             return { ...el, x: (startPos as Point).x + finalDx, y: (startPos as Point).y + finalDy };
                         }
-                        
+
                         if (el.type === 'path') {
                             const startPoints = startPos as Point[];
                             const newPoints = startPoints.map(p => ({ x: p.x + finalDx, y: p.y + finalDy }));
@@ -1131,7 +1137,7 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
                 }), false);
                 break;
             }
-             case 'selectBox': {
+            case 'selectBox': {
                 const newX = Math.min(point.x, startCanvasPoint.x);
                 const newY = Math.min(point.y, startCanvasPoint.y);
                 const newWidth = Math.abs(point.x - startCanvasPoint.x);
@@ -1141,20 +1147,20 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
             }
         }
     };
-    
+
     const handleMouseUp = () => {
         if (interactionMode.current) {
             if (interactionMode.current === 'selectBox' && selectionBox) {
                 const selectedIds: string[] = [];
                 const { x: sx, y: sy, width: sw, height: sh } = selectionBox;
-                
+
                 elements.forEach(element => {
                     const bounds = getElementBounds(element, elements);
                     const { x: ex, y: ey, width: ew, height: eh } = bounds;
-                    
+
                     if (sx < ex + ew && sx + sw > ex && sy < ey + eh && sy + sh > ey) {
                         const selectable = getSelectableElement(element.id, elements);
-                        if(selectable) selectedIds.push(selectable.id);
+                        if (selectable) selectedIds.push(selectable.id);
                     }
                 });
                 setSelectedElementIds([...new Set(selectedIds)]);
@@ -1167,10 +1173,10 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
                 setSelectedElementIds(prev => [...new Set([...prev, ...selectedIds])]);
                 setLassoPath(null);
             } else if (['draw', 'drawShape', 'drawArrow', 'drawLine', 'dragElements', 'erase'].some(prefix => interactionMode.current?.startsWith(prefix)) || interactionMode.current.startsWith('resize-')) {
-                 commitAction(els => els); // This effectively commits the current state to history
+                commitAction(els => els); // This effectively commits the current state to history
             }
         }
-        
+
         interactionMode.current = null;
         currentDrawingElementId.current = null;
         setSelectionBox(null);
@@ -1181,39 +1187,39 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
         dragStartElementPositions.current.clear();
     };
 
-  
 
-  useEffect(() => {
-    const el = svgRef.current;
-    if (!el) return;
+
+    useEffect(() => {
+        const el = svgRef.current;
+        if (!el) return;
         const listener = (e: WheelEvent) => {
-          if (croppingState || editingElement) { e.preventDefault(); return; }
-          e.preventDefault();
-          const { clientX, clientY, deltaX, deltaY, ctrlKey } = e;
-          wheelLastEventRef.current = { clientX, clientY, deltaX, deltaY, ctrlKey };
-          if (wheelRafRef.current == null) {
-            wheelRafRef.current = requestAnimationFrame(() => {
-              wheelRafRef.current = null;
-              const last = wheelLastEventRef.current;
-              if (!last) return;
-              if (last.ctrlKey || wheelAction === 'zoom') {
-                const zoomFactor = 1.05;
-                const oldZoom = zoom;
-                const newZoom = last.deltaY < 0 ? oldZoom * zoomFactor : oldZoom / zoomFactor;
-                const clampedZoom = Math.max(0.1, Math.min(newZoom, 10));
-                const mousePoint = { x: last.clientX, y: last.clientY };
-                const newPanX = mousePoint.x - (mousePoint.x - panOffset.x) * (clampedZoom / oldZoom);
-                const newPanY = mousePoint.y - (mousePoint.y - panOffset.y) * (clampedZoom / oldZoom);
-                updateActiveBoardSilent(b => ({ ...b, zoom: clampedZoom, panOffset: { x: newPanX, y: newPanY } }));
-              } else {
-                updateActiveBoardSilent(b => ({ ...b, panOffset: { x: b.panOffset.x - last.deltaX, y: b.panOffset.y - last.deltaY } }));
-              }
-            });
-          }
+            if (croppingState || editingElement) { e.preventDefault(); return; }
+            e.preventDefault();
+            const { clientX, clientY, deltaX, deltaY, ctrlKey } = e;
+            wheelLastEventRef.current = { clientX, clientY, deltaX, deltaY, ctrlKey };
+            if (wheelRafRef.current == null) {
+                wheelRafRef.current = requestAnimationFrame(() => {
+                    wheelRafRef.current = null;
+                    const last = wheelLastEventRef.current;
+                    if (!last) return;
+                    if (last.ctrlKey || wheelAction === 'zoom') {
+                        const zoomFactor = 1.05;
+                        const oldZoom = zoom;
+                        const newZoom = last.deltaY < 0 ? oldZoom * zoomFactor : oldZoom / zoomFactor;
+                        const clampedZoom = Math.max(0.1, Math.min(newZoom, 10));
+                        const mousePoint = { x: last.clientX, y: last.clientY };
+                        const newPanX = mousePoint.x - (mousePoint.x - panOffset.x) * (clampedZoom / oldZoom);
+                        const newPanY = mousePoint.y - (mousePoint.y - panOffset.y) * (clampedZoom / oldZoom);
+                        updateActiveBoardSilent(b => ({ ...b, zoom: clampedZoom, panOffset: { x: newPanX, y: newPanY } }));
+                    } else {
+                        updateActiveBoardSilent(b => ({ ...b, panOffset: { x: b.panOffset.x - last.deltaX, y: b.panOffset.y - last.deltaY } }));
+                    }
+                });
+            }
         };
-    el.addEventListener('wheel', listener, { passive: false });
-  return () => { el.removeEventListener('wheel', listener as EventListener); };
-  }, [croppingState, editingElement, wheelAction, zoom, panOffset, updateActiveBoardSilent]);
+        el.addEventListener('wheel', listener, { passive: false });
+        return () => { el.removeEventListener('wheel', listener as EventListener); };
+    }, [croppingState, editingElement, wheelAction, zoom, panOffset, updateActiveBoardSilent]);
 
     const handleDeleteElement = (id: string) => {
         commitAction(prev => {
@@ -1228,10 +1234,10 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
         commitAction(prev => {
             const elementsToCopy = [elementToCopy, ...getDescendants(elementToCopy.id, prev)];
             const idMap = new Map<string, string>();
-            
-// FIX: Refactored element creation to use explicit switch cases for each element type.
-// This helps TypeScript correctly infer the return type of the map function as Element[],
-// preventing type errors caused by spreading a discriminated union.
+
+            // FIX: Refactored element creation to use explicit switch cases for each element type.
+            // This helps TypeScript correctly infer the return type of the map function as Element[],
+            // preventing type errors caused by spreading a discriminated union.
             const newElements: Element[] = elementsToCopy.map((el): Element => {
                 const newId = generateId();
                 idMap.set(el.id, newId);
@@ -1244,23 +1250,23 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
                     case 'arrow':
                         return { ...el, id: newId, points: [{ x: el.points[0].x + dx, y: el.points[0].y + dy }, { x: el.points[1].x + dx, y: el.points[1].y + dy }] as [Point, Point] };
                     case 'line':
-                         return { ...el, id: newId, points: [{ x: el.points[0].x + dx, y: el.points[0].y + dy }, { x: el.points[1].x + dx, y: el.points[1].y + dy }] as [Point, Point] };
+                        return { ...el, id: newId, points: [{ x: el.points[0].x + dx, y: el.points[0].y + dy }, { x: el.points[1].x + dx, y: el.points[1].y + dy }] as [Point, Point] };
                     case 'image':
                         return { ...el, id: newId, x: el.x + dx, y: el.y + dy };
                     case 'shape':
-                         return { ...el, id: newId, x: el.x + dx, y: el.y + dy };
+                        return { ...el, id: newId, x: el.x + dx, y: el.y + dy };
                     case 'text':
-                         return { ...el, id: newId, x: el.x + dx, y: el.y + dy };
+                        return { ...el, id: newId, x: el.x + dx, y: el.y + dy };
                     case 'group':
-                         return { ...el, id: newId, x: el.x + dx, y: el.y + dy };
+                        return { ...el, id: newId, x: el.x + dx, y: el.y + dy };
                     case 'video':
                         return { ...el, id: newId, x: el.x + dx, y: el.y + dy };
                 }
             });
-            
-// FIX: Refactored parentId assignment to use an explicit switch statement.
-// This ensures TypeScript can correctly track the types within the Element union
-// and avoids errors when returning the new array of elements.
+
+            // FIX: Refactored parentId assignment to use an explicit switch statement.
+            // This ensures TypeScript can correctly track the types within the Element union
+            // and avoids errors when returning the new array of elements.
             const finalNewElements: Element[] = newElements.map((el): Element => {
                 const parentId = el.parentId ? idMap.get(el.parentId) : undefined;
                 switch (el.type) {
@@ -1274,13 +1280,13 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
                     case 'video': return { ...el, parentId };
                 }
             });
-            
+
             setSelectedElementIds([idMap.get(elementToCopy.id)!]);
             return [...prev, ...finalNewElements];
         });
     };
-    
-     const handleDownloadImage = (element: ImageElement) => {
+
+    const handleDownloadImage = (element: ImageElement) => {
         const link = document.createElement('a');
         link.href = element.href;
         link.download = `canvas-image-${element.id}.${element.mimeType.split('/')[1] || 'png'}`;
@@ -1309,7 +1315,7 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
         const elementToCrop = elementsRef.current.find(el => el.id === elementId) as ImageElement;
 
         if (!elementToCrop) { handleCancelCrop(); return; }
-        
+
         const img = new Image();
         img.crossOrigin = 'anonymous';
         img.onload = () => {
@@ -1352,7 +1358,7 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
         img.onerror = () => { setError("Failed to load image for cropping."); handleCancelCrop(); }
         img.src = elementToCrop.href;
     };
-    
+
     useEffect(() => {
         if (editingElement && editingTextareaRef.current) {
             setTimeout(() => {
@@ -1363,20 +1369,20 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
             }, 0);
         }
     }, [editingElement]);
-    
+
     useEffect(() => {
         if (editingElement && editingTextareaRef.current) {
             const textarea = editingTextareaRef.current;
             textarea.style.height = 'auto';
             const newHeight = textarea.scrollHeight;
-            textarea.style.height = ''; 
+            textarea.style.height = '';
 
             const currentElement = elementsRef.current.find(el => el.id === editingElement.id);
             if (currentElement && currentElement.type === 'text' && currentElement.height !== newHeight) {
-                setElements(prev => prev.map(el => 
-                    el.id === editingElement.id && el.type === 'text' 
-                    ? { ...el, height: newHeight } 
-                    : el
+                setElements(prev => prev.map(el =>
+                    el.id === editingElement.id && el.type === 'text'
+                        ? { ...el, height: newHeight }
+                        : el
                 ), false);
             }
         }
@@ -1397,27 +1403,27 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
             try {
                 const selectedElements = elements.filter(el => selectedElementIds.includes(el.id));
                 const imageElement = selectedElements.find(el => el.type === 'image') as ImageElement | undefined;
-                
+
                 if (selectedElementIds.length > 1 || (selectedElementIds.length === 1 && !imageElement)) {
                     setError('For video generation, please select a single image or no elements.');
                     setIsLoading(false);
                     return;
                 }
-                
+
                 const { videoBlob, mimeType } = await generateVideo(
-                    prompt, 
-                    videoAspectRatio, 
-                    (message) => setProgressMessage(message), 
+                    prompt,
+                    videoAspectRatio,
+                    (message) => setProgressMessage(message),
                     imageElement ? { href: imageElement.href, mimeType: imageElement.mimeType } : undefined
                 );
 
                 setProgressMessage('Processing video...');
                 const videoUrl = URL.createObjectURL(videoBlob);
                 const video = document.createElement('video');
-                
+
                 video.onloadedmetadata = () => {
                     if (!svgRef.current) return;
-                    
+
                     let newWidth = video.videoWidth;
                     let newHeight = video.videoHeight;
                     const MAX_DIM = 800;
@@ -1456,14 +1462,14 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
                     setError('Could not load generated video metadata.');
                     setIsLoading(false);
                 };
-                
+
                 video.src = videoUrl;
 
             } catch (err) {
-                 const error = err as Error; 
-                 setError(`Video generation failed: ${error.message}`); 
-                 console.error("Video generation failed:", error);
-                 setIsLoading(false);
+                const error = err as Error;
+                setError(`Video generation failed: ${error.message}`);
+                console.error("Video generation failed:", error);
+                setIsLoading(false);
             }
             return;
         }
@@ -1487,34 +1493,34 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
                         [{ href: baseImage.href, mimeType: baseImage.mimeType }],
                         { imageSize, mask: { href: maskData.href, mimeType: maskData.mimeType } }
                     );
-                    
+
                     if (result.newImageBase64 && result.newImageMimeType) {
                         const { newImageBase64, newImageMimeType } = result;
 
-                    loadImageWithFallback(newImageBase64, newImageMimeType).then(({ img, href }) => {
-                        const maskPathIds = new Set(maskPaths.map(p => p.id));
-                        commitAction(prev => 
-                            prev.map(el => {
-                                if (el.id === baseImage.id && el.type === 'image') {
-                                    return {
-                                        ...el,
-                                        href,
-                                        width: img.width,
-                                        height: img.height,
-                                    };
-                                }
-                                return el;
-                            }).filter(el => !maskPathIds.has(el.id))
-                        );
-                        setSelectedElementIds([baseImage.id]);
-                    }).catch(() => setError('Failed to load the generated image.'));
+                        loadImageWithFallback(newImageBase64, newImageMimeType).then(({ img, href }) => {
+                            const maskPathIds = new Set(maskPaths.map(p => p.id));
+                            commitAction(prev =>
+                                prev.map(el => {
+                                    if (el.id === baseImage.id && el.type === 'image') {
+                                        return {
+                                            ...el,
+                                            href,
+                                            width: img.width,
+                                            height: img.height,
+                                        };
+                                    }
+                                    return el;
+                                }).filter(el => !maskPathIds.has(el.id))
+                            );
+                            setSelectedElementIds([baseImage.id]);
+                        }).catch(() => setError('Failed to load the generated image.'));
 
                     } else {
                         setError(result.textResponse || 'Inpainting failed to produce an image.');
                     }
                     return; // End execution for inpainting path
                 }
-                
+
                 // Regular edit/combine logic
                 const imagePromises = selectedElements.map(el => {
                     if (el.type === 'image') return Promise.resolve({ href: el.href, mimeType: el.mimeType });
@@ -1530,7 +1536,7 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
 
                 if (result.newImageBase64 && result.newImageMimeType) {
                     const { newImageBase64, newImageMimeType } = result;
-                    
+
                     loadImageWithFallback(newImageBase64, newImageMimeType).then(({ img, href }) => {
                         let minX = Infinity, minY = Infinity, maxX = -Infinity;
                         selectedElements.forEach(el => {
@@ -1541,7 +1547,7 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
                         });
                         const x = maxX + 20;
                         const y = minY;
-                        
+
                         const newImage: ImageElement = {
                             id: generateId(), type: 'image', x, y, name: 'Generated Image',
                             width: img.width, height: img.height,
@@ -1557,19 +1563,24 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
             } else {
                 // Generate from scratch
                 let aspectRatio: string | undefined = undefined;
-                if (svgRef.current) {
+                if (imageAspectRatio && imageAspectRatio !== 'auto') {
+                    aspectRatio = imageAspectRatio;
+                } else if (svgRef.current) {
                     const b = svgRef.current.getBoundingClientRect();
                     const w = Math.max(1, Math.floor(b.width));
                     const h = Math.max(1, Math.floor(b.height));
                     const r = w / h;
                     const list = [
                         { ar: '1:1', v: 1 },
-                        { ar: '16:9', v: 16/9 },
-                        { ar: '4:3', v: 4/3 },
-                        { ar: '3:2', v: 3/2 },
-                        { ar: '2:3', v: 2/3 },
-                        { ar: '3:4', v: 3/4 },
-                        { ar: '9:16', v: 9/16 },
+                        { ar: '16:9', v: 16 / 9 },
+                        { ar: '4:3', v: 4 / 3 },
+                        { ar: '3:2', v: 3 / 2 },
+                        { ar: '2:3', v: 2 / 3 },
+                        { ar: '3:4', v: 3 / 4 },
+                        { ar: '5:4', v: 5 / 4 },
+                        { ar: '4:5', v: 4 / 5 },
+                        { ar: '9:16', v: 9 / 16 },
+                        { ar: '21:9', v: 21 / 9 },
                     ];
                     let best = list[0];
                     let bestDiff = Math.abs(r - best.v);
@@ -1583,7 +1594,7 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
 
                 if (result.newImageBase64 && result.newImageMimeType) {
                     const { newImageBase64, newImageMimeType } = result;
-                    
+
                     loadImageWithFallback(newImageBase64, newImageMimeType).then(({ img, href }) => {
                         if (!svgRef.current) return;
                         const svgBounds = svgRef.current.getBoundingClientRect();
@@ -1591,7 +1602,7 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
                         const canvasPoint = getCanvasPoint(screenCenter.x, screenCenter.y);
                         const x = canvasPoint.x - (img.width / 2);
                         const y = canvasPoint.y - (img.height / 2);
-                        
+
                         const newImage: ImageElement = {
                             id: generateId(), type: 'image', x, y, name: 'Generated Image',
                             width: img.width, height: img.height,
@@ -1600,38 +1611,38 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
                         commitAction(prev => [...prev, newImage]);
                         setSelectedElementIds([newImage.id]);
                     }).catch(() => setError('Failed to load the generated image.'));
-                } else { 
-                    setError(result.textResponse || 'Generation failed to produce an image.'); 
+                } else {
+                    setError(result.textResponse || 'Generation failed to produce an image.');
                 }
             }
         } catch (err) {
-            const error = err as Error; 
+            const error = err as Error;
             let friendlyMessage = `An error occurred during generation: ${error.message}`;
 
             if (error.message && (error.message.includes('429') || error.message.toUpperCase().includes('RESOURCE_EXHAUSTED'))) {
                 friendlyMessage = "API quota exceeded. Please check your Google AI Studio plan and billing details, or try again later.";
             }
 
-            setError(friendlyMessage); 
+            setError(friendlyMessage);
             console.error("Generation failed:", error);
-        } finally { 
-            setIsLoading(false); 
+        } finally {
+            setIsLoading(false);
         }
     };
-    
+
     const handleDragOver = useCallback((e: React.DragEvent) => { e.preventDefault(); }, []);
     const handleDrop = useCallback((e: React.DragEvent) => { e.preventDefault(); if (e.dataTransfer.files && e.dataTransfer.files[0]) { handleAddImageElement(e.dataTransfer.files[0]); } }, [handleAddImageElement]);
 
     const handlePropertyChange = (elementId: string, updates: Partial<Element>) => {
         commitAction(prev => prev.map(el => {
             if (el.id === elementId) {
-                 return { ...el, ...updates };
+                return { ...el, ...updates };
             }
             return el;
         }));
     };
 
-     const handleLayerAction = (elementId: string, action: 'front' | 'back' | 'forward' | 'backward') => {
+    const handleLayerAction = (elementId: string, action: 'front' | 'back' | 'forward' | 'backward') => {
         commitAction(prev => {
             const elementsCopy = [...prev];
             const index = elementsCopy.findIndex(el => el.id === elementId);
@@ -1654,7 +1665,7 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
         });
         setContextMenu(null);
     };
-    
+
     const handleRasterizeSelection = async () => {
         const elementsToRasterize = elements.filter(
             el => selectedElementIds.includes(el.id) && el.type !== 'image' && el.type !== 'video'
@@ -1673,9 +1684,9 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
                 minX = Math.min(minX, bounds.x);
                 minY = Math.min(minY, bounds.y);
             });
-            
+
             const { href, mimeType, width, height } = await rasterizeElements(elementsToRasterize);
-            
+
             const newImage: ImageElement = {
                 id: generateId(),
                 type: 'image', name: 'Rasterized Image',
@@ -1708,7 +1719,7 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
     const handleGroup = () => {
         const selectedElements = elements.filter(el => selectedElementIds.includes(el.id));
         if (selectedElements.length < 2) return;
-        
+
         const bounds = getSelectionBounds(selectedElementIds);
         const newGroupId = generateId();
 
@@ -1723,7 +1734,7 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
         };
 
         commitAction(prev => {
-            const updatedElements = prev.map(el => 
+            const updatedElements = prev.map(el =>
                 selectedElementIds.includes(el.id) ? { ...el, parentId: newGroupId } : el
             );
             return [...updatedElements, newGroup];
@@ -1789,15 +1800,15 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
     const handleAlignSelection = (alignment: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom') => {
         const selectedElements = elementsRef.current.filter(el => selectedElementIds.includes(el.id));
         if (selectedElements.length < 2) return;
-    
+
         const selectionBounds = getSelectionBounds(selectedElementIds);
         const { x: minX, y: minY, width, height } = selectionBounds;
         const maxX = minX + width;
         const maxY = minY + height;
-    
+
         const selectionCenterX = minX + width / 2;
         const selectionCenterY = minY + height / 2;
-    
+
         commitAction(prev => {
             const elementsToUpdate = new Map<string, { dx: number; dy: number }>();
 
@@ -1805,16 +1816,16 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
                 const bounds = getElementBounds(el, prev);
                 let dx = 0;
                 let dy = 0;
-        
+
                 switch (alignment) {
-                    case 'left':   dx = minX - bounds.x; break;
+                    case 'left': dx = minX - bounds.x; break;
                     case 'center': dx = selectionCenterX - (bounds.x + bounds.width / 2); break;
-                    case 'right':  dx = maxX - (bounds.x + bounds.width); break;
-                    case 'top':    dy = minY - bounds.y; break;
+                    case 'right': dx = maxX - (bounds.x + bounds.width); break;
+                    case 'top': dy = minY - bounds.y; break;
                     case 'middle': dy = selectionCenterY - (bounds.y + bounds.height / 2); break;
                     case 'bottom': dy = maxY - (bounds.y + bounds.height); break;
                 }
-        
+
                 if (dx !== 0 || dy !== 0) {
                     const elementsToMove = [el, ...getDescendants(el.id, prev)];
                     elementsToMove.forEach(elementToMove => {
@@ -1831,7 +1842,7 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
                 }
 
                 const { dx, dy } = delta;
-                
+
                 switch (el.type) {
                     case 'image':
                     case 'shape':
@@ -1898,7 +1909,7 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
         });
         setActiveBoardId(newBoard.id);
     };
-    
+
     const handleDeleteBoard = (boardId: string) => {
         setBoards(prev => {
             if (prev.length <= 1) return prev;
@@ -1911,7 +1922,7 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
             return next;
         });
     };
-    
+
     const handleRenameBoard = (boardId: string, name: string) => {
         setBoards(prev => {
             const next = prev.map(b => b.id === boardId ? { ...b, name } : b);
@@ -1925,14 +1936,14 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
     };
 
     const generateBoardThumbnail = useCallback((elements: Element[], bgColor: string): string => {
-         const THUMB_WIDTH = 120;
-         const THUMB_HEIGHT = 80;
+        const THUMB_WIDTH = 120;
+        const THUMB_HEIGHT = 80;
 
         if (elements.length === 0) {
             const emptySvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${THUMB_WIDTH}" height="${THUMB_HEIGHT}"><rect width="100%" height="100%" fill="${bgColor}" /></svg>`;
             return `data:image/svg+xml;base64,${btoa(emptySvg)}`;
         }
-        
+
         let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
         elements.forEach(el => {
             const bounds = getElementBounds(el, elements);
@@ -1955,15 +1966,15 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
         const dy = (THUMB_HEIGHT - contentHeight * scale) / 2 - minY * scale;
 
         const svgContent = elements.map(el => {
-             if (el.type === 'path') {
+            if (el.type === 'path') {
                 const pathData = el.points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
                 return `<path d="${pathData}" stroke="${el.strokeColor}" stroke-width="${el.strokeWidth}" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="${el.strokeOpacity || 1}" />`;
-             }
-             if (el.type === 'image') {
-                 return `<image href="${el.href}" x="${el.x}" y="${el.y}" width="${el.width}" height="${el.height}" opacity="${typeof el.opacity === 'number' ? el.opacity / 100 : 1}" />`;
-             }
-             // Add other element types for more accurate thumbnails if needed
-             return '';
+            }
+            if (el.type === 'image') {
+                return `<image href="${el.href}" x="${el.x}" y="${el.y}" width="${el.width}" height="${el.height}" opacity="${typeof el.opacity === 'number' ? el.opacity / 100 : 1}" />`;
+            }
+            // Add other element types for more accurate thumbnails if needed
+            return '';
         }).join('');
 
         const fullSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${THUMB_WIDTH}" height="${THUMB_HEIGHT}"><rect width="100%" height="100%" fill="${bgColor}" /><g transform="translate(${dx} ${dy}) scale(${scale})">${svgContent}</g></svg>`;
@@ -1971,7 +1982,7 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
     }, []);
 
     return (
-            <div className="w-screen h-screen flex flex-col font-sans podui-theme" onDragOver={handleDragOver} onDrop={handleDrop}>
+        <div className="w-screen h-screen flex flex-col font-sans podui-theme" onDragOver={handleDragOver} onDrop={handleDrop}>
             {isLoading && <Loader progressMessage={progressMessage} />}
             {error && (
                 <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md shadow-lg flex items-center max-w-lg">
@@ -1999,7 +2010,7 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
                 onImportHistoryBoard={(snapshot) => {
                     const pad = (x: number) => String(x).padStart(2, '0');
                     const d = new Date(snapshot.savedAt);
-                    const code = `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+                    const code = `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
                     const newBoard = {
                         id: generateId(),
                         name: code,
@@ -2019,10 +2030,10 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
                     setIsBoardPanelOpen(false)
                 }}
             />
-            <CanvasSettings 
-                isOpen={isSettingsPanelOpen} 
-                onClose={() => setIsSettingsPanelOpen(false)} 
-                canvasBackgroundColor={canvasBackgroundColor} 
+            <CanvasSettings
+                isOpen={isSettingsPanelOpen}
+                onClose={() => setIsSettingsPanelOpen(false)}
+                canvasBackgroundColor={canvasBackgroundColor}
                 onCanvasBackgroundColorChange={handleCanvasBackgroundColorChange}
                 language={language}
                 setLanguage={setLanguage}
@@ -2039,8 +2050,6 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
                 setSystemToken={setSystemToken}
                 userId={userId}
                 setUserId={setUserId}
-                imageModel={imageModel}
-                setImageModel={setImageModel}
             />
             <Toolbar
                 t={t}
@@ -2062,7 +2071,7 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
                 canUndo={historyIndex > 0}
                 canRedo={historyIndex < history.length - 1}
             />
-             <LayerPanel
+            <LayerPanel
                 isOpen={isLayerPanelOpen}
                 onClose={() => setIsLayerPanelOpen(false)}
                 elements={elements}
@@ -2084,10 +2093,10 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
                             newElements.push(draggedItem); // Fallback
                             return newElements;
                         }
-                        
+
                         const finalIndex = position === 'before' ? targetIndex : targetIndex + 1;
                         newElements.splice(finalIndex, 0, draggedItem);
-                        
+
                         return newElements;
                     });
                 }}
@@ -2105,9 +2114,9 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
                 >
                     <defs>
                         <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
-                            <circle cx="1" cy="1" r="1" style={{ fill: 'var(--grid-dot-color)', opacity: 'var(--grid-dot-opacity)' }}/>
+                            <circle cx="1" cy="1" r="1" style={{ fill: 'var(--grid-dot-color)', opacity: 'var(--grid-dot-opacity)' }} />
                         </pattern>
-                         {elements.map(el => {
+                        {elements.map(el => {
                             if (el.type === 'image' && el.borderRadius && el.borderRadius > 0) {
                                 const clipPathId = `clip-${el.id}`;
                                 return (
@@ -2125,8 +2134,8 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
                         })}
                     </defs>
                     <g transform={`translate(${panOffset.x}, ${panOffset.y}) scale(${zoom})`}>
-                        <rect x={-panOffset.x/zoom} y={-panOffset.y/zoom} width={`calc(100% / ${zoom})`} height={`calc(100% / ${zoom})`} fill="url(#grid)" />
-                        
+                        <rect x={-panOffset.x / zoom} y={-panOffset.y / zoom} width={`calc(100% / ${zoom})`} height={`calc(100% / ${zoom})`} fill="url(#grid)" />
+
                         {elements.map(el => {
                             if (!isElementVisible(el, elements)) return null;
 
@@ -2135,8 +2144,8 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
 
                             if (isSelected && !croppingState) {
                                 if (selectedElementIds.length > 1 || el.type === 'path' || el.type === 'arrow' || el.type === 'line' || el.type === 'group') {
-                                     const bounds = getElementBounds(el, elements);
-                                     selectionComponent = <rect x={bounds.x} y={bounds.y} width={bounds.width} height={bounds.height} fill="none" stroke="rgb(59 130 246)" strokeWidth={2/zoom} strokeDasharray={`${6/zoom} ${4/zoom}`} pointerEvents="none" />
+                                    const bounds = getElementBounds(el, elements);
+                                    selectionComponent = <rect x={bounds.x} y={bounds.y} width={bounds.width} height={bounds.height} fill="none" stroke="rgb(59 130 246)" strokeWidth={2 / zoom} strokeDasharray={`${6 / zoom} ${4 / zoom}`} pointerEvents="none" />
                                 } else if ((el.type === 'image' || el.type === 'shape' || el.type === 'text' || el.type === 'video')) {
                                     const handleSize = 8 / zoom;
                                     const handles = [
@@ -2144,13 +2153,13 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
                                         { name: 'ml', x: el.x, y: el.y + el.height / 2, cursor: 'ew-resize' }, { name: 'mr', x: el.x + el.width, y: el.y + el.height / 2, cursor: 'ew-resize' },
                                         { name: 'bl', x: el.x, y: el.y + el.height, cursor: 'nesw-resize' }, { name: 'bm', x: el.x + el.width / 2, y: el.y + el.height, cursor: 'ns-resize' }, { name: 'br', x: el.x + el.width, y: el.y + el.height, cursor: 'nwse-resize' },
                                     ];
-                                     selectionComponent = <g>
+                                    selectionComponent = <g>
                                         <rect x={el.x} y={el.y} width={el.width} height={el.height} fill="none" stroke="rgb(59 130 246)" strokeWidth={2 / zoom} pointerEvents="none" />
                                         {handles.map(h => <rect key={h.name} data-handle={h.name} x={h.x - handleSize / 2} y={h.y - handleSize / 2} width={handleSize} height={handleSize} fill="white" stroke="#3b82f6" strokeWidth={1 / zoom} style={{ cursor: h.cursor }} />)}
                                     </g>;
                                 }
                             }
-                           
+
                             if (el.type === 'path') {
                                 const pathData = el.points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
                                 return <g key={el.id} data-id={el.id} className="cursor-pointer"><path d={pathData} stroke={el.strokeColor} strokeWidth={el.strokeWidth / zoom} fill="none" strokeLinecap="round" strokeLinejoin="round" pointerEvents="stroke" strokeOpacity={el.strokeOpacity} />{selectionComponent}</g>;
@@ -2200,16 +2209,16 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
                                     </g>
                                 )
                             }
-                             if (el.type === 'shape') {
+                            if (el.type === 'shape') {
                                 let shapeJsx;
                                 if (el.shapeType === 'rectangle') shapeJsx = <rect width={el.width} height={el.height} rx={el.borderRadius || 0} ry={el.borderRadius || 0} />
-                                else if (el.shapeType === 'circle') shapeJsx = <ellipse cx={el.width/2} cy={el.height/2} rx={el.width/2} ry={el.height/2} />
-                                else if (el.shapeType === 'triangle') shapeJsx = <polygon points={`${el.width/2},0 0,${el.height} ${el.width},${el.height}`} />
+                                else if (el.shapeType === 'circle') shapeJsx = <ellipse cx={el.width / 2} cy={el.height / 2} rx={el.width / 2} ry={el.height / 2} />
+                                else if (el.shapeType === 'triangle') shapeJsx = <polygon points={`${el.width / 2},0 0,${el.height} ${el.width},${el.height}`} />
                                 return (
-                                     <g key={el.id} data-id={el.id} transform={`translate(${el.x}, ${el.y})`} className="cursor-pointer">
-                                        {shapeJsx && React.cloneElement(shapeJsx, { 
-                                            fill: el.fillColor, 
-                                            stroke: el.strokeColor, 
+                                    <g key={el.id} data-id={el.id} transform={`translate(${el.x}, ${el.y})`} className="cursor-pointer">
+                                        {shapeJsx && React.cloneElement(shapeJsx, {
+                                            fill: el.fillColor,
+                                            stroke: el.strokeColor,
                                             strokeWidth: el.strokeWidth / zoom,
                                             strokeDasharray: el.strokeDashArray ? el.strokeDashArray.join(' ') : 'none'
                                         })}
@@ -2222,12 +2231,12 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
                                 const clipPathId = `clip-${el.id}`;
                                 return (
                                     <g key={el.id} data-id={el.id}>
-                                        <image 
-                                            transform={`translate(${el.x}, ${el.y})`} 
-                                            href={el.href} 
-                                            width={el.width} 
-                                            height={el.height} 
-                                            className={croppingState && croppingState.elementId !== el.id ? 'opacity-30' : ''} 
+                                        <image
+                                            transform={`translate(${el.x}, ${el.y})`}
+                                            href={el.href}
+                                            width={el.width}
+                                            height={el.height}
+                                            className={croppingState && croppingState.elementId !== el.id ? 'opacity-30' : ''}
                                             opacity={typeof el.opacity === 'number' ? el.opacity / 100 : 1}
                                             clipPath={hasBorderRadius ? `url(#${clipPathId})` : undefined}
                                         />
@@ -2235,13 +2244,13 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
                                     </g>
                                 );
                             }
-                             if (el.type === 'video') {
+                            if (el.type === 'video') {
                                 return (
                                     <g key={el.id} data-id={el.id}>
                                         <foreignObject x={el.x} y={el.y} width={el.width} height={el.height}>
-                                            <video 
-                                                src={el.href} 
-                                                controls 
+                                            <video
+                                                src={el.href}
+                                                controls
                                                 style={{ width: '100%', height: '100%', borderRadius: '8px' }}
                                                 className={croppingState ? 'opacity-30' : ''}
                                             ></video>
@@ -2250,18 +2259,18 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
                                     </g>
                                 );
                             }
-                             if (el.type === 'group') {
+                            if (el.type === 'group') {
                                 return <g key={el.id} data-id={el.id}>{selectionComponent}</g>
-                             }
+                            }
                             return null;
                         })}
 
                         {lassoPath && (
-                            <path d={lassoPath.map((p, i) => i === 0 ? `M ${p.x} ${p.y}` : `L ${p.x} ${p.y}`).join(' ')} stroke="rgb(59 130 246)" strokeWidth={1 / zoom} strokeDasharray={`${4/zoom} ${4/zoom}`} fill="rgba(59, 130, 246, 0.1)" />
+                            <path d={lassoPath.map((p, i) => i === 0 ? `M ${p.x} ${p.y}` : `L ${p.x} ${p.y}`).join(' ')} stroke="rgb(59 130 246)" strokeWidth={1 / zoom} strokeDasharray={`${4 / zoom} ${4 / zoom}`} fill="rgba(59, 130, 246, 0.1)" />
                         )}
-                        
+
                         {alignmentGuides.map((guide, i) => (
-                             <line key={i} x1={guide.type === 'v' ? guide.position : guide.start} y1={guide.type === 'h' ? guide.position : guide.start} x2={guide.type === 'v' ? guide.position : guide.end} y2={guide.type === 'h' ? guide.position : guide.end} stroke="red" strokeWidth={1/zoom} strokeDasharray={`${4/zoom} ${2/zoom}`} />
+                            <line key={i} x1={guide.type === 'v' ? guide.position : guide.start} y1={guide.type === 'h' ? guide.position : guide.start} x2={guide.type === 'v' ? guide.position : guide.end} y2={guide.type === 'h' ? guide.position : guide.end} stroke="red" strokeWidth={1 / zoom} strokeDasharray={`${4 / zoom} ${2 / zoom}`} />
                         ))}
 
                         {selectedElementIds.length > 0 && !croppingState && !editingElement && (() => {
@@ -2269,10 +2278,10 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
                                 const bounds = getSelectionBounds(selectedElementIds);
                                 const toolbarScreenWidth = 280;
                                 const toolbarScreenHeight = 56;
-                                
+
                                 const toolbarCanvasWidth = toolbarScreenWidth / zoom;
                                 const toolbarCanvasHeight = toolbarScreenHeight / zoom;
-                                
+
                                 const x = bounds.x + bounds.width / 2 - (toolbarCanvasWidth / 2);
                                 const y = bounds.y - toolbarCanvasHeight - (10 / zoom);
 
@@ -2310,13 +2319,13 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
                                 if (element.type === 'group') toolbarScreenWidth = 80;
 
                                 const toolbarScreenHeight = 56;
-                                
+
                                 const toolbarCanvasWidth = toolbarScreenWidth / zoom;
                                 const toolbarCanvasHeight = toolbarScreenHeight / zoom;
-                                
+
                                 const x = bounds.x + bounds.width / 2 - (toolbarCanvasWidth / 2);
                                 const y = bounds.y - toolbarCanvasHeight - (10 / zoom);
-                                
+
                                 const toolbar = <div
                                     style={{ transform: `scale(${1 / zoom})`, transformOrigin: 'top left', width: `${toolbarScreenWidth}px`, height: `${toolbarScreenHeight}px` }}
                                     onMouseDown={(e) => e.stopPropagation()}
@@ -2330,14 +2339,14 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
                                             <>
                                                 <div className="h-6 w-px bg-gray-200"></div>
                                                 <div title={t('contextMenu.opacity')} className="flex items-center space-x-1 p-1">
-                                                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-600"><circle cx="12" cy="12" r="9"/></svg>
-                                                    <input 
-                                                        type="range" 
-                                                        min="0" 
-                                                        max={100} 
-                                                        value={typeof element.opacity === 'number' ? element.opacity : 100} 
-                                                        onChange={e => handlePropertyChange(element.id, { opacity: parseInt(e.target.value, 10) })} 
-                                                        className="w-16" 
+                                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-600"><circle cx="12" cy="12" r="9" /></svg>
+                                                    <input
+                                                        type="range"
+                                                        min="0"
+                                                        max={100}
+                                                        value={typeof element.opacity === 'number' ? element.opacity : 100}
+                                                        onChange={e => handlePropertyChange(element.id, { opacity: parseInt(e.target.value, 10) })}
+                                                        className="w-16"
                                                     />
                                                     <input
                                                         type="number"
@@ -2369,18 +2378,18 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
                                                 </div>
                                             </>
                                         )}
-                                         {element.type === 'shape' && element.shapeType === 'rectangle' && (
+                                        {element.type === 'shape' && element.shapeType === 'rectangle' && (
                                             <>
                                                 <div className="h-6 w-px bg-gray-200"></div>
                                                 <div title={t('contextMenu.borderRadius')} className="flex items-center space-x-1 p-1">
-                                                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-600"><path d="M10 3H5a2 2 0 0 0-2 2v5"/></svg>
-                                                    <input 
-                                                        type="range" 
-                                                        min="0" 
-                                                        max={Math.min(element.width, element.height) / 2} 
-                                                        value={element.borderRadius || 0} 
-                                                        onChange={e => handlePropertyChange(element.id, { borderRadius: parseInt(e.target.value, 10) })} 
-                                                        className="w-16" 
+                                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-600"><path d="M10 3H5a2 2 0 0 0-2 2v5" /></svg>
+                                                    <input
+                                                        type="range"
+                                                        min="0"
+                                                        max={Math.min(element.width, element.height) / 2}
+                                                        value={element.borderRadius || 0}
+                                                        onChange={e => handlePropertyChange(element.id, { borderRadius: parseInt(e.target.value, 10) })}
+                                                        className="w-16"
                                                     />
                                                     <input
                                                         type="number"
@@ -2401,7 +2410,7 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
                                         <button title={t('contextMenu.delete')} onClick={() => handleDeleteElement(element.id)} className="p-2 rounded hover:bg-red-100 hover:text-red-600 flex items-center justify-center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
                                     </div>
                                 </div>;
-                                
+
                                 return (
                                     <foreignObject x={x} y={y} width={toolbarCanvasWidth} height={toolbarCanvasHeight} style={{ overflow: 'visible' }}>
                                         {toolbar}
@@ -2411,13 +2420,13 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
                             return null;
                         })()}
                         {editingElement && (() => {
-                             const element = elements.find(el => el.id === editingElement.id) as TextElement;
-                             if (!element) return null;
-                             return <foreignObject 
+                            const element = elements.find(el => el.id === editingElement.id) as TextElement;
+                            if (!element) return null;
+                            return <foreignObject
                                 x={element.x} y={element.y} width={element.width} height={element.height}
                                 onMouseDown={(e) => e.stopPropagation()}
-                             >
-                                 <textarea
+                            >
+                                <textarea
                                     ref={editingTextareaRef}
                                     value={editingElement.text}
                                     onChange={(e) => setEditingElement({ ...editingElement, text: e.target.value })}
@@ -2428,13 +2437,13 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
                                         fontSize: element.fontSize, color: element.fontColor,
                                         overflow: 'hidden'
                                     }}
-                                 />
-                             </foreignObject>
+                                />
+                            </foreignObject>
                         })()}
                         {croppingState && (
-                             <g>
+                            <g>
                                 <path
-                                    d={`M ${-panOffset.x/zoom},${-panOffset.y/zoom} H ${window.innerWidth/zoom - panOffset.x/zoom} V ${window.innerHeight/zoom - panOffset.y/zoom} H ${-panOffset.x/zoom} Z M ${croppingState.cropBox.x},${croppingState.cropBox.y} v ${croppingState.cropBox.height} h ${croppingState.cropBox.width} v ${-croppingState.cropBox.height} Z`}
+                                    d={`M ${-panOffset.x / zoom},${-panOffset.y / zoom} H ${window.innerWidth / zoom - panOffset.x / zoom} V ${window.innerHeight / zoom - panOffset.y / zoom} H ${-panOffset.x / zoom} Z M ${croppingState.cropBox.x},${croppingState.cropBox.y} v ${croppingState.cropBox.height} h ${croppingState.cropBox.width} v ${-croppingState.cropBox.height} Z`}
                                     fill="rgba(0,0,0,0.5)"
                                     fillRule="evenodd"
                                     pointerEvents="none"
@@ -2447,12 +2456,12 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
                                         { name: 'tl', x, y, cursor: 'nwse-resize' }, { name: 'tr', x: x + width, y, cursor: 'nesw-resize' },
                                         { name: 'bl', x, y: y + height, cursor: 'nesw-resize' }, { name: 'br', x: x + width, y: y + height, cursor: 'nwse-resize' },
                                     ];
-                                    return handles.map(h => <rect key={h.name} data-handle={h.name} x={h.x - handleSize/2} y={h.y - handleSize/2} width={handleSize} height={handleSize} fill="white" stroke="#3b82f6" strokeWidth={1/zoom} style={{ cursor: h.cursor }}/>)
+                                    return handles.map(h => <rect key={h.name} data-handle={h.name} x={h.x - handleSize / 2} y={h.y - handleSize / 2} width={handleSize} height={handleSize} fill="white" stroke="#3b82f6" strokeWidth={1 / zoom} style={{ cursor: h.cursor }} />)
                                 })()}
                             </g>
                         )}
                         {selectionBox && (
-                             <rect
+                            <rect
                                 x={selectionBox.x}
                                 y={selectionBox.y}
                                 width={selectionBox.width}
@@ -2464,18 +2473,18 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
                         )}
                     </g>
                 </svg>
-                 {contextMenu && (() => {
+                {contextMenu && (() => {
                     const hasDrawableSelection = elements.some(el => selectedElementIds.includes(el.id) && el.type !== 'image' && el.type !== 'video');
                     const isGroupable = selectedElementIds.length > 1;
                     const isUngroupable = selectedElementIds.length === 1 && elements.find(el => el.id === selectedElementIds[0])?.type === 'group';
 
                     return (
                         <div style={{ top: contextMenu.y, left: contextMenu.x }} className="absolute z-30 bg-white rounded-md shadow-lg border border-gray-200 text-sm py-1 text-gray-800" onContextMenu={e => e.stopPropagation()}>
-                           {isGroupable && <button onClick={handleGroup} className="block w-full text-left px-4 py-1.5 hover:bg-gray-100">{t('contextMenu.group')}</button>}
-                           {isGroupable && <button onClick={() => handleMergeLayers('selected')} className="block w-full text-left px-4 py-1.5 hover:bg-gray-100">{t('contextMenu.mergeLayers')}</button>}
-                           {isUngroupable && <button onClick={handleUngroup} className="block w-full text-left px-4 py-1.5 hover:bg-gray-100">{t('contextMenu.ungroup')}</button>}
-                           {(isGroupable || isUngroupable) && <div className="border-t border-gray-100 my-1"></div>}
-                            
+                            {isGroupable && <button onClick={handleGroup} className="block w-full text-left px-4 py-1.5 hover:bg-gray-100">{t('contextMenu.group')}</button>}
+                            {isGroupable && <button onClick={() => handleMergeLayers('selected')} className="block w-full text-left px-4 py-1.5 hover:bg-gray-100">{t('contextMenu.mergeLayers')}</button>}
+                            {isUngroupable && <button onClick={handleUngroup} className="block w-full text-left px-4 py-1.5 hover:bg-gray-100">{t('contextMenu.ungroup')}</button>}
+                            {(isGroupable || isUngroupable) && <div className="border-t border-gray-100 my-1"></div>}
+
                             {contextMenu.elementId && (<>
                                 <button onClick={() => handleLayerAction(contextMenu.elementId!, 'forward')} className="block w-full text-left px-4 py-1.5 hover:bg-gray-100">{t('contextMenu.bringForward')}</button>
                                 <button onClick={() => handleLayerAction(contextMenu.elementId!, 'backward')} className="block w-full text-left px-4 py-1.5 hover:bg-gray-100">{t('contextMenu.sendBackward')}</button>
@@ -2483,7 +2492,7 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
                                 <button onClick={() => handleLayerAction(contextMenu.elementId!, 'front')} className="block w-full text-left px-4 py-1.5 hover:bg-gray-100">{t('contextMenu.bringToFront')}</button>
                                 <button onClick={() => handleLayerAction(contextMenu.elementId!, 'back')} className="block w-full text-left px-4 py-1.5 hover:bg-gray-100">{t('contextMenu.sendToBack')}</button>
                             </>)}
-                            
+
                             {hasDrawableSelection && (
                                 <>
                                     <div className="border-t border-gray-100 my-1"></div>
@@ -2494,17 +2503,16 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
                     );
                 })()}
             </div>
-            {/* Measure PromptBar to position BananaSidebar responsively */}
-            {!croppingState && <PromptBar 
-                t={t}
-                prompt={prompt} 
-                setPrompt={setPrompt} 
-                onGenerate={handleGenerate} 
-                isLoading={isLoading} 
-                isSelectionActive={isSelectionActive} 
+            <PromptBar
+                t={t as (key: string, ...args: unknown[]) => string}
+                prompt={prompt}
+                setPrompt={setPrompt}
+                onGenerate={handleGenerate}
+                isLoading={isLoading}
+                isSelectionActive={selectedElementIds.length > 0}
                 selectedElementCount={selectedElementIds.length}
-                onAddUserEffect={handleAddUserEffect}
                 userEffects={userEffects}
+                onAddUserEffect={handleAddUserEffect}
                 onDeleteUserEffect={handleDeleteUserEffect}
                 generationMode={generationMode}
                 setGenerationMode={setGenerationMode}
@@ -2513,67 +2521,11 @@ const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', s
                 activeImageModel={imageModel}
                 imageSize={imageSize}
                 setImageSize={setImageSize}
-                containerRef={promptBarRef}
-            />}
+                imageAspectRatio={imageAspectRatio}
+                setImageAspectRatio={setImageAspectRatio}
+                setImageModel={setImageModel}
+            />
         </div>
     );
 };
-
 export default App;
-    const loadImageWithFallback = (b64: string, mime: string): Promise<{ img: HTMLImageElement; href: string }> => {
-        return new Promise((resolve, reject) => {
-            const img = new Image();
-            const sanitize = (input: string) => {
-                const raw = input.includes('base64,') ? input.split('base64,')[1] : input.replace(/^data:.*?;base64,?/i, '');
-                let s = raw.replace(/\s/g, '').replace(/-/g, '+').replace(/_/g, '/');
-                const pad = s.length % 4;
-                if (pad === 2) s += '==';
-                else if (pad === 3) s += '=';
-                else if (pad !== 0) { while (s.length % 4 !== 0) s += '='; }
-                return s;
-            };
-            const safeB64 = sanitize(b64);
-            const safeMime = mime && mime.startsWith('image/') ? mime : 'image/png';
-            try {
-                const binary = atob(safeB64);
-                const bytes = new Uint8Array(binary.length);
-                for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-                const blob = new Blob([bytes], { type: safeMime });
-                const objUrl = URL.createObjectURL(blob);
-                img.onload = () => {
-                    try {
-                        const canvas = document.createElement('canvas');
-                        canvas.width = img.width;
-                        canvas.height = img.height;
-                        const ctx = canvas.getContext('2d');
-                        if (ctx) {
-                            ctx.drawImage(img, 0, 0);
-                            const dataUrl = canvas.toDataURL(safeMime);
-                            URL.revokeObjectURL(objUrl);
-                            resolve({ img, href: dataUrl });
-                        } else {
-                            URL.revokeObjectURL(objUrl);
-                            const dataUrl = `data:${safeMime};base64,${safeB64}`;
-                            resolve({ img, href: dataUrl });
-                        }
-                    } catch {
-                        URL.revokeObjectURL(objUrl);
-                        const dataUrl = `data:${safeMime};base64,${safeB64}`;
-                        resolve({ img, href: dataUrl });
-                    }
-                };
-                img.onerror = () => {
-                    const dataUrl = `data:${safeMime};base64,${safeB64}`;
-                    img.onload = () => resolve({ img, href: dataUrl });
-                    img.onerror = () => reject(new Error('Failed to load generated image'));
-                    img.src = dataUrl;
-                };
-                img.src = objUrl;
-            } catch (e) {
-                const dataUrl = `data:${safeMime};base64,${safeB64}`;
-                img.onload = () => resolve({ img, href: dataUrl });
-                img.onerror = () => reject(e instanceof Error ? e : new Error(String(e)));
-                img.src = dataUrl;
-            }
-        });
-    };

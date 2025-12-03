@@ -108,3 +108,15 @@
 
 验证说明：
 - 在设置面板选择 `nano-banana-2`，切换到“图片”模式：提示条显示 `1K/2K/4K` 尺寸按钮；选择尺寸后进行编辑，网络请求的 `FormData` 应包含 `image_size`（仅 `nano-banana-2`）；其它模型不显示尺寸按钮且不传该参数
+
+## v0.9.7
+
+- feat(api): 图片接口统一返回 `url`（优先解析 `url`，`b64_json` 兜底）
+- feat(nano-banana-2): 强制枚举比例，输入图非枚举时自动居中裁剪到最近枚举比例
+- fix(api): `images/edits` 移除 `size` 参数，避免与 `aspect_ratio` 冲突
+- test(script): 新增脚本 `npm run test:banana` 验证生图与编辑链路（含 `url` 下载校验）
+
+## v1.0.2
+
+- docs: 同步项目文档与元数据版本至 1.0.2
+- chore(version): 统一各文件版本号

@@ -8,9 +8,10 @@ interface QuickPromptsProps {
     disabled: boolean;
     userEffects: UserEffect[];
     onDeleteUserEffect: (id: string) => void;
+    className?: string;
 }
 
-export const QuickPrompts: React.FC<QuickPromptsProps> = ({ t, setPrompt, disabled, userEffects, onDeleteUserEffect }) => {
+export const QuickPrompts: React.FC<QuickPromptsProps> = ({ t, setPrompt, disabled, userEffects, onDeleteUserEffect, className }) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const wrapperRef = useRef<HTMLDivElement>(null);
 
@@ -41,9 +42,9 @@ export const QuickPrompts: React.FC<QuickPromptsProps> = ({ t, setPrompt, disabl
                 aria-label={t('quickPromptsAriaLabel') as string}
                 title={t('quickPromptsAriaLabel') as string}
                 noHoverHighlight
-                className="quick-prompts-button flex-shrink-0 w-11 h-11 flex items-center justify-center"
+                className={`quick-prompts-button flex-shrink-0 flex items-center justify-center ${className || 'w-11 h-11'}`}
             >
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2.69l.13.04a7.9 7.9 0 0 1 5.92 6.61 8.27 8.27 0 0 1-1.77 6.13A8.52 8.52 0 0 1 12 21.31a8.52 8.52 0 0 1-4.28-5.83 8.27 8.27 0 0 1-1.77-6.13A7.9 7.9 0 0 1 11.87 2.73L12 2.69zM12 22v-1.16"/><path d="M9 19h6"/></svg>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2.69l.13.04a7.9 7.9 0 0 1 5.92 6.61 8.27 8.27 0 0 1-1.77 6.13A8.52 8.52 0 0 1 12 21.31a8.52 8.52 0 0 1-4.28-5.83 8.27 8.27 0 0 1-1.77-6.13A7.9 7.9 0 0 1 11.87 2.73L12 2.69zM12 22v-1.16"/><path d="M9 19h6"/></svg>
             </IconButton>
             {isMenuOpen && (
                 <Panel className="absolute bottom-full left-0 mb-3 w-80 max-h-96 overflow-y-auto pod-scrollbar-y p-2 flex flex-col gap-1">
