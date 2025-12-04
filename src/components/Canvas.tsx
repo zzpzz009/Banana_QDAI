@@ -32,6 +32,7 @@ interface CanvasProps {
   handlePropertyChange: (elementId: string, updates: Partial<Element>) => void;
   cursor: string;
   handleStopEditing: () => void;
+  canvasBackgroundColor?: string;
 }
 export const Canvas: React.FC<CanvasProps> = ({
   svgRef,
@@ -60,6 +61,7 @@ export const Canvas: React.FC<CanvasProps> = ({
   handlePropertyChange,
   cursor,
   handleStopEditing,
+  canvasBackgroundColor,
 }) => {
   const isElementVisible = (element: Element, allElements: Element[]): boolean => {
     if (element.isVisible === false) return false;
@@ -78,11 +80,11 @@ export const Canvas: React.FC<CanvasProps> = ({
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
       onContextMenu={handleContextMenu}
-      style={{ cursor }}
+      style={{ cursor, backgroundColor: canvasBackgroundColor }}
     >
       <defs>
-        <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
-          <circle cx="1" cy="1" r="1" style={{ fill: 'var(--grid-dot-color)', opacity: 'var(--grid-dot-opacity)' }} />
+        <pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse">
+          <circle cx="1.5" cy="1.5" r="1.5" style={{ fill: 'var(--grid-dot-color)', opacity: 'var(--grid-dot-opacity)' }} />
         </pattern>
         {elements.map(el => {
           if (el.type === 'image' && el.borderRadius && el.borderRadius > 0) {

@@ -29,6 +29,8 @@ import { useUiTheme } from '@/hooks/useUiTheme';
 import { useCredentials } from '@/hooks/useCredentials';
 import { useElementOps } from '@/hooks/useElementOps';
 import { useCanvasCoords } from '@/hooks/useCanvasCoords';
+import { PodUIPreview } from '@/components/PodUIPreview';
+import { PodButton } from '@/components/podui';
 
 const generateId = () => `id_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
@@ -50,7 +52,7 @@ const createNewBoard = (name: string): Board => {
         historyIndex: 0,
         panOffset: { x: 0, y: 0 },
         zoom: 1,
-        canvasBackgroundColor: '#1f2937',
+        canvasBackgroundColor: '#0F0D13',
     };
 };
 
@@ -89,6 +91,7 @@ const App: React.FC = () => {
     const [contextMenu, setContextMenu] = useState<{ x: number; y: number; elementId: string | null } | null>(null);
     // 初始化编辑逻辑在 useTextEditing（稍后基于 commitAction/setElements 注入）
     const [lassoPath, setLassoPath] = useState<Point[] | null>(null);
+    const [showUIPreview, setShowUIPreview] = useState(false);
 
     const { language, setLanguage, t } = useI18n('ZH');
     const { apiKey, setApiKey, systemToken, setSystemToken, userId, setUserId } = useCredentials();
@@ -363,6 +366,7 @@ const App: React.FC = () => {
                     handlePropertyChange={handlePropertyChange}
                     cursor={cursor}
                     handleStopEditing={handleStopEditing}
+                    canvasBackgroundColor={canvasBackgroundColor || 'var(--bg-page)'}
                 />
                 
                 <ContextMenuOverlay
@@ -400,6 +404,13 @@ const App: React.FC = () => {
                 setImageAspectRatio={setImageAspectRatio}
                 setImageModel={setImageModel}
             />
+            
+            {showUIPreview && <PodUIPreview onClose={() => setShowUIPreview(false)} />}
+            <div className="fixed bottom-4 left-4 z-50">
+                <PodButton size="xs" variant="secondary" onClick={() => setShowUIPreview(true)}>
+                    UI Preview
+                </PodButton>
+            </div>
         </div>
     );
 };

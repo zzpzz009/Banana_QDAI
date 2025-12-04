@@ -122,7 +122,7 @@ const getCardImageSrc = (label: string) => {
 // Local icon fallback mapping (runtime image error handler will use this)
 const getLocalIconSrc = (label: string): string | null => resolveIconUrl(label);
 
-export const BananaSidebar: React.FC<BananaSidebarProps> = ({ t, language, setPrompt, onGenerate, disabled = false, promptBarOffsetPx = 0, buttonSize }) => {
+export const BananaSidebar: React.FC<BananaSidebarProps> = ({ language, setPrompt, onGenerate, disabled = false, promptBarOffsetPx = 0, buttonSize }) => {
   const [isOpen, setIsOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const builtInPrompts = (language === 'ZH' ? translations.ZH.bananaCards : translations.en.bananaCards) as { name: string; value: string }[];
@@ -155,79 +155,20 @@ export const BananaSidebar: React.FC<BananaSidebarProps> = ({ t, language, setPr
         disabled={disabled}
         aria-label="Banana Presets"
         title="Banana Presets"
-        className="banana-circle pod-inner-gradient-ring"
+        className="pod-banana-trigger pod-inner-gradient-ring"
         style={{
-          position: 'relative',
-          cursor: disabled ? 'not-allowed' : 'pointer',
           height: buttonSize || 40,
           width: buttonSize || 40,
-          aspectRatio: '1 / 1',
-          flex: '0 0 auto',
-          boxSizing: 'border-box',
-          padding: 0,
-          border: 0,
-          borderRadius: 9999,
-          overflow: 'hidden',
-          background: 'linear-gradient(135deg, #ff6fb3 0%, #3ba6ff 50%, #ffb36b 100%)',
-          boxShadow:
-            '0 8px 24px rgba(59,166,255,0.35), 0 2px 6px rgba(0,0,0,0.25)',
-          display: 'inline-flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          opacity: disabled ? 0.6 : 1,
           ['--pod-ring-width' as unknown as string]: '1.5px',
         }}
       >
         {/* Inner glass */}
-          <span
-            style={{
-              position: 'relative',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: '100%',
-              height: '100%',
-              borderRadius: '9999px',
-              overflow: 'hidden',
-              background: 'rgba(255, 255, 255, 0.12)',
-              boxShadow:
-                'inset 0 1px 0 rgba(255,255,255,0.35), inset 0 -8px 18px rgba(59, 166, 255, 0.22)',
-              backdropFilter: 'blur(8px)',
-              WebkitBackdropFilter: 'blur(8px)',
-              padding: 6,
-              boxSizing: 'border-box',
-              color: 'rgba(255,255,255,0.95)',
-            }}
-          >
+          <span className="pod-banana-trigger-inner">
           {/* Soft highlight sweep */}
-          <span
-            style={{
-              content: "''",
-              position: 'absolute',
-              inset: 0,
-              background:
-                'linear-gradient(-65deg, transparent 40%, rgba(255,255,255,0.35) 50%, transparent 70%)',
-              backgroundSize: '200% 100%',
-              backgroundRepeat: 'no-repeat',
-              animation: 'banana_sheen 4.8s ease-in-out infinite',
-              pointerEvents: 'none',
-              borderRadius: 'inherit',
-              mixBlendMode: 'screen',
-            }}
-          />
+          <span className="pod-banana-sheen" />
 
           {/* Gentle top rim glow */}
-          <span
-            style={{
-              content: "''",
-              position: 'absolute',
-              inset: 0,
-              background:
-                'radial-gradient(120% 60% at 50% -10%, rgba(255,255,255,0.35), transparent 55%)',
-              pointerEvents: 'none',
-              borderRadius: 'inherit',
-            }}
-          />
+          <span className="pod-banana-glow" />
 
           {/* Icon centered for circular button */}
           <span style={{ position: 'relative', zIndex: 1 }}>
@@ -235,31 +176,7 @@ export const BananaSidebar: React.FC<BananaSidebarProps> = ({ t, language, setPr
           </span>
         </span>
       </button>
-      {/* Scoped styles for hover/active and sheen animation */}
-      <style>{`
-        @keyframes banana_sheen {
-          0% { background-position: 130% 0; opacity: 1; }
-          100% { background-position: -160% 0; opacity: 0; }
-        }
-        .banana-circle:hover > span {
-          background: rgba(255, 255, 255, 0.13);
-          box-shadow:
-            inset 0 1px 0 rgba(255,255,255,0.5),
-            inset 0 -10px 20px rgba(59,166,255,0.3);
-        }
-        .banana-circle:hover {
-          transform: translateY(-1px);
-          box-shadow:
-            0 10px 28px rgba(59, 166, 255, 0.4),
-            0 4px 10px rgba(0,0,0,0.28);
-        }
-        .banana-circle:active {
-          transform: translateY(1px);
-          box-shadow:
-            0 6px 16px rgba(59, 166, 255, 0.28),
-            0 2px 6px rgba(0,0,0,0.28);
-        }
-      `}</style>
+      
       {isOpen && (
         <div
           className="absolute bottom-full mb-3 sm:w-full md:w-[48rem] lg:w-[64rem] max-w-[90vw] pod-panel pod-panel-transparent pod-panel-rounded-xl p-3 overflow-x-auto overflow-y-hidden pod-scrollbar-x"
@@ -271,10 +188,9 @@ export const BananaSidebar: React.FC<BananaSidebarProps> = ({ t, language, setPr
                 key={idx}
                 onClick={() => handleSelect(item.value)}
                 title={item.name}
-                className="group relative cursor-pointer transform transition-all duration-500 hover:scale-105 hover:-translate-y-1 flex-shrink-0 w-32"
-                style={{ padding: 0 }}
+                className="pod-banana-card-wrapper"
               >
-                <div className="bg-white/10 backdrop-blur-xl rounded-3xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-500 hover:bg-white/15">
+                <div className="pod-banana-card-container">
                   <div className="aspect-square relative overflow-hidden">
                     <img
                       src={getCardImageSrc(item.name)}
@@ -282,46 +198,22 @@ export const BananaSidebar: React.FC<BananaSidebarProps> = ({ t, language, setPr
                       loading="lazy"
                       decoding="async"
                       referrerPolicy="no-referrer"
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      className="pod-banana-card-image"
                       onError={(e) => {
                         const fb = getLocalIconSrc(item.name);
                         e.currentTarget.src = fb ?? makeSvgDataUrl(item.name);
                       }}
                     />
                     {/* bottom gradient overlay for readability */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent"></div>
+                    <div className="pod-banana-card-overlay"></div>
                     {/* centered title overlay */}
-                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="pod-banana-card-content">
                       <h3
-                        className="font-semibold text-white text-base leading-tight drop-shadow-md text-center px-2"
-                        style={{
-                          fontFamily:
-                            "'阿里妈妈数黑体 Bold', 'Alimama ShuHeiTi', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', 'Heiti SC', Arial, sans-serif",
-                          fontSize: '1.2em',
-                          textShadow:
-                            '0 2px 6px rgba(0,0,0,0.45), 0 1px 2px rgba(0,0,0,0.35)',
-                          letterSpacing: '0.06em'
-                        }}
+                        className="pod-banana-card-text"
                         title={item.name}
                       >
                         {item.name}
                       </h3>
-                    </div>
-                    {/* content area */}
-                    <div className="absolute bottom-0 left-0 right-0 p-2">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex gap-1">
-                          <span className="w-1.5 h-1.5 bg-white/40 rounded-full"/>
-                          <span className="w-1.5 h-1.5 bg-white/30 rounded-full"/>
-                          <span className="w-1.5 h-1.5 bg-white/20 rounded-full"/>
-                          <span className="w-1.5 h-1.5 bg-white/10 rounded-full"/>
-                          <span className="w-1.5 h-1.5 bg-white/5 rounded-full"/>
-                        </div>
-                        <span className="text-[10px] text-white/80 bg-white/15 backdrop-blur-xl px-1.5 py-0.5 rounded-lg">
-                          {t('bananaSidebar.presetLabel')}
-                        </span>
-                      </div>
-                      {/* 移除CTA按钮：卡片底部不再显示“使用” */}
                     </div>
                   </div>
                 </div>
@@ -333,5 +225,3 @@ export const BananaSidebar: React.FC<BananaSidebarProps> = ({ t, language, setPr
     </div>
   );
 };
-
-export default BananaSidebar;

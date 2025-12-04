@@ -39,7 +39,6 @@ const ToolButton: React.FC<{
         disabled={disabled}
         active={isActive}
         className={className}
-        style={isActive ? { backgroundColor: 'var(--text-accent)', color: 'var(--bg-page)' } : {}}
     >
         {icon}
     </IconButton>
@@ -128,21 +127,14 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         }
     };
 
-    const containerStyle: React.CSSProperties = {
-        backdropFilter: 'blur(8px)',
-        WebkitBackdropFilter: 'blur(8px)',
-        backgroundColor: 'rgba(33, 31, 38, 0.6)'
-    };
-
     if (isCropping) {
         return (
             <Panel 
-                style={containerStyle}
-                className="absolute top-1/2 left-4 -translate-y-1/2 z-10 px-2 py-4 flex flex-col items-center space-y-2 w-auto min-w-[72px]"
+                className="absolute top-1/2 left-4 -translate-y-1/2 z-10 px-2 py-4 flex flex-col items-center space-y-2 w-auto min-w-[72px] pod-toolbar-container"
             >
-                <span className="text-sm" style={{ color: 'var(--text-heading)', fontWeight: 500 }}>{t('toolbar.crop.title')}</span>
-                <div className="w-full my-2" style={{ height: '1px', backgroundColor: 'var(--border-color)' }}></div>
-                <label className="w-full text-xs" style={{ color: 'var(--text-primary)' }}>{t('toolbar.crop.aspectRatioLabel')}</label>
+                <span className="text-sm font-medium pod-text-heading">{t('toolbar.crop.title')}</span>
+                <div className="pod-toolbar-separator my-2 w-full"></div>
+                <label className="w-full text-xs pod-text-primary">{t('toolbar.crop.aspectRatioLabel')}</label>
                 <Select
                     value={cropAspectRatio || ''}
                     onChange={(e) => onCropAspectRatioChange((e.target as HTMLSelectElement).value ? (e.target as HTMLSelectElement).value : null)}
@@ -194,17 +186,13 @@ export const Toolbar: React.FC<ToolbarProps> = ({
 
     return (
         <div 
-            style={{ 
-                ...containerStyle,
-                ['--toolbar-bg-color' as unknown as string]: 'rgba(33, 31, 38, 0.6)'
-            }}
-            className="absolute top-1/2 left-4 -translate-y-1/2 z-10 pod-toolbar pod-toolbar-elevated pod-bar-soft-gradient px-2 py-4 flex flex-col items-center gap-2"
+            className="absolute top-1/2 left-4 -translate-y-1/2 z-10 pod-toolbar pod-toolbar-elevated pod-bar-soft-gradient pod-toolbar-container px-2 py-4 flex flex-col items-center gap-2"
         >
             <ToolButton label="Boards" onClick={onBoardsClick} icon={<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>} />
             <ToolButton label={t('toolbar.layers')} onClick={onLayersClick} icon={<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>} />
             <ToolButton label={t('toolbar.settings')} onClick={onSettingsClick} icon={<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0 .33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>} />
 
-            <div className="w-10" style={{ height: '1px', backgroundColor: 'var(--border-color)' }}></div>
+            <div className="pod-toolbar-separator"></div>
             
             <div className="flex flex-col items-center gap-2 flex-grow">
                 {mainTools.map(tool => (
@@ -231,16 +219,16 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                     <ToolButton key={tool.id} label={tool.label} icon={tool.icon} isActive={activeTool === tool.id} onClick={() => setActiveTool(tool.id)} />
                 ))}
 
-                <div className="w-10" style={{ height: '1px', backgroundColor: 'var(--border-color)' }}></div>
-                <input type="color" aria-label={t('toolbar.strokeColor')} title={t('toolbar.strokeColor')} value={drawingOptions.strokeColor} onChange={(e) => setDrawingOptions({ ...drawingOptions, strokeColor: e.target.value })} className="w-7 h-7 p-0 border border-white/30 rounded-full cursor-pointer bg-transparent pod-color-swatch-circle" />
-                <input type="range" min="1" max="50" value={drawingOptions.strokeWidth} aria-label={t('toolbar.strokeWidth')} title={t('toolbar.strokeWidth')} onChange={(e) => setDrawingOptions({ ...drawingOptions, strokeWidth: parseInt(e.target.value, 10) })} className="w-10 cursor-pointer pod-slider" />
-                <span className="text-sm w-6 text-center" style={{ color: 'var(--text-primary)' }}>{drawingOptions.strokeWidth}</span>
-                <div className="w-10" style={{ height: '1px', backgroundColor: 'var(--border-color)' }}></div>
+                <div className="pod-toolbar-separator"></div>
+                <input type="color" aria-label={t('toolbar.strokeColor')} title={t('toolbar.strokeColor')} value={drawingOptions.strokeColor} onChange={(e) => setDrawingOptions({ ...drawingOptions, strokeColor: e.target.value })} className="pod-color-picker-input" />
+                <input type="range" min="1" max="50" value={drawingOptions.strokeWidth} aria-label={t('toolbar.strokeWidth')} title={t('toolbar.strokeWidth')} onChange={(e) => setDrawingOptions({ ...drawingOptions, strokeWidth: parseInt(e.target.value, 10) })} className="pod-slider-input pod-slider" />
+                <span className="pod-text-value">{drawingOptions.strokeWidth}</span>
+                <div className="pod-toolbar-separator"></div>
                 <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
                 <ToolButton label={t('toolbar.upload')} onClick={handleUploadClick} icon={<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>} />
             </div>
 
-            <div className="w-10" style={{ height: '1px', backgroundColor: 'var(--border-color)' }}></div>
+            <div className="pod-toolbar-separator"></div>
             <ToolButton label={t('toolbar.undo')} onClick={onUndo} disabled={!canUndo} icon={<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11"/></svg>} />
             <ToolButton label={t('toolbar.redo')} onClick={onRedo} disabled={!canRedo} icon={<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5A5.5 5.5 0 0 0 4 14.5v0A5.5 5.5 0 0 0 9.5 20H13"/></svg>} />
         </div>

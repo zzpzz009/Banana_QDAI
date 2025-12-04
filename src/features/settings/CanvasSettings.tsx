@@ -113,6 +113,20 @@ export const CanvasSettings: React.FC<CanvasSettingsProps> = ({
                                 </div>
                             </div>
                             <div className="space-y-1.5">
+                                <label className="text-xs font-medium text-[var(--text-heading)]">{t('settings.backgroundColor')}</label>
+                                <div className="flex items-center gap-2 p-0.5 rounded-md bg-[var(--bg-input)] border border-[var(--border-color)]">
+                                    <input
+                                        type="color"
+                                        value={canvasBackgroundColor && canvasBackgroundColor.startsWith('#') ? canvasBackgroundColor : '#0F0D13'}
+                                        onChange={(e) => onCanvasBackgroundColorChange(e.target.value)}
+                                        className="h-5 w-8 rounded cursor-pointer border-none bg-transparent p-0"
+                                    />
+                                    <span className="text-[10px] text-[var(--text-secondary)] font-mono flex-1 text-center uppercase">
+                                        {canvasBackgroundColor && canvasBackgroundColor.startsWith('#') ? canvasBackgroundColor : 'DEFAULT'}
+                                    </span>
+                                </div>
+                            </div>
+                            <div className="space-y-1.5">
                                 <label className="text-xs font-medium text-[var(--text-heading)]">{t('settings.mouseWheel')}</label>
                                 <div className="flex p-0.5 rounded-md bg-[var(--bg-input)] border border-[var(--border-color)]">
                                     <button

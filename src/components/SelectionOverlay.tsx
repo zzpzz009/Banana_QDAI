@@ -67,8 +67,8 @@ export const SelectionOverlay: React.FC<SelectionOverlayProps> = ({
       {selectedElementIds.length > 0 && !croppingState && !editingElement && (() => {
         if (selectedElementIds.length > 1) {
           const b = getSelectionBounds(selectedElementIds);
-          const sw = 280;
-          const sh = 56;
+          const sw = 380; // Increased width for new UI
+          const sh = 64; // Increased height
           const cw = sw / zoom;
           const ch = sh / zoom;
           const x = b.x + b.width / 2 - cw / 2;
@@ -81,17 +81,17 @@ export const SelectionOverlay: React.FC<SelectionOverlayProps> = ({
         } else if (singleSelectedElement) {
           const el = singleSelectedElement;
           const b = getElementBounds(el, elements);
-          let sw = 160;
+          let sw = 340; // Minimum width for consistency
           if (el.type === 'shape') {
-            sw = 300;
-            if ((el as any).shapeType === 'rectangle') sw += 190;
+            sw = 400;
+            if ((el as any).shapeType === 'rectangle') sw += 200;
           }
-          if (el.type === 'text') sw = 220;
-          if (el.type === 'arrow' || el.type === 'line') sw = 220;
-          if (el.type === 'image') sw = 340;
-          if (el.type === 'video') sw = 160;
-          if (el.type === 'group') sw = 80;
-          const sh = 56;
+          if (el.type === 'text') sw = 360;
+          if (el.type === 'arrow' || el.type === 'line') sw = 360;
+          if (el.type === 'image') sw = 440;
+          if (el.type === 'video') sw = 340;
+          if (el.type === 'group') sw = 340;
+          const sh = 64; // Increased height
           const cw = sw / zoom;
           const ch = sh / zoom;
           const x = b.x + b.width / 2 - cw / 2;

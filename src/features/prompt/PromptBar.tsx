@@ -189,7 +189,7 @@ export const PromptBar: React.FC<PromptBarProps> = ({
                     borderRadius: isExpanded ? 24 : 999
                 }}
                 transition={{ type: "spring", stiffness: 220, damping: 28, delay: isExpanded ? 0 : 0.18 }}
-                className="relative overflow-hidden bg-[#18181b]/95 border border-white/10 shadow-2xl backdrop-blur-xl"
+                className="relative bg-[var(--bg-component)] border border-[var(--border-color)] shadow-2xl backdrop-blur-xl"
                 style={{
                     boxShadow: '0 20px 40px -10px rgba(0,0,0,0.6)',
                     willChange: 'width, height, border-radius'
@@ -242,20 +242,20 @@ export const PromptBar: React.FC<PromptBarProps> = ({
                                         disabled={!isSelectionActive || isLoading}
                                         userEffects={userEffects}
                                         onDeleteUserEffect={onDeleteUserEffect}
-                                        className="w-10 h-10 text-neutral-500 hover:text-white bg-white/5 hover:bg-white/10 rounded-full transition-all"
+                                        className="w-10 h-10 text-[var(--text-secondary)] hover:text-[var(--text-heading)] bg-[var(--bg-component)] hover:bg-[var(--border-color)] rounded-full transition-all"
                                     />
                                     {/* Mode Switcher */}
-                                    <div className="flex bg-black/20 rounded-full p-0.5 border border-white/5">
+                                    <div className="flex bg-black/20 rounded-full p-0.5 border border-[var(--border-color)]">
                                         <button
                                             onClick={() => setGenerationMode('image')}
-                                            className={`p-1.5 rounded-full transition-all ${generationMode === 'image' ? 'bg-[#3f3f46] text-white shadow-sm' : 'text-neutral-500 hover:text-neutral-300'}`}
+                                            className={`p-1.5 rounded-full transition-all ${generationMode === 'image' ? 'bg-[var(--border-color)] text-[var(--text-heading)] shadow-sm' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
                                             title="Image Mode"
                                         >
                                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" /></svg>
                                         </button>
                                         <button
                                             onClick={() => setGenerationMode('video')}
-                                            className={`p-1.5 rounded-full transition-all ${generationMode === 'video' ? 'bg-[#3f3f46] text-white shadow-sm' : 'text-neutral-500 hover:text-neutral-300'}`}
+                                            className={`p-1.5 rounded-full transition-all ${generationMode === 'video' ? 'bg-[var(--border-color)] text-[var(--text-heading)] shadow-sm' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
                                             title="Video Mode"
                                         >
                                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7" /><rect x="1" y="5" width="15" height="14" rx="2" ry="2" /></svg>
@@ -270,8 +270,8 @@ export const PromptBar: React.FC<PromptBarProps> = ({
                                     onChange={(e) => setPrompt((e.target as HTMLTextAreaElement).value)}
                                     onKeyDown={handleKeyDown}
                                     placeholder={getPlaceholderText()}
-                                    className="w-full bg-transparent text-neutral-200 placeholder-neutral-500 resize-none focus:outline-none text-[15px] leading-relaxed font-light"
-                                    style={{ minHeight: '60px', border: 'none', padding: '18px 130px 18px 12px', transition: 'height 150ms ease', overflow: 'hidden' }}
+                                    className="w-full bg-transparent text-[var(--text-primary)] placeholder-[var(--text-muted)] resize-none focus:outline-none focus:shadow-none focus:ring-0 text-[15px] leading-relaxed font-light"
+                                    style={{ minHeight: '60px', border: 'none', padding: '18px 130px 18px 12px', transition: 'height 150ms ease', overflow: 'hidden', boxShadow: 'none' }}
                                     disabled={isLoading}
                                     autoFocus
                                 />
@@ -281,7 +281,7 @@ export const PromptBar: React.FC<PromptBarProps> = ({
                                             onClick={handleSaveEffect}
                                             title={t('myEffects.saveEffectTooltip')}
                                             noHoverHighlight
-                                            className="w-7 h-7 flex items-center justify-center text-neutral-500 hover:text-white bg-white/5 hover:bg-white/10 rounded-full transition-all"
+                                            className="w-7 h-7 flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-heading)] bg-[var(--bg-component)] hover:bg-[var(--border-color)] rounded-full transition-all"
                                         >
                                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z" /></svg>
                                         </IconButton>
@@ -318,7 +318,7 @@ export const PromptBar: React.FC<PromptBarProps> = ({
                                                 setModelMenuAnchor({ left: Math.round(rect.left), top: Math.round(rect.top), width: Math.round(rect.width) });
                                                 setIsModelMenuOpen(!isModelMenuOpen);
                                             }}
-                                                className="h-9 px-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 text-xs font-medium text-neutral-300 flex items-center gap-1.5 transition-colors whitespace-nowrap"
+                                                className="h-9 px-3 rounded-xl bg-[var(--bg-component)] hover:bg-[var(--border-color)] border border-[var(--border-color)] text-xs font-medium text-[var(--text-primary)] flex items-center gap-1.5 transition-colors whitespace-nowrap"
                                             >
                                                 {activeModelLabel}
                                                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform ${isModelMenuOpen ? 'rotate-180' : ''}`}><path d="m6 9 6 6 6-6" /></svg>
@@ -329,13 +329,13 @@ export const PromptBar: React.FC<PromptBarProps> = ({
                                                     initial={{ opacity: 0, y: -4, scale: 0.95 }}
                                                     animate={{ opacity: 1, y: 0, scale: 1 }}
                                                     style={{ position: 'fixed', left: Math.round(modelMenuAnchor.left + modelMenuAnchor.width / 2 - 192 / 2), bottom: Math.round(window.innerHeight - modelMenuAnchor.top + 8), zIndex: 10000, width: 192 }}
-                                                    className="bg-[#27272a] border border-white/10 rounded-xl shadow-xl overflow-hidden py-1"
+                                                    className="bg-[var(--bg-component)] border border-[var(--border-color)] rounded-xl shadow-xl overflow-hidden py-1"
                                                 >
                                                     {MODELS.map(m => (
                                                         <button
                                                             key={m.id}
                                                             onClick={(e) => { e.stopPropagation(); setImageModel(m.id); setIsModelMenuOpen(false); setIsExpanded(true); }}
-                                                            className={`w-full px-3 py-2 text-left text-xs hover:bg-white/5 transition-colors flex items-center justify-between ${activeImageModel === m.id ? 'text-yellow-400 font-medium' : 'text-neutral-300'}`}
+                                                            className={`w-full px-3 py-2 text-left text-xs hover:bg-[var(--border-color)] transition-colors flex items-center justify-between ${activeImageModel === m.id ? 'text-[var(--brand-yellow)] font-medium' : 'text-[var(--text-primary)]'}`}
                                                         >
                                                             <span>{m.label}</span>
                                                             {activeImageModel === m.id && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12" /></svg>}
@@ -348,12 +348,12 @@ export const PromptBar: React.FC<PromptBarProps> = ({
 
                                     {/* Size Selector */}
                                     {generationMode === 'image' && (
-                                        <div className="flex bg-white/5 rounded-xl p-1 border border-white/5 h-9 items-center">
+                                        <div className="flex bg-[var(--bg-component)] rounded-xl p-1 border border-[var(--border-color)] h-9 items-center">
                                             {(['1K', '2K', '4K'] as const).map((size) => (
                                                 <button
                                                     key={size}
                                                     onClick={() => { if (!sizeDisabled) setImageSize(size); }}
-                                                    className={`px-2.5 py-1 rounded-lg text-[10px] font-medium transition-all ${effectiveSize === size ? 'bg-[#4A4458] text-white shadow-sm' : 'text-neutral-500 hover:text-neutral-300'} ${sizeDisabled ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''}`}
+                                                    className={`px-2.5 py-1 rounded-lg text-[10px] font-medium transition-all ${effectiveSize === size ? 'bg-[#4F378B] text-white shadow-sm' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'} ${sizeDisabled ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''}`}
                                                     aria-disabled={sizeDisabled}
                                                 >
                                                     <span className={effectiveSize === size && size === '4K' ? 'pod-text-gold-sheen' : ''}>
@@ -374,7 +374,7 @@ export const PromptBar: React.FC<PromptBarProps> = ({
                                                 setRatioMenuAnchor({ left: Math.round(rect.left), top: Math.round(rect.top), width: Math.round(rect.width) });
                                                 setIsRatioMenuOpen(!isRatioMenuOpen);
                                             }}
-                                            className="h-9 px-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 text-xs font-medium text-neutral-300 hover:text-neutral-200 flex items-center gap-1.5 transition-colors whitespace-nowrap"
+                                            className="h-9 px-3 rounded-xl bg-[var(--bg-component)] hover:bg-[var(--border-color)] border border-[var(--border-color)] text-xs font-medium text-[var(--text-primary)] hover:text-[var(--text-heading)] flex items-center gap-1.5 transition-colors whitespace-nowrap"
                                             title="Aspect Ratio"
                                         >
                                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="10" rx="2" ry="2" /></svg>
@@ -392,14 +392,14 @@ export const PromptBar: React.FC<PromptBarProps> = ({
                                                     zIndex: 10000, 
                                                     width: generationMode === 'image' ? 240 : 96 
                                                 }}
-                                                className={`bg-[#27272a] border border-white/10 rounded-xl shadow-xl overflow-hidden py-1 ${generationMode === 'image' ? 'grid grid-cols-3 gap-1 p-1' : ''}`}
+                                                className={`bg-[var(--bg-component)] border border-[var(--border-color)] rounded-xl shadow-xl overflow-hidden py-1 ${generationMode === 'image' ? 'grid grid-cols-3 gap-1 p-1' : ''}`}
                                             >
                                                 {generationMode === 'image' ? (
                                                     ASPECT_RATIOS.map(r => (
                                                         <button
                                                             key={r.id}
                                                             onClick={() => { setImageAspectRatio(r.id); setIsRatioMenuOpen(false); setIsExpanded(true); blockCollapseUntilRef.current = Date.now() + 800; requestAnimationFrame(() => { textareaRef.current?.focus(); }); }}
-                                                             className={`w-full px-1 py-1.5 text-center text-xs hover:bg-white/5 rounded-md transition-colors ${imageAspectRatio === r.id ? 'bg-white/10 text-yellow-400 font-medium' : 'text-neutral-300'}`}
+                                                             className={`w-full px-1 py-1.5 text-center text-xs hover:bg-[var(--border-color)] rounded-md transition-colors ${imageAspectRatio === r.id ? 'bg-[var(--border-color)] text-[var(--brand-yellow)] font-medium' : 'text-[var(--text-primary)]'}`}
                                                          >
                                                              {r.label}
                                                          </button>
@@ -409,7 +409,7 @@ export const PromptBar: React.FC<PromptBarProps> = ({
                                                         <button
                                                             key={r}
                                                             onClick={() => { setVideoAspectRatio(r as '16:9' | '9:16'); setIsRatioMenuOpen(false); setIsExpanded(true); blockCollapseUntilRef.current = Date.now() + 800; requestAnimationFrame(() => { textareaRef.current?.focus(); }); }}
-                                                             className={`w-full px-3 py-1.5 text-left text-xs hover:bg-white/5 transition-colors ${videoAspectRatio === r ? 'text-yellow-400 font-medium' : 'text-neutral-300'}`}
+                                                             className={`w-full px-3 py-1.5 text-left text-xs hover:bg-[var(--border-color)] transition-colors ${videoAspectRatio === r ? 'text-[var(--brand-yellow)] font-medium' : 'text-[var(--text-primary)]'}`}
                                                          >
                                                              {r}
                                                          </button>
@@ -423,7 +423,7 @@ export const PromptBar: React.FC<PromptBarProps> = ({
                                     <button
                                         onClick={onGenerate}
                                         disabled={isLoading || !prompt.trim()}
-                                        className="h-9 px-5 rounded-xl font-bold text-sm text-[#062102] transition-all active:scale-[0.98] shadow-lg shadow-black/20 whitespace-nowrap bg-[#B6F298] hover:bg-[#A4DA89] border border-white/5 flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="h-9 px-5 rounded-xl font-bold text-sm text-[#062102] transition-all active:scale-[0.98] shadow-lg shadow-black/20 whitespace-nowrap pod-generate-button flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         {isLoading ? (
                                             <svg className="animate-spin h-4 w-4 text-[#062102]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
