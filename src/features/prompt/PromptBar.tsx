@@ -91,6 +91,21 @@ export const PromptBar: React.FC<PromptBarProps> = ({
     const ratioPortalRef = useRef<HTMLDivElement>(null);
     const blockCollapseUntilRef = useRef<number>(0);
     const expandedContentRef = useRef<HTMLDivElement>(null);
+    const expandedWidth = 580;
+
+    const [contentHeight, setContentHeight] = useState<number | 'auto'>('auto');
+
+    // Measure content height
+    useEffect(() => {
+        if (!expandedContentRef.current) return;
+        const observer = new ResizeObserver((entries) => {
+            for (const entry of entries) {
+                setContentHeight(entry.contentRect.height + 16); // +16 for padding (top 4 + bottom 12)
+            }
+        });
+        observer.observe(expandedContentRef.current);
+        return () => observer.disconnect();
+    }, [isExpanded]);
 
     // Auto-expand if prompt is not empty
     useEffect(() => {
@@ -187,7 +202,7 @@ export const PromptBar: React.FC<PromptBarProps> = ({
                 initial={false}
                 animate={{
                     width: isExpanded ? 580 : 180,
-                    height: isExpanded ? 'auto' : 56,
+                    height: isExpanded ? contentHeight : 56,
                     borderRadius: isExpanded ? 24 : 999
                 }}
                 transition={{
@@ -208,9 +223,9 @@ export const PromptBar: React.FC<PromptBarProps> = ({
                         delay: isExpanded ? 0.3 : 0.18
                     },
                     height: {
-                        type: "spring",
-                        stiffness: 220,
-                        damping: 28,
+                        type: "tween",
+                        ease: [0.2, 0, 0, 1],
+                        duration: 0.3,
                         delay: isExpanded ? 0.3 : 0.18
                     },
                     default: {
@@ -220,7 +235,7 @@ export const PromptBar: React.FC<PromptBarProps> = ({
                         delay: isExpanded ? 0.3 : 0.18
                     }
                 }}
-                className="relative bg-[var(--bg-component)] border border-[var(--border-color)] shadow-2xl backdrop-blur-xl"
+                className="relative bg-[var(--bg-component)] border border-[var(--border-color)] shadow-2xl backdrop-blur-xl overflow-hidden"
                 style={{
                     boxShadow: '0 20px 40px -10px rgba(0,0,0,0.6)',
                     willChange: 'width, height, border-radius, transform',
@@ -263,7 +278,8 @@ export const PromptBar: React.FC<PromptBarProps> = ({
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1, transition: { duration: 0.2, delay: isExpanded ? 0.18 : 0 } }}
                             exit={{ opacity: 0, transition: { duration: 0.2 } }}
-                            className="flex flex-col px-3 pt-1 pb-3 gap-0 w-full"
+                            className="flex flex-col px-3 pt-1 pb-3 gap-0"
+                            style={{ width: expandedWidth }}
                             ref={expandedContentRef}
                         >
                             {/* Body: Input Area */}

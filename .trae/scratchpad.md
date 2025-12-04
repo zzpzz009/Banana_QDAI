@@ -45,10 +45,14 @@
   - 显式定义了 `width` 和 `height` 的 `transition` 属性，避免 `layout` 属性可能的默认行为干扰。
   - 排查了代码库，确认无重复实现冲突。
 - **样式修正**：在 `QuickPrompts.tsx` 和 `BananaSidebar.tsx` 中明确添加了 `.pod-bg-solid` 类，确保这两个菜单在展开时背景完全不透明，符合用户对于可读性的要求。
-- **动画与布局终修**：响应用户反馈（“动画最后有明显下坠过程”），移除了 `PromptBar` 的 `layout` 属性，彻底消除动画结束时的布局修正跳动。同时将展开视图的底部内边距调整为 `pb-3`，优化了与下边框的间距。
-- **交互与菜单修复**：
-  - **菜单显示**：将香蕉菜单和快捷效果菜单改为 `createPortal` 挂载到 `body`，解除了 `PromptBar` 的 `overflow` 限制，菜单可完整显示。
-  - **按钮反馈**：为香蕉按钮添加了 `:active` 和 `aria-pressed` 样式，增强了点击与展开状态的视觉反馈。
+- **v1.1.3 更新**：
+  - **交互优化**：
+    - 为香蕉按钮（`BananaSidebar.tsx`）添加了点击反馈动画（`:active` 缩放）与状态高亮（`aria-pressed`），提升交互感知。
+    - 将香蕉菜单和快捷效果菜单（`QuickPrompts.tsx`）改为使用 `createPortal` 渲染到 `body`，彻底解除了 `PromptBar` 容器对菜单显示的裁剪限制，允许菜单在任意位置完整显示。
+  - **视觉修正**：
+    - 修复了 `PromptBar` 展开动画的“下坠”感。通过引入 `ResizeObserver` 实时测量内容高度，并将高度动画从弹簧（spring）改为无回弹的缓动（tween），实现了稳如磐石的展开效果。
+    - 锁定了展开视图的内部宽度（580px），配合 `overflow-hidden`，消除了展开过程中内容重排（reflow）导致的视觉抖动。
+    - 调整了 `PromptBar` 展开后的底部内边距（`pb-3`），优化了控件行与下边框的视觉间距。
 
 ### 验收清单 (Acceptance Checklist)
 #### 1. 基础组件 (Basic Components)
