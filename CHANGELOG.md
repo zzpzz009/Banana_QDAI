@@ -120,3 +120,21 @@
 
 - docs: 同步项目文档与元数据版本至 1.0.2
 - chore(version): 统一各文件版本号
+
+## v1.1.0(2025-12-04)
+
+- refactor(app-container): 优化 `src/App.tsx` 为纯容器，仅进行依赖注入与组件组合；交互/选择/裁剪/合并等逻辑下沉到 Hooks 与组件
+- feat(hooks): 抽取并接入 `useCanvasInteraction/useSelection/useBoardActions/useBoardManager/useClipboard/useKeyboardShortcuts/useLayerMerge/useCrop/useTextEditing/useContextMenuActions/useDragImport/useGenerationPipeline/useUserEffects/useI18n/useCredentials/useCanvasCoords/useElementOps`
+- fix(i18n): 统一 `t` 函数返回类型为 `string`，移除使用处类型断言，组件接线更稳定
+- chore(cleanup): 移除重复的 `LayerPanel` 与旧版 `useI18n`，统一引用路径到 `src/*`
+- docs(readme): 更新目录结构、端口说明与常用命令（新增 `npm run lint` 与 `npx tsc --noEmit`）
+
+验证说明：
+- 运行 `npm run lint`、`npx tsc --noEmit`、`npm run build` 均通过；启动 `npm run preview` 可在本地验证交互（右键菜单、裁剪、选择、对齐、缩放/拖拽、生成管线）。
+
+## v1.1.1 (2025-12-04)
+
+- docs(scratchpad): 新增 UI 设计标准与任务看板，统一 Design Tokens/组件规范/交互状态/A11y/动效边界
+- style(podui): 在 `:root` 增加令牌别名与焦点环（`--pod-panel-bg`, `--pod-border-color`, `--pod-text-primary`, `--pod-radius-xs`, `--pod-transition-fast`, `--pod-ring-color/width/ring`, `--pod-accent`, `--toolbar-bg-color`），保证组件变量完备
+- fix(i18n): `BananaSidebar/QuickPrompts` 不再通过 `t()` 读取数组，改为 `translations[language]`；向 `PromptBar` 传 `language` 并下游接线，修复 `(p || []).slice(...).map is not a function`
+- verify: 通过 `npm run lint`、`npx tsc --noEmit`、`npm run build`；预览交互正常

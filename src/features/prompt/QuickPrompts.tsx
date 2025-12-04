@@ -1,9 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { translations } from '@/i18n/translations';
 import type { UserEffect } from '@/types';
 import { Panel, IconButton, MenuItem } from '../../ui';
 
 interface QuickPromptsProps {
     t: (key: string, ...args: unknown[]) => unknown;
+    language: 'en' | 'ZH';
     setPrompt: (prompt: string) => void;
     disabled: boolean;
     userEffects: UserEffect[];
@@ -11,7 +13,7 @@ interface QuickPromptsProps {
     className?: string;
 }
 
-export const QuickPrompts: React.FC<QuickPromptsProps> = ({ t, setPrompt, disabled, userEffects, onDeleteUserEffect, className }) => {
+export const QuickPrompts: React.FC<QuickPromptsProps> = ({ t, language, setPrompt, disabled, userEffects, onDeleteUserEffect, className }) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const wrapperRef = useRef<HTMLDivElement>(null);
 
@@ -32,7 +34,7 @@ export const QuickPrompts: React.FC<QuickPromptsProps> = ({ t, setPrompt, disabl
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [wrapperRef]);
     
-    const builtInPrompts = t('quickPrompts');
+    const builtInPrompts = (language === 'ZH' ? translations.ZH.quickPrompts : translations.en.quickPrompts) as { name: string; value: string }[];
 
     return (
         <div className="relative" ref={wrapperRef}>
@@ -71,7 +73,7 @@ export const QuickPrompts: React.FC<QuickPromptsProps> = ({ t, setPrompt, disabl
                     
                     <div className="my-2 -mx-2" style={{ borderTop: '1px solid var(--border-color)' }}></div>
                     
-                    {(builtInPrompts as {name: string, value: string}[]).map((item, index) => (
+                    {builtInPrompts.map((item, index) => (
                         <MenuItem 
                             key={index} 
                             onClick={() => handleSelect(item.value)}

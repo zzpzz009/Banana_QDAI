@@ -8,6 +8,7 @@ import type { UserEffect, GenerationMode } from '@/types';
 
 interface PromptBarProps {
     t: (key: string, ...args: unknown[]) => string;
+    language: 'en' | 'ZH';
     prompt: string;
     setPrompt: (prompt: string) => void;
     onGenerate: () => void;
@@ -53,6 +54,7 @@ const ASPECT_RATIOS = [
 
 export const PromptBar: React.FC<PromptBarProps> = ({
     t,
+    language,
     prompt,
     setPrompt,
     onGenerate,
@@ -235,6 +237,7 @@ export const PromptBar: React.FC<PromptBarProps> = ({
                             <div className="absolute top-1 right-1 z-10 flex items-center gap-2">
                                 <QuickPrompts
                                         t={t}
+                                        language={language}
                                         setPrompt={setPrompt}
                                         disabled={!isSelectionActive || isLoading}
                                         userEffects={userEffects}
@@ -292,6 +295,7 @@ export const PromptBar: React.FC<PromptBarProps> = ({
                                 <div className="relative">
                                     <BananaSidebar
                                         t={t}
+                                        language={language}
                                         setPrompt={setPrompt}
                                         onGenerate={onGenerate}
                                         disabled={isLoading}

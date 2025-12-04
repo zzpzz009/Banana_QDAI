@@ -1,11 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { translations } from '@/i18n/translations';
 
 interface BananaSidebarProps {
   t: (key: string, ...args: unknown[]) => unknown;
+  language: 'en' | 'ZH';
   setPrompt: (prompt: string) => void;
   onGenerate: () => void;
   disabled?: boolean;
-  /** 从 PromptBar 中心到香蕉按钮的水平偏移（px），用于让面板按 PromptBar 轴居中 */
   promptBarOffsetPx?: number;
   buttonSize?: number;
 }
@@ -121,10 +122,10 @@ const getCardImageSrc = (label: string) => {
 // Local icon fallback mapping (runtime image error handler will use this)
 const getLocalIconSrc = (label: string): string | null => resolveIconUrl(label);
 
-export const BananaSidebar: React.FC<BananaSidebarProps> = ({ t, setPrompt, onGenerate, disabled = false, promptBarOffsetPx = 0, buttonSize }) => {
+export const BananaSidebar: React.FC<BananaSidebarProps> = ({ t, language, setPrompt, onGenerate, disabled = false, promptBarOffsetPx = 0, buttonSize }) => {
   const [isOpen, setIsOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
-  const builtInPrompts = t('bananaCards') as { name: string; value: string }[];
+  const builtInPrompts = (language === 'ZH' ? translations.ZH.bananaCards : translations.en.bananaCards) as { name: string; value: string }[];
   void onGenerate;
 
   useEffect(() => {

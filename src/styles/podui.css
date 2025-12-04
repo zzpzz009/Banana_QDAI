@@ -34,6 +34,16 @@
   /* Canvas grid dots */
   --grid-dot-color: #8a8a90;
   --grid-dot-opacity: 0.35;
+  --pod-panel-bg: var(--bg-component);
+  --pod-border-color: var(--border-color);
+  --pod-text-primary: var(--text-primary);
+  --pod-radius-xs: var(--border-radius-base);
+  --pod-transition-fast: var(--transition-speed-fast);
+  --pod-accent: var(--text-accent);
+  --toolbar-bg-color: var(--bg-component);
+  --pod-ring-color: color-mix(in srgb, var(--text-accent), white 15%);
+  --pod-ring-width: 2px;
+  --pod-ring: 0 0 0 var(--pod-ring-width) var(--pod-ring-color);
 }
 
  
