@@ -585,7 +585,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: opacity 0.2s, filter 0.2s;
+  transition: opacity 0.2s, filter 0.2s, transform 0.12s;
 }
 .pod-banana-trigger:disabled {
   cursor: not-allowed;
@@ -594,6 +594,15 @@
 .pod-banana-trigger:not(:disabled) {
   cursor: pointer;
   opacity: 1;
+}
+
+.pod-banana-trigger:active {
+  transform: scale(0.98);
+  filter: brightness(1.02);
+}
+.pod-banana-trigger[aria-pressed="true"] {
+  transform: scale(0.985);
+  filter: brightness(1.06) saturate(1.1);
 }
 
 .pod-banana-trigger-inner {
@@ -638,6 +647,7 @@
 
 /* Banana panel overrides */
 .pod-panel.pod-panel-black { background-color: #000; }
+.pod-bg-solid { background-color: var(--bg-component-solid) !important; }
 .pod-panel-rounded-xl { border-radius: 22px; }
 /* Banana panel yellow gradient background */
 .pod-panel-yellow-gradient {

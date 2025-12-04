@@ -90,6 +90,7 @@ export const PromptBar: React.FC<PromptBarProps> = ({
     const modelPortalRef = useRef<HTMLDivElement>(null);
     const ratioPortalRef = useRef<HTMLDivElement>(null);
     const blockCollapseUntilRef = useRef<number>(0);
+    const expandedContentRef = useRef<HTMLDivElement>(null);
 
     // Auto-expand if prompt is not empty
     useEffect(() => {
@@ -134,6 +135,8 @@ export const PromptBar: React.FC<PromptBarProps> = ({
         });
         return () => cancelAnimationFrame(raf);
     }, [prompt]);
+
+    
 
     const getPlaceholderText = () => {
         if (!isSelectionActive) {
@@ -181,18 +184,48 @@ export const PromptBar: React.FC<PromptBarProps> = ({
         <div ref={containerRef} className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[100] flex justify-center">
             <motion.div
                 ref={wrapperRef}
-                layout
                 initial={false}
                 animate={{
                     width: isExpanded ? 580 : 180,
                     height: isExpanded ? 'auto' : 56,
                     borderRadius: isExpanded ? 24 : 999
                 }}
-                transition={{ type: "spring", stiffness: 220, damping: 28, delay: isExpanded ? 0 : 0.18 }}
+                transition={{
+                    borderRadius: isExpanded ? {
+                        duration: 0.3,
+                        ease: "easeOut",
+                        delay: 0
+                    } : {
+                        type: "spring",
+                        stiffness: 220,
+                        damping: 28,
+                        delay: 0.18
+                    },
+                    width: {
+                        type: "spring",
+                        stiffness: 220,
+                        damping: 28,
+                        delay: isExpanded ? 0.3 : 0.18
+                    },
+                    height: {
+                        type: "spring",
+                        stiffness: 220,
+                        damping: 28,
+                        delay: isExpanded ? 0.3 : 0.18
+                    },
+                    default: {
+                        type: "spring",
+                        stiffness: 220,
+                        damping: 28,
+                        delay: isExpanded ? 0.3 : 0.18
+                    }
+                }}
                 className="relative bg-[var(--bg-component)] border border-[var(--border-color)] shadow-2xl backdrop-blur-xl"
                 style={{
                     boxShadow: '0 20px 40px -10px rgba(0,0,0,0.6)',
-                    willChange: 'width, height, border-radius'
+                    willChange: 'width, height, border-radius, transform',
+                    contain: 'layout paint',
+                    isolation: 'isolate'
                 }}
             >
                 <AnimatePresence mode="sync">
@@ -207,9 +240,10 @@ export const PromptBar: React.FC<PromptBarProps> = ({
                             onClick={() => setIsExpanded(true)}
                         >
                             <div className="flex items-center gap-3 w-full">
-                                <div className="flex-shrink-0">
+                                <div className="flex-shrink-0" onClick={(e) => e.stopPropagation()}>
                                     <BananaSidebar
                                         t={t}
+                                        language={language}
                                         setPrompt={handleBananaSelect}
                                         onGenerate={() => { }}
                                         disabled={isLoading}
@@ -229,12 +263,23 @@ export const PromptBar: React.FC<PromptBarProps> = ({
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1, transition: { duration: 0.2, delay: isExpanded ? 0.18 : 0 } }}
                             exit={{ opacity: 0, transition: { duration: 0.2 } }}
-                            className="flex flex-col px-3 pt-1 pb-2 gap-0 w-[580px]" // Reduced padding and gap
+                            className="flex flex-col px-3 pt-1 pb-3 gap-0 w-full"
+                            ref={expandedContentRef}
                         >
                             {/* Body: Input Area */}
                             <div className="relative group rounded-xl px-1 transition-colors">
                                 {/* Top-Right Controls: QuickPrompts + Mode Switcher */}
                             <div className="absolute top-1 right-1 z-10 flex items-center gap-2">
+                                {prompt.trim() && !isLoading && (
+                                    <IconButton
+                                        onClick={handleSaveEffect}
+                                        title={t('myEffects.saveEffectTooltip')}
+                                        noHoverHighlight
+                                        className="w-10 h-10 flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-heading)] bg-[var(--bg-component)] hover:bg-[var(--border-color)] rounded-full transition-all"
+                                    >
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z" /></svg>
+                                    </IconButton>
+                                )}
                                 <QuickPrompts
                                         t={t}
                                         language={language}
@@ -271,22 +316,10 @@ export const PromptBar: React.FC<PromptBarProps> = ({
                                     onKeyDown={handleKeyDown}
                                     placeholder={getPlaceholderText()}
                                     className="w-full bg-transparent text-[var(--text-primary)] placeholder-[var(--text-muted)] resize-none focus:outline-none focus:shadow-none focus:ring-0 text-[15px] leading-relaxed font-light"
-                                    style={{ minHeight: '60px', border: 'none', padding: '18px 130px 18px 12px', transition: 'height 150ms ease', overflow: 'hidden', boxShadow: 'none' }}
+                                    style={{ minHeight: '60px', border: 'none', padding: prompt.trim() && !isLoading ? '18px 170px 18px 12px' : '18px 130px 18px 12px', transition: 'height 150ms ease', overflow: 'hidden', boxShadow: 'none' }}
                                     disabled={isLoading}
                                     autoFocus
                                 />
-                                {prompt.trim() && !isLoading && (
-                                    <div className="absolute bottom-0 right-0">
-                                        <IconButton
-                                            onClick={handleSaveEffect}
-                                            title={t('myEffects.saveEffectTooltip')}
-                                            noHoverHighlight
-                                            className="w-7 h-7 flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-heading)] bg-[var(--bg-component)] hover:bg-[var(--border-color)] rounded-full transition-all"
-                                        >
-                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z" /></svg>
-                                        </IconButton>
-                                    </div>
-                                )}
                             </div>
 
                             {/* Footer: Controls Row */}
@@ -329,7 +362,7 @@ export const PromptBar: React.FC<PromptBarProps> = ({
                                                     initial={{ opacity: 0, y: -4, scale: 0.95 }}
                                                     animate={{ opacity: 1, y: 0, scale: 1 }}
                                                     style={{ position: 'fixed', left: Math.round(modelMenuAnchor.left + modelMenuAnchor.width / 2 - 192 / 2), bottom: Math.round(window.innerHeight - modelMenuAnchor.top + 8), zIndex: 10000, width: 192 }}
-                                                    className="bg-[var(--bg-component)] border border-[var(--border-color)] rounded-xl shadow-xl overflow-hidden py-1"
+                                                    className="bg-[var(--bg-component-solid)] border border-[var(--border-color)] rounded-xl shadow-xl overflow-hidden py-1"
                                                 >
                                                     {MODELS.map(m => (
                                                         <button
@@ -392,7 +425,7 @@ export const PromptBar: React.FC<PromptBarProps> = ({
                                                     zIndex: 10000, 
                                                     width: generationMode === 'image' ? 240 : 96 
                                                 }}
-                                                className={`bg-[var(--bg-component)] border border-[var(--border-color)] rounded-xl shadow-xl overflow-hidden py-1 ${generationMode === 'image' ? 'grid grid-cols-3 gap-1 p-1' : ''}`}
+                                                className={`bg-[var(--bg-component-solid)] border border-[var(--border-color)] rounded-xl shadow-xl overflow-hidden py-1 ${generationMode === 'image' ? 'grid grid-cols-3 gap-1 p-1' : ''}`}
                                             >
                                                 {generationMode === 'image' ? (
                                                     ASPECT_RATIOS.map(r => (

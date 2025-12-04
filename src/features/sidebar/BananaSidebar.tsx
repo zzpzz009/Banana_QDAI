@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { translations } from '@/i18n/translations';
 
 interface BananaSidebarProps {
@@ -125,12 +126,19 @@ const getLocalIconSrc = (label: string): string | null => resolveIconUrl(label);
 export const BananaSidebar: React.FC<BananaSidebarProps> = ({ language, setPrompt, onGenerate, disabled = false, promptBarOffsetPx = 0, buttonSize }) => {
   const [isOpen, setIsOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [anchor, setAnchor] = useState<{ left: number; top: number; width: number } | null>(null);
   const builtInPrompts = (language === 'ZH' ? translations.ZH.bananaCards : translations.en.bananaCards) as { name: string; value: string }[];
   void onGenerate;
 
   useEffect(() => {
     const onClickOutside = (e: MouseEvent) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      const inButton = buttonRef.current?.contains(target) ?? false;
+      const inMenu = menuRef.current?.contains(target) ?? false;
+      const inWrapper = wrapperRef.current?.contains(target) ?? false;
+      if (!(inButton || inMenu || inWrapper)) {
         setIsOpen(false);
       }
     };
@@ -151,10 +159,17 @@ export const BananaSidebar: React.FC<BananaSidebarProps> = ({ language, setPromp
     <div className="relative" ref={wrapperRef}>
       {/* Gradient glass circle button styled like PodUI copy.html */}
       <button
-        onClick={() => !disabled && setIsOpen(prev => !prev)}
+        ref={buttonRef}
+        onClick={(e) => {
+          if (disabled) return;
+          setIsOpen(prev => !prev);
+          const rect = (e.currentTarget as HTMLButtonElement).getBoundingClientRect();
+          setAnchor({ left: Math.round(rect.left), top: Math.round(rect.top), width: Math.round(rect.width) });
+        }}
         disabled={disabled}
         aria-label="Banana Presets"
         title="Banana Presets"
+        aria-pressed={isOpen}
         className="pod-banana-trigger pod-inner-gradient-ring"
         style={{
           height: buttonSize || 40,
@@ -177,10 +192,11 @@ export const BananaSidebar: React.FC<BananaSidebarProps> = ({ language, setPromp
         </span>
       </button>
       
-      {isOpen && (
+      {isOpen && anchor && createPortal(
         <div
-          className="absolute bottom-full mb-3 sm:w-full md:w-[48rem] lg:w-[64rem] max-w-[90vw] pod-panel pod-panel-transparent pod-panel-rounded-xl p-3 overflow-x-auto overflow-y-hidden pod-scrollbar-x"
-          style={{ left: '50%', transform: `translateX(calc(-50% + ${Number(promptBarOffsetPx || 0)}px))` }}
+          ref={menuRef}
+          className="pod-panel pod-bg-solid pod-panel-rounded-xl p-3 overflow-x-auto overflow-y-hidden pod-scrollbar-x"
+          style={{ position: 'fixed', left: Math.round(anchor.left + anchor.width / 2 - Math.min(window.innerWidth * 0.9, 1024) / 2 + Number(promptBarOffsetPx || 0)), bottom: Math.round(window.innerHeight - anchor.top + 12), zIndex: 10000, width: 'min(90vw, 64rem)' }}
         >
           <div className="flex flex-row gap-2 justify-center flex-wrap md:flex-nowrap">
             {(builtInPrompts || []).slice(0, 7).map((item, idx) => (
@@ -204,9 +220,7 @@ export const BananaSidebar: React.FC<BananaSidebarProps> = ({ language, setPromp
                         e.currentTarget.src = fb ?? makeSvgDataUrl(item.name);
                       }}
                     />
-                    {/* bottom gradient overlay for readability */}
                     <div className="pod-banana-card-overlay"></div>
-                    {/* centered title overlay */}
                     <div className="pod-banana-card-content">
                       <h3
                         className="pod-banana-card-text"
@@ -220,7 +234,8 @@ export const BananaSidebar: React.FC<BananaSidebarProps> = ({ language, setPromp
               </button>
             ))}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

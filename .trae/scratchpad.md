@@ -16,6 +16,7 @@
 | canvas-bg-setting | 画布背景颜色设置 | 已完成 | Medium | App.tsx, Canvas.tsx, CanvasSettings.tsx |
 | unify-promptbar-bg | 统一 PromptBar 底色 | 已完成 | Low | PromptBar.tsx |
 | update-default-bg | 更新默认画布背景色 | 已完成 | Low | App.tsx |
+| opaque-menus | 菜单去透明度 | 已完成 | High | PromptBar.tsx, podui.css |
 
 ### 执行者反馈或请求帮助
 - **配置更新**：响应用户指令（"默认背景底色默认为#0F0D13"），将 `App.tsx` 中 `createNewBoard` 的默认背景色从 `#1f2937` 更新为 `#0F0D13`，确保新创建的看板背景色符合最新标准。
@@ -33,6 +34,21 @@
   - 调整了 `.pod-icon-button` 和其他按钮的圆角与 Hover 状态，使其与 Prompt Bar 控件一致。
 - **当前状态**：UI 预览页可正常访问，PromptBar 样式已入库，且全局 UI 组件库已同步更新为 Prompt Bar 风格。
 - **修复**：用户反馈快捷效果和香蕉按钮的展开菜单看不见，原因是 PromptBar 存在 `overflow-hidden` 样式。已在 `PromptBar.tsx` 中移除该样式，确保菜单可以正常显示在 PromptBar 之外。
+- **布局调整**：响应用户指令（"保存自定义效果按钮，放在快捷效果的左侧，并列布置"），将 `PromptBar` 中的保存按钮从输入框右下角移动到右上角工具栏，并与快捷效果按钮（Quick Prompts）并列。同时调整了按钮尺寸（40px）与图标大小（16px）以保持视觉一致性，并优化了输入框的动态右侧内边距。
+- **样式调整**：响应用户反馈（"promptbar里的按钮的展开菜单，底色取消透明度"），将 `PromptBar.tsx` 中的模型和比例选择菜单背景修改为 `bg-[var(--bg-component-solid)]`，并在 `podui.css` 中添加 `.pod-bg-solid` 类（强制使用不透明背景），确保 QuickPrompts 和 BananaSidebar 菜单背景均为实色不透明，提升可读性。
+- **交互优化**：响应用户指令（"胶囊状态下的promptbar，点击香蕉按钮也可以弹出香蕉按钮的菜单栏"），在 `PromptBar.tsx` 的折叠视图（Collapsed Pill View）中，阻止了香蕉按钮点击事件的冒泡（`e.stopPropagation()`），使其不再触发 PromptBar 的全局展开动作，而是正常切换香蕉菜单的显隐。同时修复了该状态下 `BananaSidebar` 缺失 `language` 属性的问题。
+- **动画优化**：响应用户指令（"PromptBar的展开动画，主要为了优化面板形状的柔和过渡"），修改了 `PromptBar.tsx` 的 `transition` 配置。
+  - **展开时**：采用两段式动画，`borderRadius` 先在 0.2s（原0.15s）内从胶囊变圆角矩形（无延迟），`width`/`height` 延迟 0.2s 后开始弹簧展开。这确保了先变方（倒角到位）再变大的视觉效果。
+  - **收缩时**：保持原有逻辑，所有属性延迟 0.18s（等待内容淡出）后通过弹簧动画同步收缩。
+- **二次优化**：响应用户反馈（"这个效果没有被实现"），进一步优化了 `PromptBar` 展开动画：
+  - 将 `borderRadius` 动画时长增加至 0.3s，并将 `width`/`height` 的展开延迟同步增加至 0.3s，确保“先变方再变大”的视觉节奏清晰可见。
+  - 显式定义了 `width` 和 `height` 的 `transition` 属性，避免 `layout` 属性可能的默认行为干扰。
+  - 排查了代码库，确认无重复实现冲突。
+- **样式修正**：在 `QuickPrompts.tsx` 和 `BananaSidebar.tsx` 中明确添加了 `.pod-bg-solid` 类，确保这两个菜单在展开时背景完全不透明，符合用户对于可读性的要求。
+- **动画与布局终修**：响应用户反馈（“动画最后有明显下坠过程”），移除了 `PromptBar` 的 `layout` 属性，彻底消除动画结束时的布局修正跳动。同时将展开视图的底部内边距调整为 `pb-3`，优化了与下边框的间距。
+- **交互与菜单修复**：
+  - **菜单显示**：将香蕉菜单和快捷效果菜单改为 `createPortal` 挂载到 `body`，解除了 `PromptBar` 的 `overflow` 限制，菜单可完整显示。
+  - **按钮反馈**：为香蕉按钮添加了 `:active` 和 `aria-pressed` 样式，增强了点击与展开状态的视觉反馈。
 
 ### 验收清单 (Acceptance Checklist)
 #### 1. 基础组件 (Basic Components)
