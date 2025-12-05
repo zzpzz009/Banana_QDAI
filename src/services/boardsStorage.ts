@@ -69,7 +69,6 @@ async function hrefToBlob(href: string, expectedMime?: string): Promise<Blob> {
     if (expectedMime && blob.type && expectedMime !== blob.type) return new Blob([await blob.arrayBuffer()], { type: expectedMime })
     return blob
   } else {
-    const { Blob } = await serverModules()
     if (href.startsWith('data:')) {
       const comma = href.indexOf(',')
       const meta = href.substring(0, comma)
@@ -77,12 +76,12 @@ async function hrefToBlob(href: string, expectedMime?: string): Promise<Blob> {
       const mimeMatch = /data:(.*?)(;base64)?$/i.exec(meta)
       const mime = (mimeMatch && mimeMatch[1]) ? mimeMatch[1] : (expectedMime || 'application/octet-stream')
       const buf = Buffer.from(b64, 'base64')
-      return new Blob([buf], { type: mime })
+      return (new Blob([buf], { type: mime }) as any as Blob)
     }
     const res = await fetch(href)
     const ab = await res.arrayBuffer()
     const mime = expectedMime || (res.headers.get('content-type') || 'application/octet-stream')
-    return new Blob([ab], { type: mime })
+    return (new Blob([ab], { type: mime }) as any as Blob)
   }
 }
 
@@ -129,11 +128,11 @@ async function getImageBlob(hash: string): Promise<Blob | null> {
   } else {
     try {
       await ensureDirs()
-      const { fs, path, Blob } = await serverModules()
+      const { fs, path } = await serverModules()
       const base = getBaseDir()
       const file = path.join(base, 'images', hash)
       const buf = await fs.readFile(file)
-      return new Blob([buf], { type: 'application/octet-stream' })
+      return (new Blob([buf], { type: 'application/octet-stream' }) as any as Blob)
     } catch {
       return null
     }
@@ -172,8 +171,26 @@ async function slimElement(el: Element): Promise<Element> {
 
 
 async function blobToDataUrl(blob: Blob): Promise<string> {
+  if (typeof FileReader !== 'undefined') {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onloadend = () => resolve(reader.result as string)
+      reader.onerror = reject
+      reader.readAsDataURL(blob)
+    })
+  }
   const ab = await blob.arrayBuffer()
-  const b64 = (typeof Buffer !== 'undefined') ? Buffer.from(ab).toString('base64') : btoa(String.fromCharCode(...new Uint8Array(ab)))
+  const b64 = (typeof Buffer !== 'undefined') ? Buffer.from(ab).toString('base64') : ''
+  // Fallback for non-node non-browser if any (unlikely to hit large files here without FileReader)
+  if (!b64 && typeof btoa === 'function') {
+    const bytes = new Uint8Array(ab)
+    let binary = ''
+    const len = bytes.byteLength
+    for (let i = 0; i < len; i++) {
+      binary += String.fromCharCode(bytes[i])
+    }
+    return `data:${blob.type || 'application/octet-stream'};base64,${btoa(binary)}`
+  }
   const mime = blob.type || 'application/octet-stream'
   return `data:${mime};base64,${b64}`
 }

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { forwardRef } from 'react';
 
 export interface IconButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   children?: React.ReactNode;
@@ -12,7 +12,7 @@ export interface IconButtonProps extends React.ButtonHTMLAttributes<HTMLButtonEl
   style?: React.CSSProperties;
 }
 
-export function IconButton({ active, noHoverHighlight, className, children, ...rest }: IconButtonProps) {
+export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(function IconButton({ active, noHoverHighlight, className, children, ...rest }, ref) {
   const classes = [
     'pod-icon-button',
     active ? 'active' : '',
@@ -20,8 +20,8 @@ export function IconButton({ active, noHoverHighlight, className, children, ...r
     className || ''
   ].filter(Boolean).join(' ');
   return (
-    <button className={classes} {...rest}>
+    <button ref={ref} className={classes} {...rest}>
       {children}
     </button>
   );
-}
+});

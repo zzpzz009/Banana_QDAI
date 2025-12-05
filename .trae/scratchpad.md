@@ -54,6 +54,11 @@
     - 锁定了展开视图的内部宽度（580px），配合 `overflow-hidden`，消除了展开过程中内容重排（reflow）导致的视觉抖动。
     - 调整了 `PromptBar` 展开后的底部内边距（`pb-3`），优化了控件行与下边框的视觉间距。
 
+- **v1.1.3.1 更新**：
+  - **修复**：解决 `boardsStorage.ts` 在加载大文件时的 `RangeError: Maximum call stack size exceeded`（`String.fromCharCode(...Uint8Array)` 导致）。改用 `FileReader.readAsDataURL` 异步处理，避免栈溢出并提升稳定性（`src/services/boardsStorage.ts`）。
+  - **运维**：重启开发服务器，修复 `net::ERR_CONNECTION_REFUSED`（`npm run dev`）。
+  - **版本**：更新 `package.json` 至 `1.1.3.1`，打标签并准备推送。
+
 ### 验收清单 (Acceptance Checklist)
 #### 1. 基础组件 (Basic Components)
 - [ ] **Button**:
