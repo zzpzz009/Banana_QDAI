@@ -166,6 +166,17 @@ const App: React.FC = () => {
         if (!supportsSize) setImageSize('1K');
     }, [imageModel]);
 
+    useEffect(() => {
+        const onDragOver = (e: DragEvent) => { e.preventDefault(); if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy'; };
+        const onDrop = (e: DragEvent) => { e.preventDefault(); if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy'; };
+        window.addEventListener('dragover', onDragOver);
+        window.addEventListener('drop', onDrop);
+        return () => {
+            window.removeEventListener('dragover', onDragOver);
+            window.removeEventListener('drop', onDrop);
+        };
+    }, []);
+
     const interactionMode = useRef<string | null>(null);
     const startPoint = useRef<Point>({ x: 0, y: 0 });
     const currentDrawingElementId = useRef<string | null>(null);
