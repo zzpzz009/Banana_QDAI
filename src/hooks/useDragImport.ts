@@ -225,11 +225,10 @@ export function useDragImport({ svgRef, getCanvasPoint, setElements, setSelected
     const items = dt && dt.items ? Array.from(dt.items) : []
     let count = 0
     for (let i = 0; i < items.length; i++) {
-      const it = items[i]
-      if (it.kind === 'file') {
-        const tp = (it.type || '').toLowerCase()
-        if (tp.startsWith('image/') || tp === '') count++
-      }
+      const it = items[i] as unknown as { getAsFile?: () => File | null; type?: string }
+      const f = it.getAsFile ? it.getAsFile() : null
+      const tp = ((f && f.type) || (it.type || '')).toLowerCase()
+      if (tp.startsWith('image/') || tp === '') count++
     }
     if (count <= 0) {
       setElements(prev => prev.filter(el => !(el.type === 'image' && el.name === '[DragPreview]')))
@@ -309,7 +308,10 @@ export function useDragImport({ svgRef, getCanvasPoint, setElements, setSelected
     const dt = e.dataTransfer
     let files: File[] = []
     if (dt && dt.items && dt.items.length > 0) {
-      files = Array.from(dt.items).map(it => it.kind === 'file' ? it.getAsFile() : null).filter((f): f is File => !!f)
+      files = Array.from(dt.items).map(it => {
+        const anyIt = it as unknown as { getAsFile?: () => File | null }
+        return anyIt.getAsFile ? anyIt.getAsFile() : null
+      }).filter((f): f is File => !!f)
     }
     if ((!files || files.length === 0) && dt && dt.files && dt.files.length > 0) {
       files = Array.from(dt.files)
