@@ -71,8 +71,8 @@ export function HistoryList({ isOpen, generateBoardThumbnail, onImportHistoryBoa
   }, [isOpen, history, scheduleQueue]);
 
   return (
-    <div className="mt-2">
-      <h4 className="text-sm mb-2" style={{ color: 'var(--text-heading)', fontWeight: 600 }}>历史图版（最多5个）</h4>
+    <div>
+      <h4 className="text-sm mb-2 font-semibold text-[var(--text-heading)]">历史图版（最多5个）</h4>
       <div ref={containerRef} className="grid grid-cols-2 gap-2 content-start overflow-y-auto">
         {history.slice(0,5).map(h => {
           const pad = (x: number) => String(x).padStart(2, '0');
@@ -97,7 +97,7 @@ export function HistoryList({ isOpen, generateBoardThumbnail, onImportHistoryBoa
           );
         })}
         {history.length === 0 && (
-          <div className="text-xs" style={{ color: 'var(--text-primary)' }}>暂无历史图版</div>
+          <div className="text-xs text-[var(--text-primary)]">暂无历史图版</div>
         )}
       </div>
     </div>

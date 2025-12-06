@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import type { JSX } from 'react';
 import type { Tool } from '@/types';
 import { Panel, IconButton, Button, Select } from '../../ui';
@@ -54,18 +55,51 @@ const ToolGroupButton: React.FC<{
 }> = ({ activeTool, setActiveTool, tools, groupIcon, groupLabel }) => {
     const [isOpen, setIsOpen] = useState(false);
     const wrapperRef = useRef<HTMLDivElement>(null);
+    const menuRef = useRef<HTMLDivElement>(null);
+    const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
 
     const activeToolInGroup = tools.find(t => t.id === activeTool);
 
+    const updatePosition = () => {
+        if (wrapperRef.current) {
+            const rect = wrapperRef.current.getBoundingClientRect();
+            setMenuPosition({
+                top: rect.top,
+                left: rect.right + 12 // Add some spacing
+            });
+        }
+    };
+
+    useEffect(() => {
+        if (isOpen) {
+            updatePosition();
+        }
+    }, [isOpen]);
+
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
-            if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
+            if (
+                wrapperRef.current &&
+                !wrapperRef.current.contains(event.target as Node) &&
+                menuRef.current &&
+                !menuRef.current.contains(event.target as Node)
+            ) {
                 setIsOpen(false);
             }
         };
+
+        const handleScroll = () => {
+            if (isOpen) setIsOpen(false);
+        };
+
         document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
+        window.addEventListener('scroll', handleScroll, { capture: true });
+        
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+            window.removeEventListener('scroll', handleScroll, { capture: true });
+        };
+    }, [isOpen]);
 
     const handleToolSelect = (toolId: Tool) => {
         setActiveTool(toolId);
@@ -80,18 +114,29 @@ const ToolGroupButton: React.FC<{
                 isActive={!!activeToolInGroup}
                 onClick={() => setIsOpen(prev => !prev)}
             />
-            {isOpen && (
-                <Panel className="absolute left-full top-0 ml-2 p-1 flex flex-col gap-1">
-                    {tools.map(tool => (
-                        <ToolButton
-                            key={tool.id}
-                            label={tool.label}
-                            icon={tool.icon}
-                            isActive={activeTool === tool.id}
-                            onClick={() => handleToolSelect(tool.id)}
-                        />
-                    ))}
-                </Panel>
+            {isOpen && createPortal(
+                <div
+                    ref={menuRef}
+                    style={{
+                        position: 'fixed',
+                        top: menuPosition.top,
+                        left: menuPosition.left,
+                        zIndex: 50
+                    }}
+                >
+                    <Panel className="p-1 flex flex-col gap-1 pod-shadow-lg bg-[var(--bg-component)] border border-[var(--border-color)]">
+                        {tools.map(tool => (
+                            <ToolButton
+                                key={tool.id}
+                                label={tool.label}
+                                icon={tool.icon}
+                                isActive={activeTool === tool.id}
+                                onClick={() => handleToolSelect(tool.id)}
+                            />
+                        ))}
+                    </Panel>
+                </div>,
+                document.body
             )}
         </div>
     );
@@ -130,7 +175,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
     if (isCropping) {
         return (
             <Panel 
-                className="absolute top-1/2 left-4 -translate-y-1/2 z-10 px-2 py-4 flex flex-col items-center space-y-2 w-auto min-w-[72px] pod-toolbar-container"
+                className="absolute top-1/2 left-2 sm:left-4 lg:left-6 -translate-y-1/2 z-10 px-2 py-3 sm:py-4 flex flex-col items-center space-y-2 w-auto min-w-[72px] pod-toolbar-container max-h-[90vh] overflow-y-auto pod-scrollbar"
             >
                 <span className="text-sm font-medium pod-text-heading">{t('toolbar.crop.title')}</span>
                 <div className="pod-toolbar-separator my-2 w-full"></div>
@@ -186,7 +231,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
 
     return (
         <div 
-            className="absolute top-1/2 left-4 -translate-y-1/2 z-10 pod-toolbar pod-toolbar-elevated pod-bar-soft-gradient pod-toolbar-container px-2 py-4 flex flex-col items-center gap-2"
+            className="absolute top-1/2 left-2 sm:left-4 lg:left-6 -translate-y-1/2 z-10 pod-toolbar pod-toolbar-elevated pod-bar-soft-gradient pod-toolbar-container px-2 py-3 sm:py-4 flex flex-col items-center gap-[var(--space-2)] max-h-[90vh] overflow-y-auto pod-scrollbar"
         >
             <ToolButton label="Boards" onClick={onBoardsClick} icon={<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>} />
             <ToolButton label={t('toolbar.layers')} onClick={onLayersClick} icon={<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>} />
@@ -194,7 +239,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
 
             <div className="pod-toolbar-separator"></div>
             
-            <div className="flex flex-col items-center gap-2 flex-grow">
+            <div className="flex flex-col items-center gap-[var(--space-2)] flex-grow">
                 {mainTools.map(tool => (
                     <ToolButton key={tool.id} label={tool.label} icon={tool.icon} isActive={activeTool === tool.id} onClick={() => setActiveTool(tool.id)} />
                 ))}

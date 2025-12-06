@@ -64,10 +64,11 @@ export const QuickPrompts: React.FC<QuickPromptsProps> = ({ t, language, setProm
             {isMenuOpen && anchor && createPortal(
                 <div
                     ref={menuRef}
-                    style={{ position: 'fixed', left: Math.round(anchor.left + anchor.width / 2 - 320 / 2), bottom: Math.round(window.innerHeight - anchor.top + 8), zIndex: 10000, width: 320 }}
+                    className="pod-overlay-position fixed z-[10000] w-80"
+                    style={{ '--pod-left': `${Math.round(anchor.left + anchor.width / 2 - 320 / 2)}px`, '--pod-bottom': `${Math.round(window.innerHeight - anchor.top + 8)}px` } as React.CSSProperties}
                 >
-                    <Panel className="pod-bg-solid border border-[var(--border-color)] rounded-xl shadow-xl max-h-96 overflow-y-auto pod-scrollbar-y p-2 flex flex-col gap-1">
-                        <h4 className="px-2 pt-1 pb-2 text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-secondary)' }}>{t('myEffects.title')}</h4>
+                    <Panel className="pod-menu-panel max-h-96 overflow-y-auto pod-scrollbar-y">
+                        <h4 className="pod-menu-header">{t('myEffects.title')}</h4>
                         {userEffects.length > 0 ? (
                             userEffects.map((effect) => (
                                 <div key={effect.id} className="group flex items-center justify-between p-2 pod-list-item text-sm">
@@ -77,17 +78,16 @@ export const QuickPrompts: React.FC<QuickPromptsProps> = ({ t, language, setProm
                                     <IconButton
                                         onClick={() => onDeleteUserEffect(effect.id)}
                                         title={t('myEffects.deleteEffectTooltip') as string}
-                                        className="ml-2 opacity-0 group-hover:opacity-100 flex-shrink-0"
-                                        style={{ color: '#ff6b6b' }}
+                                        className="ml-2 opacity-0 group-hover:opacity-100 flex-shrink-0 text-[var(--color-red-400)]"
                                     >
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                                     </IconButton>
                                 </div>
                             ))
                         ) : (
-                            <p className="px-2 pb-2 text-xs" style={{ color: 'var(--text-secondary)' }}>{t('myEffects.noEffects')}</p>
+                            <p className="px-2 pb-2 text-xs text-[var(--text-secondary)]">{t('myEffects.noEffects')}</p>
                         )}
-                        <div className="my-2 -mx-2" style={{ borderTop: '1px solid var(--border-color)' }}></div>
+                        <div className="my-2 -mx-2 border-t border-[var(--border-color)]"></div>
                         {builtInPrompts.map((item, index) => (
                             <MenuItem 
                                 key={index} 

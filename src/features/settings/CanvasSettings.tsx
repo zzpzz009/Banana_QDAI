@@ -80,7 +80,7 @@ export const CanvasSettings: React.FC<CanvasSettingsProps> = ({
             className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-sm"
             onClick={onClose}
         >
-            <Panel className="relative flex flex-col w-80 max-h-[85vh] overflow-hidden shadow-2xl">
+            <Panel className="relative flex flex-col w-80 max-w-[90vw] max-h-[85vh] overflow-hidden shadow-2xl">
                 <div onClick={(e: React.MouseEvent<HTMLDivElement>) => { e.stopPropagation(); }}>
                     {/* Header */}
                     <div className="flex-shrink-0 px-4 py-3 flex justify-between items-center border-b border-[var(--border-color)] bg-[var(--bg-panel)] z-10">
@@ -91,7 +91,7 @@ export const CanvasSettings: React.FC<CanvasSettingsProps> = ({
                     </div>
 
                     {/* Content */}
-                    <div className="flex-grow overflow-y-auto p-4 space-y-4 custom-scrollbar">
+                    <div className="flex-grow overflow-y-auto p-4 space-y-4 pod-scrollbar">
 
                         {/* Preferences */}
                         <div className="grid grid-cols-2 gap-4">
@@ -163,7 +163,7 @@ export const CanvasSettings: React.FC<CanvasSettingsProps> = ({
 
 
 
-                        <div className="border-t border-[var(--border-color)]"></div>
+                        <div className="pod-separator"></div>
 
                         {/* API & Account */}
                         <div className="space-y-3">

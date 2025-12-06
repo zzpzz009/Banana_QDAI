@@ -1,6 +1,6 @@
 import React from 'react';
 import type { Board, HistoryBoardSnapshot } from '@/types';
-import { Panel, IconButton } from '../../ui';
+import { IconButton } from '../../ui';
 import { BoardGrid } from './components/BoardGrid';
 import { HistoryList } from './components/HistoryList';
 
@@ -27,12 +27,12 @@ export const BoardPanel: React.FC<BoardPanelProps> = ({
     if (!isOpen) return null;
 
     return (
-         <Panel 
-            className="absolute top-4 left-4 z-20 flex flex-col w-64 h-[calc(100vh-2rem)] overflow-hidden"
+         <div 
+            className="absolute top-4 left-4 z-20 flex flex-col w-[85vw] sm:w-64 md:w-72 lg:w-80 max-w-[400px] h-[calc(100vh-2rem)] pod-panel overflow-hidden"
         >
-            <div className="flex-shrink-0 flex justify-between items-center p-3" style={{ borderBottom: '1px solid var(--border-color)' }}>
-                <h3 className="text-base" style={{ color: 'var(--text-heading)', fontWeight: 600 }}>Boards</h3>
-                <div className="flex items-center space-x-1">
+          <div className="pod-panel-header">
+            <h3 className="text-base font-semibold text-[var(--text-heading)]">Boards</h3>
+            <div className="flex items-center gap-[var(--space-2)]">
                     <IconButton onClick={onAddBoard} title="New Board" aria-label="New Board">
                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                     </IconButton>
@@ -41,7 +41,7 @@ export const BoardPanel: React.FC<BoardPanelProps> = ({
                     </IconButton>
                 </div>
             </div>
-            <div className="flex-grow p-2 overflow-y-auto">
+            <div className="flex-grow overflow-y-auto p-[var(--space-2)]">
                 <BoardGrid
                     isOpen={isOpen}
                     boards={boards}
@@ -52,12 +52,13 @@ export const BoardPanel: React.FC<BoardPanelProps> = ({
                     onDeleteBoard={onDeleteBoard}
                     generateBoardThumbnail={generateBoardThumbnail}
                 />
+                <div className="pod-separator" />
                 <HistoryList
                     isOpen={isOpen}
                     generateBoardThumbnail={generateBoardThumbnail}
                     onImportHistoryBoard={onImportHistoryBoard}
                 />
             </div>
-        </Panel>
+        </div>
     );
 };

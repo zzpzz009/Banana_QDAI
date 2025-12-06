@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { forwardRef } from 'react';
 
 export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   className?: string;
@@ -6,7 +6,7 @@ export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> 
   inputSize?: 'sm' | 'md' | 'lg';
 }
 
-export function Input({ className, variant = 'default', inputSize = 'md', ...rest }: InputProps) {
+export const Input = forwardRef<HTMLInputElement, InputProps>(function Input({ className, variant = 'default', inputSize = 'md', ...rest }, ref) {
   const sizeClass = {
     sm: 'pod-input-sm',
     md: 'pod-input-md',
@@ -29,5 +29,5 @@ export function Input({ className, variant = 'default', inputSize = 'md', ...res
     className || ''
   ].filter(Boolean).join(' ');
 
-  return <input className={classes} {...rest} />;
-}
+  return <input ref={ref} className={classes} {...rest} />;
+});

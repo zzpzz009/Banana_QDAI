@@ -13,12 +13,12 @@ export const SessionRestoreDialog: React.FC<Props> = ({ onContinue, onNew, lastN
     <Dialog open={true} onClose={onNew}>
       <div className="p-4 w-80">
         <div className="flex justify-between items-center mb-2">
-          <h3 className="text-lg" style={{ color: 'var(--text-heading)', fontWeight: 600 }}>发现上次图版</h3>
+          <h3 className="text-lg font-semibold text-[var(--text-heading)]">发现上次图版</h3>
           <IconButton onClick={onNew}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
           </IconButton>
         </div>
-        <div className="text-sm" style={{ color: 'var(--text-primary)' }}>
+        <div className="text-sm text-[var(--text-primary)]">
           <div>上次活动图版：{lastName || '未命名'}</div>
           <div>保存时间：{lastTime ? new Date(lastTime).toLocaleString() : '-'}</div>
         </div>

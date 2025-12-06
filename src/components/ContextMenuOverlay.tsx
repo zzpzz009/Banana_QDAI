@@ -20,24 +20,24 @@ export function ContextMenuOverlay({ contextMenu, elements, selectedElementIds, 
   const isUngroupable = selectedElementIds.length === 1 && elements.find(el => el.id === selectedElementIds[0])?.type === 'group'
 
   return (
-    <div style={{ top: contextMenu.y, left: contextMenu.x }} className="absolute z-30 bg-white rounded-md shadow-lg border border-gray-200 text-sm py-1 text-gray-800" onContextMenu={e => e.stopPropagation()}>
-      {isGroupable && <button onClick={onGroup} className="block w-full text-left px-4 py-1.5 hover:bg-gray-100">{t('contextMenu.group')}</button>}
-      {isGroupable && <button onClick={() => onMergeLayers('selected')} className="block w-full text-left px-4 py-1.5 hover:bg-gray-100">{t('contextMenu.mergeLayers')}</button>}
-      {isUngroupable && <button onClick={onUngroup} className="block w-full text-left px-4 py-1.5 hover:bg-gray-100">{t('contextMenu.ungroup')}</button>}
-      {(isGroupable || isUngroupable) && <div className="border-t border-gray-100 my-1"></div>}
+    <div style={{ '--pod-top': `${contextMenu.y}px`, '--pod-left': `${contextMenu.x}px` } as React.CSSProperties} className="pod-overlay-position pod-context-menu" onContextMenu={e => e.stopPropagation()}>
+      {isGroupable && <button onClick={onGroup} className="pod-context-menu-item">{t('contextMenu.group')}</button>}
+      {isGroupable && <button onClick={() => onMergeLayers('selected')} className="pod-context-menu-item">{t('contextMenu.mergeLayers')}</button>}
+      {isUngroupable && <button onClick={onUngroup} className="pod-context-menu-item">{t('contextMenu.ungroup')}</button>}
+      {(isGroupable || isUngroupable) && <div className="pod-context-divider"></div>}
       {contextMenu.elementId && (
         <>
-          <button onClick={() => onLayerAction(contextMenu.elementId!, 'forward')} className="block w-full text-left px-4 py-1.5 hover:bg-gray-100">{t('contextMenu.bringForward')}</button>
-          <button onClick={() => onLayerAction(contextMenu.elementId!, 'backward')} className="block w-full text-left px-4 py-1.5 hover:bg-gray-100">{t('contextMenu.sendBackward')}</button>
-          <div className="border-t border-gray-100 my-1"></div>
-          <button onClick={() => onLayerAction(contextMenu.elementId!, 'front')} className="block w-full text-left px-4 py-1.5 hover:bg-gray-100">{t('contextMenu.bringToFront')}</button>
-          <button onClick={() => onLayerAction(contextMenu.elementId!, 'back')} className="block w-full text-left px-4 py-1.5 hover:bg-gray-100">{t('contextMenu.sendToBack')}</button>
+          <button onClick={() => onLayerAction(contextMenu.elementId!, 'forward')} className="pod-context-menu-item">{t('contextMenu.bringForward')}</button>
+          <button onClick={() => onLayerAction(contextMenu.elementId!, 'backward')} className="pod-context-menu-item">{t('contextMenu.sendBackward')}</button>
+          <div className="pod-context-divider"></div>
+          <button onClick={() => onLayerAction(contextMenu.elementId!, 'front')} className="pod-context-menu-item">{t('contextMenu.bringToFront')}</button>
+          <button onClick={() => onLayerAction(contextMenu.elementId!, 'back')} className="pod-context-menu-item">{t('contextMenu.sendToBack')}</button>
         </>
       )}
       {hasDrawableSelection && (
         <>
-          <div className="border-t border-gray-100 my-1"></div>
-          <button onClick={onRasterizeSelection} className="block w-full text-left px-4 py-1.5 hover:bg-gray-100">{t('contextMenu.rasterize')}</button>
+          <div className="pod-context-divider"></div>
+          <button onClick={onRasterizeSelection} className="pod-context-menu-item">{t('contextMenu.rasterize')}</button>
         </>
       )}
     </div>

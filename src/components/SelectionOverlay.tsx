@@ -57,11 +57,11 @@ export const SelectionOverlay: React.FC<SelectionOverlayProps> = ({
   return (
     <>
       {lassoPath && (
-        <path d={lassoPath.map((p, i) => (i === 0 ? `M ${p.x} ${p.y}` : `L ${p.x} ${p.y}`)).join(' ')} stroke="rgb(59 130 246)" strokeWidth={1 / zoom} strokeDasharray={`${4 / zoom} ${4 / zoom}`} fill="rgba(59, 130, 246, 0.1)" />
+        <path d={lassoPath.map((p, i) => (i === 0 ? `M ${p.x} ${p.y}` : `L ${p.x} ${p.y}`)).join(' ')} stroke="var(--color-blue-500)" strokeWidth={1 / zoom} strokeDasharray={`${4 / zoom} ${4 / zoom}`} fill="var(--color-blue-500)" fillOpacity="0.1" />
       )}
 
       {alignmentGuides.map((g, i) => (
-        <line key={i} x1={g.type === 'v' ? g.position : g.start} y1={g.type === 'h' ? g.position : g.start} x2={g.type === 'v' ? g.position : g.end} y2={g.type === 'h' ? g.position : g.end} stroke="red" strokeWidth={1 / zoom} strokeDasharray={`${4 / zoom} ${2 / zoom}`} />
+        <line key={i} x1={g.type === 'v' ? g.position : g.start} y1={g.type === 'h' ? g.position : g.start} x2={g.type === 'v' ? g.position : g.end} y2={g.type === 'h' ? g.position : g.end} stroke="var(--color-red-500)" strokeWidth={1 / zoom} strokeDasharray={`${4 / zoom} ${2 / zoom}`} />
       ))}
 
       {selectedElementIds.length > 0 && !croppingState && !editingElement && (() => {
@@ -74,7 +74,7 @@ export const SelectionOverlay: React.FC<SelectionOverlayProps> = ({
           const x = b.x + b.width / 2 - cw / 2;
           const y = b.y - ch - 10 / zoom;
           return (
-            <foreignObject x={x} y={y} width={cw} height={ch} style={{ overflow: 'visible' }}>
+            <foreignObject x={x} y={y} width={cw} height={ch} className="pod-foreign-object-visible">
               <ContextToolbar mode="multi" toolbarScreenWidth={sw} toolbarScreenHeight={sh} zoom={zoom} t={t} onAlign={handleAlignSelection} />
             </foreignObject>
           );
@@ -97,8 +97,20 @@ export const SelectionOverlay: React.FC<SelectionOverlayProps> = ({
           const x = b.x + b.width / 2 - cw / 2;
           const y = b.y - ch - 10 / zoom;
           return (
-            <foreignObject x={x} y={y} width={cw} height={ch} style={{ overflow: 'visible' }}>
-              <ContextToolbar mode="single" element={el} toolbarScreenWidth={sw} toolbarScreenHeight={sh} zoom={zoom} t={t} onCopy={handleCopyElement} onDownloadImage={handleDownloadImage} onStartCrop={handleStartCrop} onPropChange={handlePropertyChange} onDelete={handleDeleteElement} />
+            <foreignObject x={x} y={y} width={cw} height={ch} className="pod-foreign-object-visible">
+              <ContextToolbar 
+                mode="single" 
+                element={el} 
+                toolbarScreenWidth={sw} 
+                toolbarScreenHeight={sh} 
+                zoom={zoom} 
+                t={t} 
+                onCopy={handleCopyElement} 
+                onDownloadImage={handleDownloadImage} 
+                onStartCrop={handleStartCrop} 
+                onPropChange={handlePropertyChange} 
+                onDelete={handleDeleteElement} 
+              />
             </foreignObject>
           );
         }
@@ -115,7 +127,8 @@ export const SelectionOverlay: React.FC<SelectionOverlayProps> = ({
               value={editingElement.text}
               onChange={(e) => setEditingElement({ ...editingElement, text: e.target.value })}
               onBlur={() => handleStopEditing()}
-              style={{ width: '100%', height: '100%', border: 'none', padding: 0, margin: 0, outline: 'none', resize: 'none', background: 'transparent', fontSize: el.fontSize, color: el.fontColor, overflow: 'hidden' }}
+              className="pod-text-element-content"
+              style={{ '--el-font-size': `${el.fontSize}px`, '--el-color': el.fontColor } as React.CSSProperties}
             />
           </foreignObject>
         );
@@ -129,7 +142,7 @@ export const SelectionOverlay: React.FC<SelectionOverlayProps> = ({
             fillRule="evenodd"
             pointerEvents="none"
           />
-          <rect x={croppingState.cropBox.x} y={croppingState.cropBox.y} width={croppingState.cropBox.width} height={croppingState.cropBox.height} fill="none" stroke="white" strokeWidth={2 / zoom} pointerEvents="all" />
+          <rect x={croppingState.cropBox.x} y={croppingState.cropBox.y} width={croppingState.cropBox.width} height={croppingState.cropBox.height} fill="none" stroke="var(--color-neutral-white)" strokeWidth={2 / zoom} pointerEvents="all" />
           {(() => {
             const { x, y, width, height } = croppingState.cropBox;
             const s = 10 / zoom;
@@ -140,14 +153,25 @@ export const SelectionOverlay: React.FC<SelectionOverlayProps> = ({
               { n: 'br', x: x + width, y: y + height, c: 'nwse-resize' },
             ];
             return hs.map(h => (
-              <rect key={h.n} data-handle={h.n} x={h.x - s / 2} y={h.y - s / 2} width={s} height={s} fill="white" stroke="#3b82f6" strokeWidth={1 / zoom} style={{ cursor: h.c }} />
+              <rect 
+                key={h.n} 
+                data-handle={h.n} 
+                x={h.x - s / 2} 
+                y={h.y - s / 2} 
+                width={s} 
+                height={s} 
+                fill="var(--color-neutral-white)" 
+                stroke="var(--color-blue-500)" 
+                strokeWidth={1 / zoom} 
+                className={h.c === 'nwse-resize' ? 'cursor-nwse-resize' : 'cursor-nesw-resize'} 
+              />
             ));
           })()}
         </g>
       )}
 
       {selectionBox && (
-        <rect x={selectionBox.x} y={selectionBox.y} width={selectionBox.width} height={selectionBox.height} fill="rgba(59, 130, 246, 0.1)" stroke="rgb(59, 130, 246)" strokeWidth={1 / zoom} />
+        <rect x={selectionBox.x} y={selectionBox.y} width={selectionBox.width} height={selectionBox.height} fill="var(--color-blue-500)" fillOpacity="0.1" stroke="var(--color-blue-500)" strokeWidth={1 / zoom} />
       )}
     </>
   );

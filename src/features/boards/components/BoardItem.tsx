@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, forwardRef, memo } from 'react';
 import type { Board } from '@/types';
-import { IconButton, Panel, MenuItem } from '../../../ui';
+import { IconButton, Panel, MenuItem, Input } from '../../../ui';
 
 type BoardItemProps = {
   board: Board;
@@ -71,19 +71,20 @@ export const BoardItem = forwardRef<HTMLDivElement, BoardItemProps>(function Boa
       onClick={onClick}
       className={`group relative p-2 pod-list-item cursor-pointer ${isActive ? 'selected' : ''}`}
     >
-      <div className="aspect-[3/2] w-full rounded-md mb-2 overflow-hidden border-2" style={{ borderColor: isActive ? 'var(--text-accent)' : 'transparent' }}>
+      <div className={`aspect-[3/2] w-full rounded-md mb-2 overflow-hidden border-2 ${isActive ? 'border-[var(--text-accent)]' : 'border-transparent'}`}>
         <img src={thumbnail} alt={`${board.name} thumbnail`} className="w-full h-full object-cover" />
       </div>
       <div className="flex items-center justify-between">
         {isEditing ? (
-          <input
-            ref={inputRef}
+          <Input
+            ref={inputRef as React.Ref<HTMLInputElement>}
             type="text"
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(e) => setName((e.target as HTMLInputElement).value)}
             onBlur={handleBlur}
             onKeyDown={(e) => e.key === 'Enter' && handleBlur()}
-            className="w-full bg-transparent border-b border-blue-400 outline-none text-white text-sm"
+            inputSize="sm"
+            className="w-full bg-transparent"
             onClick={e => e.stopPropagation()}
           />
         ) : (
@@ -102,8 +103,8 @@ export const BoardItem = forwardRef<HTMLDivElement, BoardItemProps>(function Boa
             <Panel className="absolute right-0 bottom-full mb-1 z-10 w-32 py-1 text-sm">
               <MenuItem onClick={() => handleMenuAction('rename')} className="block w-full text-left">Rename</MenuItem>
               <MenuItem onClick={() => handleMenuAction('duplicate')} className="block w-full text-left">Duplicate</MenuItem>
-              <div className="my-1" style={{ borderTop: '1px solid var(--border-color)' }}></div>
-              <MenuItem onClick={() => handleMenuAction('delete')} className="block w-full text-left" style={{ color: '#ff6b6b' }}>Delete</MenuItem>
+              <div className="pod-separator my-1"></div>
+              <MenuItem onClick={() => handleMenuAction('delete')} className="block w-full text-left text-[#ff6b6b]">Delete</MenuItem>
             </Panel>
           )}
         </div>
@@ -115,4 +116,3 @@ export const BoardItem = forwardRef<HTMLDivElement, BoardItemProps>(function Boa
 export const MemoBoardItem = memo(BoardItem);
 BoardItem.displayName = 'BoardItem';
 MemoBoardItem.displayName = 'MemoBoardItem';
-

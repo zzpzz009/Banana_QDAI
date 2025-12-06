@@ -28,12 +28,12 @@ type SingleProps = BaseProps & {
 type Props = MultiProps | SingleProps;
 
 export const ContextToolbar: React.FC<Props> = (props) => {
-  const style = { transform: `scale(${1 / props.zoom})`, transformOrigin: 'top left', width: `${props.toolbarScreenWidth}px`, height: `${props.toolbarScreenHeight}px` } as const;
+  const style = { '--pod-scale': 1 / props.zoom, '--pod-width': `${props.toolbarScreenWidth}px`, '--pod-height': `${props.toolbarScreenHeight}px` } as React.CSSProperties;
 
   if (props.mode === 'multi') {
     const { t, onAlign } = props;
     return (
-      <div style={style} onMouseDown={(e) => e.stopPropagation()}>
+      <div className="pod-context-toolbar-container" style={style} onMouseDown={(e) => e.stopPropagation()}>
         <div className="pod-context-toolbar">
           <button title={t('contextMenu.alignment.alignLeft')} onClick={() => onAlign('left')} className="pod-context-button"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="4" y1="21" x2="4" y2="3"></line><rect x="8" y="6" width="8" height="4" rx="1"></rect><rect x="8" y="14" width="12" height="4" rx="1"></rect></svg></button>
           <button title={t('contextMenu.alignment.alignCenter')} onClick={() => onAlign('center')} className="pod-context-button"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="21" x2="12" y2="3" strokeDasharray="2 2"></line><rect x="7" y="6" width="10" height="4" rx="1"></rect><rect x="4" y="14" width="16" height="4" rx="1"></rect></svg></button>
@@ -50,7 +50,7 @@ export const ContextToolbar: React.FC<Props> = (props) => {
   const { element, t, onCopy, onDownloadImage, onStartCrop, onPropChange, onDelete } = props;
 
   return (
-    <div style={style} onMouseDown={(e) => e.stopPropagation()}>
+    <div className="pod-context-toolbar-container" style={style} onMouseDown={(e) => e.stopPropagation()}>
       <div className="pod-context-toolbar">
         <button title={t('contextMenu.copy')} onClick={() => onCopy(element)} className="pod-context-button"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button>
         {element.type === 'image' && onDownloadImage && <button title={t('contextMenu.download')} onClick={() => onDownloadImage(element as Extract<Element, { type: 'image' }>)} className="pod-context-button"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg></button>}

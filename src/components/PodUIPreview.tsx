@@ -109,6 +109,84 @@ export const PodUIPreview: React.FC<{ onClose: () => void }> = ({ onClose }) => 
         </section>
 
         <section className="space-y-4">
+          <h3 className="text-xl font-semibold text-gray-300">Acceptance Checks</h3>
+          <div className="grid grid-cols-2 gap-6">
+            <div className="space-y-3">
+              <div className="text-sm text-gray-400">Focus Ring</div>
+              <PodInput placeholder="Tab to focus" />
+            </div>
+            <div className="space-y-3">
+              <div className="text-sm text-gray-400">Disabled States</div>
+              <div className="flex gap-3">
+                <PodButton disabled>Disabled</PodButton>
+                <PodInput placeholder="Disabled" disabled />
+              </div>
+            </div>
+            <div className="space-y-3">
+              <div className="text-sm text-gray-400">Hover & Active (Buttons)</div>
+              <div className="flex gap-3">
+                <PodButton variant="primary">Primary</PodButton>
+                <PodButton variant="secondary">Secondary</PodButton>
+                <PodButton variant="ghost">Ghost</PodButton>
+              </div>
+            </div>
+            <div className="space-y-3">
+              <div className="text-sm text-gray-400">Menu Item Active</div>
+              <div className="p-3 bg-gray-800/40 rounded-lg">
+                <div className="pod-menu-item">Default</div>
+                <div className="pod-menu-item active mt-2">Active</div>
+              </div>
+            </div>
+            <div className="space-y-3">
+              <div className="text-sm text-gray-400">Scrollbar & Separator</div>
+              <div className="h-32 w-full bg-[var(--bg-component)] border border-[var(--border-color)] rounded-lg overflow-y-auto pod-scrollbar p-2 mb-2">
+                <div className="space-y-2">
+                  <div>Item 1</div>
+                  <div className="pod-separator"></div>
+                  <div>Item 2</div>
+                  <div className="pod-separator"></div>
+                  <div>Item 3</div>
+                  <div className="pod-separator"></div>
+                  <div>Item 4</div>
+                  <div className="pod-separator"></div>
+                  <div>Item 5</div>
+                  <div className="pod-separator"></div>
+                  <div>Item 6 (Scroll to see me)</div>
+                </div>
+              </div>
+              <div className="w-full bg-[var(--bg-component)] border border-[var(--border-color)] rounded-lg overflow-x-auto pod-scrollbar-x p-2 whitespace-nowrap">
+                <div className="inline-flex gap-4 p-2">
+                  <div>Item 1 (Horizontal)</div>
+                  <div className="pod-separator-vertical h-8"></div>
+                  <div>Item 2</div>
+                  <div className="pod-separator-vertical h-8"></div>
+                  <div>Item 3</div>
+                  <div className="pod-separator-vertical h-8"></div>
+                  <div>Item 4</div>
+                  <div className="pod-separator-vertical h-8"></div>
+                  <div>Item 5 (Scroll me)</div>
+                </div>
+              </div>
+            </div>
+            <div className="space-y-3">
+              <div className="text-sm text-gray-400">Chip Boundary</div>
+              <div className="flex flex-wrap gap-2 max-w-[200px] border border-[var(--border-color)] p-2 rounded-lg mb-2">
+                <div className="pod-chip text-xs py-1 px-3 min-h-[24px]">Short</div>
+                <div className="pod-chip text-xs py-1 px-3 min-h-[24px] active">Active</div>
+                <div className="pod-chip text-xs py-1 px-3 min-h-[24px] truncate max-w-full" title="Very long chip text that should truncate">
+                  Very long chip text that should truncate
+                </div>
+              </div>
+              <div className="flex gap-2 max-w-[200px] overflow-x-auto pod-scrollbar-x border border-[var(--border-color)] p-2 rounded-lg">
+                <div className="pod-chip text-xs py-1 px-3 min-h-[24px] whitespace-nowrap">No Wrap 1</div>
+                <div className="pod-chip text-xs py-1 px-3 min-h-[24px] whitespace-nowrap">No Wrap 2</div>
+                <div className="pod-chip text-xs py-1 px-3 min-h-[24px] whitespace-nowrap">No Wrap 3</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="space-y-4">
           <h3 className="text-xl font-semibold text-gray-300">Buttons</h3>
           <div className="flex flex-wrap gap-4 items-center">
             <PodButton variant="primary">Primary</PodButton>
@@ -145,7 +223,7 @@ export const PodUIPreview: React.FC<{ onClose: () => void }> = ({ onClose }) => 
           <h3 className="text-xl font-semibold text-gray-300">Panels</h3>
           <div className="grid grid-cols-2 gap-4">
             <PodPanel className="p-4 text-center">Default Panel</PodPanel>
-            <PodPanel variant="yellow-gradient" className="p-4 text-center text-black">Yellow Gradient</PodPanel>
+            <PodPanel variant="brand-gradient" className="p-4 text-center text-black">Brand Gradient</PodPanel>
             <PodPanel variant="transparent" className="p-4 text-center border border-white/10">Transparent</PodPanel>
             <PodPanel variant="pill" className="p-4 text-center">Pill Panel</PodPanel>
           </div>

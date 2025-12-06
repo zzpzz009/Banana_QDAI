@@ -74,17 +74,17 @@ export const Canvas: React.FC<CanvasProps> = ({
   return (
     <svg
       ref={svgRef}
-      className="w-full h-full"
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
       onContextMenu={handleContextMenu}
-      style={{ cursor, backgroundColor: canvasBackgroundColor }}
+      style={{ '--canvas-cursor': cursor, '--canvas-bg': canvasBackgroundColor } as React.CSSProperties}
+      className="w-full h-full pod-canvas-root"
     >
       <defs>
         <pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse">
-          <circle cx="1.5" cy="1.5" r="1.5" style={{ fill: 'var(--grid-dot-color)', opacity: 'var(--grid-dot-opacity)' }} />
+          <circle cx="1.5" cy="1.5" r="1.5" className="pod-grid-dot" />
         </pattern>
         {elements.map(el => {
           if (el.type === 'image' && el.borderRadius && el.borderRadius > 0) {
@@ -117,7 +117,7 @@ export const Canvas: React.FC<CanvasProps> = ({
               ];
               selectionComponent = <g>
                 <rect x={el.x} y={el.y} width={el.width} height={el.height} fill="none" stroke="rgb(59 130 246)" strokeWidth={2 / zoom} pointerEvents="none" />
-                {hs.map(h => <rect key={h.n} data-handle={h.n} x={h.x - s / 2} y={h.y - s / 2} width={s} height={s} fill="white" stroke="#3b82f6" strokeWidth={1 / zoom} style={{ cursor: h.c }} />)}
+                {hs.map(h => <rect key={h.n} data-handle={h.n} x={h.x - s / 2} y={h.y - s / 2} width={s} height={s} fill="white" stroke="#3b82f6" strokeWidth={1 / zoom} className={`cursor-${h.c}`} />)}
               </g>
             }
           }
@@ -144,8 +144,8 @@ export const Canvas: React.FC<CanvasProps> = ({
             return (
               <g key={el.id} data-id={el.id} transform={`translate(${el.x}, ${el.y})`} className="cursor-pointer">
                 {!isEditing && (
-                  <foreignObject width={el.width} height={el.height} style={{ overflow: 'visible' }}>
-                    <div style={{ fontSize: el.fontSize, color: el.fontColor, width: '100%', height: '100%', wordBreak: 'break-word' }}>{el.text}</div>
+                  <foreignObject width={el.width} height={el.height} className="pod-foreign-object-visible">
+                    <div className="pod-text-element-content" style={{ '--el-font-size': `${el.fontSize}px`, '--el-color': el.fontColor } as React.CSSProperties}>{el.text}</div>
                   </foreignObject>
                 )}
                 {selectionComponent && React.cloneElement(selectionComponent as React.ReactElement, { transform: `translate(${-el.x}, ${-el.y})` })}
@@ -178,7 +178,7 @@ export const Canvas: React.FC<CanvasProps> = ({
             return (
               <g key={el.id} data-id={el.id}>
                 <foreignObject x={el.x} y={el.y} width={el.width} height={el.height}>
-                  <video src={el.href} controls style={{ width: '100%', height: '100%', borderRadius: '8px' }} className={croppingState ? 'opacity-30' : ''}></video>
+                  <video src={el.href} controls className={`pod-video-element ${croppingState ? 'opacity-30' : ''}`}></video>
                 </foreignObject>
                 {selectionComponent}
               </g>

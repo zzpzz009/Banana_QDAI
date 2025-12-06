@@ -52,7 +52,8 @@ const createNewBoard = (name: string): Board => {
         historyIndex: 0,
         panOffset: { x: 0, y: 0 },
         zoom: 1,
-        canvasBackgroundColor: '#0F0D13',
+        canvasBackgroundColor: '#0F0D13', // matches var(--color-base-dark)
+        // Note: Canvas context requires valid hex/color string, cannot use CSS var directly without resolution.
     };
 };
 
@@ -73,7 +74,7 @@ const App: React.FC = () => {
     const { elements, history, historyIndex, panOffset, zoom, canvasBackgroundColor } = activeBoard;
 
     const [activeTool, setActiveTool] = useState<Tool>('select');
-    const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#FF0000', strokeWidth: 5 });
+    const [drawingOptions, setDrawingOptions] = useState({ strokeColor: '#ef4444', strokeWidth: 5 }); // matches --color-red-500
     const [selectedElementIds, setSelectedElementIds] = useState<string[]>([]);
     const [selectionBox, setSelectionBox] = useState<Rect | null>(null);
     const [prompt, setPrompt] = useState('');
@@ -96,7 +97,7 @@ const App: React.FC = () => {
     const { language, setLanguage, t } = useI18n('ZH');
     const { apiKey, setApiKey, systemToken, setSystemToken, userId, setUserId } = useCredentials();
     
-    const [uiTheme, setUiTheme] = useState({ color: '#171717', opacity: 0.7 });
+    const [uiTheme, setUiTheme] = useState({ color: '#1E1E24', opacity: 0.7 }); // matches --color-base-solid
     const [buttonTheme, setButtonTheme] = useState({ color: '#374151', opacity: 0.8 });
 
     const { userEffects, addUserEffect, deleteUserEffect } = useUserEffects();

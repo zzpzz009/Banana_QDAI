@@ -69,6 +69,7 @@ async function hrefToBlob(href: string, expectedMime?: string): Promise<Blob> {
     if (expectedMime && blob.type && expectedMime !== blob.type) return new Blob([await blob.arrayBuffer()], { type: expectedMime })
     return blob
   } else {
+    const { Blob } = await serverModules()
     if (href.startsWith('data:')) {
       const comma = href.indexOf(',')
       const meta = href.substring(0, comma)
@@ -76,12 +77,12 @@ async function hrefToBlob(href: string, expectedMime?: string): Promise<Blob> {
       const mimeMatch = /data:(.*?)(;base64)?$/i.exec(meta)
       const mime = (mimeMatch && mimeMatch[1]) ? mimeMatch[1] : (expectedMime || 'application/octet-stream')
       const buf = Buffer.from(b64, 'base64')
-      return (new Blob([buf], { type: mime }) as any as Blob)
+      return new Blob([buf], { type: mime })
     }
     const res = await fetch(href)
     const ab = await res.arrayBuffer()
     const mime = expectedMime || (res.headers.get('content-type') || 'application/octet-stream')
-    return (new Blob([ab], { type: mime }) as any as Blob)
+    return new Blob([ab], { type: mime })
   }
 }
 
@@ -128,11 +129,11 @@ async function getImageBlob(hash: string): Promise<Blob | null> {
   } else {
     try {
       await ensureDirs()
-      const { fs, path } = await serverModules()
+      const { fs, path, Blob } = await serverModules()
       const base = getBaseDir()
       const file = path.join(base, 'images', hash)
       const buf = await fs.readFile(file)
-      return (new Blob([buf], { type: 'application/octet-stream' }) as any as Blob)
+      return new Blob([buf], { type: 'application/octet-stream' })
     } catch {
       return null
     }

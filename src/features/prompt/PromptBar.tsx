@@ -38,6 +38,22 @@ const MODELS = [
     { id: 'nano-banana-2', label: 'nano-banana-2', short: 'NB2' },
 ];
 
+function readTokenPx(name: string, fallback: number) {
+    try {
+        const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+        const n = parseFloat(v.replace('px', ''));
+        return Number.isFinite(n) ? n : fallback;
+    } catch {
+        return fallback;
+    }
+}
+
+function computeExpandedWidth() {
+    const spaceX = readTokenPx('--space-10', 40);
+    const vw = typeof window !== 'undefined' ? window.innerWidth : 1280;
+    const target = Math.min(580, Math.max(320, Math.round(vw - spaceX * 2)));
+    return target;
+}
 const ASPECT_RATIOS = [
     { id: 'auto', label: 'auto' },
     { id: '1:1', label: '1:1' },
@@ -90,8 +106,16 @@ export const PromptBar: React.FC<PromptBarProps> = ({
     const modelPortalRef = useRef<HTMLDivElement>(null);
     const ratioPortalRef = useRef<HTMLDivElement>(null);
     const blockCollapseUntilRef = useRef<number>(0);
+    const [expandedWidth, setExpandedWidth] = useState<number>(580);
+
+    useEffect(() => {
+        const apply = () => setExpandedWidth(computeExpandedWidth());
+        apply();
+        const onResize = () => apply();
+        window.addEventListener('resize', onResize, { passive: true });
+        return () => window.removeEventListener('resize', onResize);
+    }, []);
     const expandedContentRef = useRef<HTMLDivElement>(null);
-    const expandedWidth = 580;
 
     const [contentHeight, setContentHeight] = useState<number | 'auto'>('auto');
 
@@ -195,53 +219,55 @@ export const PromptBar: React.FC<PromptBarProps> = ({
     const effectiveSize = activeImageModel === 'nano-banana-2' ? imageSize : '1K';
     const sizeDisabled = activeImageModel !== 'nano-banana-2';
 
+    const space3 = readTokenPx('--space-3', 12);
+    const space4 = readTokenPx('--space-4', 16);
+    const space10 = readTokenPx('--space-10', 40);
+    const textareaPadding = (() => {
+        const right = (prompt.trim() && !isLoading) ? space10 * 4.25 : space10 * 3.25;
+        return `${space4}px ${Math.round(right)}px ${space4}px ${space3}px`;
+    })();
+
     return (
         <div ref={containerRef} className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[100] flex justify-center">
             <motion.div
                 ref={wrapperRef}
                 initial={false}
                 animate={{
-                    width: isExpanded ? 580 : 180,
+                    width: isExpanded ? expandedWidth : 180,
                     height: isExpanded ? contentHeight : 56,
                     borderRadius: isExpanded ? 24 : 999
                 }}
                 transition={{
                     borderRadius: isExpanded ? {
-                        duration: 0.3,
+                        duration: 0.12,
                         ease: "easeOut",
                         delay: 0
                     } : {
                         type: "spring",
-                        stiffness: 220,
-                        damping: 28,
-                        delay: 0.18
+                        stiffness: 600,
+                        damping: 35,
+                        delay: 0
                     },
                     width: {
                         type: "spring",
-                        stiffness: 220,
-                        damping: 28,
-                        delay: isExpanded ? 0.3 : 0.18
+                        stiffness: 600,
+                        damping: 35,
+                        delay: 0
                     },
                     height: {
                         type: "tween",
-                        ease: [0.2, 0, 0, 1],
-                        duration: 0.3,
-                        delay: isExpanded ? 0.3 : 0.18
+                        ease: [0.16, 1, 0.3, 1],
+                        duration: 0.15,
+                        delay: 0
                     },
                     default: {
                         type: "spring",
-                        stiffness: 220,
-                        damping: 28,
-                        delay: isExpanded ? 0.3 : 0.18
+                        stiffness: 600,
+                        damping: 35,
+                        delay: 0
                     }
                 }}
-                className="relative bg-[var(--bg-component)] border border-[var(--border-color)] shadow-2xl backdrop-blur-xl overflow-hidden"
-                style={{
-                    boxShadow: '0 20px 40px -10px rgba(0,0,0,0.6)',
-                    willChange: 'width, height, border-radius, transform',
-                    contain: 'layout paint',
-                    isolation: 'isolate'
-                }}
+                className="relative pod-prompt-bar overflow-hidden"
             >
                 <AnimatePresence mode="sync">
                     {!isExpanded ? (
@@ -249,8 +275,8 @@ export const PromptBar: React.FC<PromptBarProps> = ({
                         <motion.div
                             key="collapsed"
                             initial={{ opacity: 0 }}
-                            animate={{ opacity: 1, transition: { duration: 0.2, delay: isExpanded ? 0 : 0.18 } }}
-                            exit={{ opacity: 0, transition: { duration: 0.2, delay: isExpanded ? 0.18 : 0 } }}
+                            animate={{ opacity: 1, transition: { duration: 0.15, delay: 0 } }}
+                            exit={{ opacity: 0, transition: { duration: 0.1, delay: 0 } }}
                             className="absolute inset-0 flex items-center gap-3 w-full px-3 cursor-pointer"
                             onClick={() => setIsExpanded(true)}
                         >
@@ -276,8 +302,8 @@ export const PromptBar: React.FC<PromptBarProps> = ({
                         <motion.div
                             key="expanded"
                             initial={{ opacity: 0 }}
-                            animate={{ opacity: 1, transition: { duration: 0.2, delay: isExpanded ? 0.18 : 0 } }}
-                            exit={{ opacity: 0, transition: { duration: 0.2 } }}
+                            animate={{ opacity: 1, transition: { duration: 0.2, delay: 0 } }}
+                            exit={{ opacity: 0, transition: { duration: 0.1 } }}
                             className="flex flex-col px-3 pt-1 pb-3 gap-0"
                             style={{ width: expandedWidth }}
                             ref={expandedContentRef}
@@ -285,13 +311,13 @@ export const PromptBar: React.FC<PromptBarProps> = ({
                             {/* Body: Input Area */}
                             <div className="relative group rounded-xl px-1 transition-colors">
                                 {/* Top-Right Controls: QuickPrompts + Mode Switcher */}
-                            <div className="absolute top-1 right-1 z-10 flex items-center gap-2">
+                            <div className="pod-prompt-top-controls">
                                 {prompt.trim() && !isLoading && (
                                     <IconButton
                                         onClick={handleSaveEffect}
                                         title={t('myEffects.saveEffectTooltip')}
                                         noHoverHighlight
-                                        className="w-10 h-10 flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-heading)] bg-[var(--bg-component)] hover:bg-[var(--border-color)] rounded-full transition-all"
+                                        className="pod-circle-button"
                                     >
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z" /></svg>
                                     </IconButton>
@@ -303,20 +329,20 @@ export const PromptBar: React.FC<PromptBarProps> = ({
                                         disabled={!isSelectionActive || isLoading}
                                         userEffects={userEffects}
                                         onDeleteUserEffect={onDeleteUserEffect}
-                                        className="w-10 h-10 text-[var(--text-secondary)] hover:text-[var(--text-heading)] bg-[var(--bg-component)] hover:bg-[var(--border-color)] rounded-full transition-all"
+                                        className="pod-circle-button"
                                     />
                                     {/* Mode Switcher */}
-                                    <div className="flex bg-black/20 rounded-full p-0.5 border border-[var(--border-color)]">
+                                    <div className="pod-prompt-mode-switch">
                                         <button
                                             onClick={() => setGenerationMode('image')}
-                                            className={`p-1.5 rounded-full transition-all ${generationMode === 'image' ? 'bg-[var(--border-color)] text-[var(--text-heading)] shadow-sm' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
+                                            className={`pod-prompt-mode-button ${generationMode === 'image' ? 'active' : ''}`}
                                             title="Image Mode"
                                         >
                                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" /></svg>
                                         </button>
                                         <button
                                             onClick={() => setGenerationMode('video')}
-                                            className={`p-1.5 rounded-full transition-all ${generationMode === 'video' ? 'bg-[var(--border-color)] text-[var(--text-heading)] shadow-sm' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
+                                            className={`pod-prompt-mode-button ${generationMode === 'video' ? 'active' : ''}`}
                                             title="Video Mode"
                                         >
                                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7" /><rect x="1" y="5" width="15" height="14" rx="2" ry="2" /></svg>
@@ -331,8 +357,8 @@ export const PromptBar: React.FC<PromptBarProps> = ({
                                     onChange={(e) => setPrompt((e.target as HTMLTextAreaElement).value)}
                                     onKeyDown={handleKeyDown}
                                     placeholder={getPlaceholderText()}
-                                    className="w-full bg-transparent text-[var(--text-primary)] placeholder-[var(--text-muted)] resize-none focus:outline-none focus:shadow-none focus:ring-0 text-[15px] leading-relaxed font-light"
-                                    style={{ minHeight: '60px', border: 'none', padding: prompt.trim() && !isLoading ? '18px 170px 18px 12px' : '18px 130px 18px 12px', transition: 'height 150ms ease', overflow: 'hidden', boxShadow: 'none' }}
+                                    className="pod-prompt-textarea"
+                                    style={{ '--pod-textarea-padding': textareaPadding } as React.CSSProperties}
                                     disabled={isLoading}
                                     autoFocus
                                 />
@@ -354,7 +380,7 @@ export const PromptBar: React.FC<PromptBarProps> = ({
                                 </div>
 
                                 {/* Right: Settings & Generate */}
-                                <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+                                <div className="flex items-center overflow-x-auto no-scrollbar gap-[var(--space-2)]">
                                     {/* Model Selector */}
                                     {generationMode === 'image' && (
                                         <div className="relative" ref={modelMenuRef}>
@@ -367,7 +393,7 @@ export const PromptBar: React.FC<PromptBarProps> = ({
                                                 setModelMenuAnchor({ left: Math.round(rect.left), top: Math.round(rect.top), width: Math.round(rect.width) });
                                                 setIsModelMenuOpen(!isModelMenuOpen);
                                             }}
-                                                className="h-9 px-3 rounded-xl bg-[var(--bg-component)] hover:bg-[var(--border-color)] border border-[var(--border-color)] text-xs font-medium text-[var(--text-primary)] flex items-center gap-1.5 transition-colors whitespace-nowrap"
+                                                className="pod-prompt-selector"
                                             >
                                                 {activeModelLabel}
                                                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform ${isModelMenuOpen ? 'rotate-180' : ''}`}><path d="m6 9 6 6 6-6" /></svg>
@@ -377,14 +403,17 @@ export const PromptBar: React.FC<PromptBarProps> = ({
                                                     ref={modelPortalRef}
                                                     initial={{ opacity: 0, y: -4, scale: 0.95 }}
                                                     animate={{ opacity: 1, y: 0, scale: 1 }}
-                                                    style={{ position: 'fixed', left: Math.round(modelMenuAnchor.left + modelMenuAnchor.width / 2 - 192 / 2), bottom: Math.round(window.innerHeight - modelMenuAnchor.top + 8), zIndex: 10000, width: 192 }}
-                                                    className="bg-[var(--bg-component-solid)] border border-[var(--border-color)] rounded-xl shadow-xl overflow-hidden py-1"
+                                                    className="pod-prompt-menu-overlay w-48"
+                                                    style={{ 
+                                                        '--pod-left': `${Math.round(modelMenuAnchor.left + modelMenuAnchor.width / 2 - 192 / 2)}px`, 
+                                                        '--pod-bottom': `${Math.round(window.innerHeight - modelMenuAnchor.top + 8)}px` 
+                                                    } as React.CSSProperties}
                                                 >
                                                     {MODELS.map(m => (
                                                         <button
                                                             key={m.id}
                                                             onClick={(e) => { e.stopPropagation(); setImageModel(m.id); setIsModelMenuOpen(false); setIsExpanded(true); }}
-                                                            className={`w-full px-3 py-2 text-left text-xs hover:bg-[var(--border-color)] transition-colors flex items-center justify-between ${activeImageModel === m.id ? 'text-[var(--brand-yellow)] font-medium' : 'text-[var(--text-primary)]'}`}
+                                                            className={`pod-prompt-menu-item-row ${activeImageModel === m.id ? 'active' : ''}`}
                                                         >
                                                             <span>{m.label}</span>
                                                             {activeImageModel === m.id && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12" /></svg>}
@@ -397,12 +426,13 @@ export const PromptBar: React.FC<PromptBarProps> = ({
 
                                     {/* Size Selector */}
                                     {generationMode === 'image' && (
-                                        <div className="flex bg-[var(--bg-component)] rounded-xl p-1 border border-[var(--border-color)] h-9 items-center">
+                                        <div className="pod-segmented-control">
                                             {(['1K', '2K', '4K'] as const).map((size) => (
                                                 <button
                                                     key={size}
                                                     onClick={() => { if (!sizeDisabled) setImageSize(size); }}
-                                                    className={`px-2.5 py-1 rounded-lg text-[10px] font-medium transition-all ${effectiveSize === size ? 'bg-[#4F378B] text-white shadow-sm' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'} ${sizeDisabled ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''}`}
+                                                    className={`pod-segment-button ${effectiveSize === size ? 'active' : ''}`}
+                                                    disabled={sizeDisabled}
                                                     aria-disabled={sizeDisabled}
                                                 >
                                                     <span className={effectiveSize === size && size === '4K' ? 'pod-text-gold-sheen' : ''}>
@@ -423,7 +453,7 @@ export const PromptBar: React.FC<PromptBarProps> = ({
                                                 setRatioMenuAnchor({ left: Math.round(rect.left), top: Math.round(rect.top), width: Math.round(rect.width) });
                                                 setIsRatioMenuOpen(!isRatioMenuOpen);
                                             }}
-                                            className="h-9 px-3 rounded-xl bg-[var(--bg-component)] hover:bg-[var(--border-color)] border border-[var(--border-color)] text-xs font-medium text-[var(--text-primary)] hover:text-[var(--text-heading)] flex items-center gap-1.5 transition-colors whitespace-nowrap"
+                                            className="pod-prompt-selector"
                                             title="Aspect Ratio"
                                         >
                                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="10" rx="2" ry="2" /></svg>
@@ -434,21 +464,19 @@ export const PromptBar: React.FC<PromptBarProps> = ({
                                                 ref={ratioPortalRef}
                                                 initial={{ opacity: 0, y: -4, scale: 0.95 }}
                                                 animate={{ opacity: 1, y: 0, scale: 1 }}
+                                                className={`pod-overlay-position fixed z-[10000] bg-[var(--bg-component-solid)] border border-[var(--border-color)] rounded-xl shadow-xl overflow-hidden py-1 ${generationMode === 'image' ? 'grid grid-cols-3 gap-1 p-1' : ''}`}
                                                 style={{ 
-                                                    position: 'fixed', 
-                                                    left: Math.round(ratioMenuAnchor.left + ratioMenuAnchor.width / 2 - (generationMode === 'image' ? 240 : 96) / 2), 
-                                                    bottom: Math.round(window.innerHeight - ratioMenuAnchor.top + 8), 
-                                                    zIndex: 10000, 
+                                                    '--pod-left': `${Math.round(ratioMenuAnchor.left + ratioMenuAnchor.width / 2 - (generationMode === 'image' ? 240 : 96) / 2)}px`, 
+                                                    '--pod-bottom': `${Math.round(window.innerHeight - ratioMenuAnchor.top + 8)}px`,
                                                     width: generationMode === 'image' ? 240 : 96 
-                                                }}
-                                                className={`bg-[var(--bg-component-solid)] border border-[var(--border-color)] rounded-xl shadow-xl overflow-hidden py-1 ${generationMode === 'image' ? 'grid grid-cols-3 gap-1 p-1' : ''}`}
+                                                } as React.CSSProperties}
                                             >
                                                 {generationMode === 'image' ? (
                                                     ASPECT_RATIOS.map(r => (
                                                         <button
                                                             key={r.id}
                                                             onClick={() => { setImageAspectRatio(r.id); setIsRatioMenuOpen(false); setIsExpanded(true); blockCollapseUntilRef.current = Date.now() + 800; requestAnimationFrame(() => { textareaRef.current?.focus(); }); }}
-                                                             className={`w-full px-1 py-1.5 text-center text-xs hover:bg-[var(--border-color)] rounded-md transition-colors ${imageAspectRatio === r.id ? 'bg-[var(--border-color)] text-[var(--brand-yellow)] font-medium' : 'text-[var(--text-primary)]'}`}
+                                                             className={`w-full px-1 py-1.5 text-center text-xs hover:bg-[var(--border-color)] rounded-md transition-colors ${imageAspectRatio === r.id ? 'bg-[var(--border-color)] text-[var(--brand-primary)] font-medium' : 'text-[var(--text-primary)]'}`}
                                                          >
                                                              {r.label}
                                                          </button>
@@ -458,7 +486,7 @@ export const PromptBar: React.FC<PromptBarProps> = ({
                                                         <button
                                                             key={r}
                                                             onClick={() => { setVideoAspectRatio(r as '16:9' | '9:16'); setIsRatioMenuOpen(false); setIsExpanded(true); blockCollapseUntilRef.current = Date.now() + 800; requestAnimationFrame(() => { textareaRef.current?.focus(); }); }}
-                                                             className={`w-full px-3 py-1.5 text-left text-xs hover:bg-[var(--border-color)] transition-colors ${videoAspectRatio === r ? 'text-[var(--brand-yellow)] font-medium' : 'text-[var(--text-primary)]'}`}
+                                                             className={`w-full px-3 py-1.5 text-left text-xs hover:bg-[var(--border-color)] transition-colors ${videoAspectRatio === r ? 'text-[var(--brand-primary)] font-medium' : 'text-[var(--text-primary)]'}`}
                                                          >
                                                              {r}
                                                          </button>
@@ -472,10 +500,10 @@ export const PromptBar: React.FC<PromptBarProps> = ({
                                     <button
                                         onClick={onGenerate}
                                         disabled={isLoading || !prompt.trim()}
-                                        className="h-9 px-5 rounded-xl font-bold text-sm text-[#062102] transition-all active:scale-[0.98] shadow-lg shadow-black/20 whitespace-nowrap pod-generate-button flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="h-9 px-5 rounded-xl font-bold text-sm transition-all active:scale-[0.98] shadow-lg shadow-black/20 whitespace-nowrap pod-generate-button flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         {isLoading ? (
-                                            <svg className="animate-spin h-4 w-4 text-[#062102]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                             </svg>

@@ -1,6 +1,6 @@
 import React from 'react';
 
-export type PodPanelVariant = 'default' | 'yellow-gradient' | 'transparent' | 'black' | 'pill';
+export type PodPanelVariant = 'default' | 'brand-gradient' | 'transparent' | 'black' | 'pill';
 
 interface PodPanelProps extends React.HTMLAttributes<HTMLDivElement> {
   variant?: PodPanelVariant;
@@ -18,8 +18,8 @@ export const PodPanel: React.FC<PodPanelProps> = ({
     switch (variant) {
       case 'default':
         return 'pod-panel';
-      case 'yellow-gradient':
-        return 'pod-panel pod-panel-yellow-gradient';
+      case 'brand-gradient':
+        return 'pod-panel pod-panel-brand-gradient';
       case 'transparent':
         return 'pod-panel pod-panel-transparent';
       case 'black':

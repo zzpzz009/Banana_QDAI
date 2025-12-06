@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import type { Element } from '@/types';
+import { IconButton } from '../../ui';
 
 interface LayerPanelProps {
     isOpen: boolean;
@@ -98,10 +99,10 @@ const LayerItem: React.FC<{
             {...dragProps}
             onClick={onSelect}
             onDoubleClick={() => { setName(element.name || element.type); setIsEditing(true); }}
-            className={`flex items-center space-x-2 p-1.5 rounded-md cursor-pointer text-sm transition-colors group ${
+            className={`pod-tree-item-content flex items-center space-x-2 p-1.5 rounded-md cursor-pointer text-sm transition-colors group ${
                 isSelected ? 'bg-blue-500/30' : 'hover:bg-white/10'
             } ${element.isVisible === false ? 'opacity-50' : ''}`}
-            style={{ paddingLeft: `${10 + level * 20}px` }}
+            style={{ '--layer-level': level } as React.CSSProperties}
         >
             <span className="flex-shrink-0 w-4 h-4 flex items-center justify-center text-gray-400">{getElementIcon(element)}</span>
             {isEditing ? (
@@ -154,17 +155,16 @@ export const LayerPanel: React.FC<LayerPanelProps> = ({ isOpen, onClose, element
 
     const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
         e.preventDefault();
-        const target = e.currentTarget;
-        target.style.background = 'rgba(255,255,255,0.2)';
+        e.currentTarget.classList.add('pod-drop-active');
     };
     
     const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
-        e.currentTarget.style.background = '';
+        e.currentTarget.classList.remove('pod-drop-active');
     };
 
     const handleDrop = (e: React.DragEvent<HTMLDivElement>, targetId: string) => {
         e.preventDefault();
-        e.currentTarget.style.background = '';
+        e.currentTarget.classList.remove('pod-drop-active');
         const draggedId = e.dataTransfer.getData('text/plain');
 
         const rect = e.currentTarget.getBoundingClientRect();
@@ -207,9 +207,9 @@ export const LayerPanel: React.FC<LayerPanelProps> = ({ isOpen, onClose, element
             ref={panelRef}
             className="absolute top-4 right-4 z-20 flex flex-col sm:w-60 md:w-64 lg:w-72 max-w-[90vw] h-[calc(100vh-2rem)] pod-panel overflow-hidden"
         >
-            <div className="flex-shrink-0 flex justify-between items-center p-3 cursor-move" style={{ borderBottom: '1px solid var(--border-color)' }}>
-                <h3 className="text-base" style={{ color: 'var(--text-heading)', fontWeight: 600 }}>Layers</h3>
-                <div className="flex items-center gap-2">
+            <div className="pod-panel-header">
+                <h3 className="text-base font-semibold text-[var(--text-heading)]">Layers</h3>
+                <div className="flex items-center gap-[var(--space-2)]">
                     {onMergeLayers && (
                         <button
                             onClick={(e) => { e.stopPropagation(); onMergeLayers(selectedElementIds.length > 0 ? 'selected' : 'visible'); }}
@@ -219,9 +219,9 @@ export const LayerPanel: React.FC<LayerPanelProps> = ({ isOpen, onClose, element
                             合并图层
                         </button>
                     )}
-                    <button onClick={onClose} aria-label="Close Layers" className="pod-icon-button">
+                    <IconButton onClick={onClose} aria-label="Close Layers">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                    </button>
+                    </IconButton>
                 </div>
             </div>
             <div className="flex-grow p-2 overflow-y-auto">
