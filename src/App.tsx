@@ -95,7 +95,26 @@ const App: React.FC = () => {
     const [showUIPreview, setShowUIPreview] = useState(false);
 
     const { language, setLanguage, t } = useI18n('ZH');
-    const { apiKey, setApiKey, systemToken, setSystemToken, userId, setUserId } = useCredentials();
+    const { apiKey, setApiKey, grsaiApiKey, setGrsaiApiKey, systemToken, setSystemToken, userId, setUserId } = useCredentials();
+
+    const [apiProvider, setApiProvider] = useState<'WHATAI' | 'Grsai'>(() => {
+        try { return (localStorage.getItem('API_PROVIDER') as 'WHATAI' | 'Grsai') || 'WHATAI' } catch { return 'WHATAI' }
+    });
+    useEffect(() => {
+        try { localStorage.setItem('API_PROVIDER', apiProvider) } catch { void 0 }
+    }, [apiProvider]);
+
+    useEffect(() => {
+        try {
+            if (apiProvider === 'Grsai') {
+                const m = localStorage.getItem('GRSAI_IMAGE_MODEL') || 'nano-banana'
+                setImageModel(m)
+            } else {
+                const m = localStorage.getItem('WHATAI_IMAGE_MODEL') || (process.env.WHATAI_IMAGE_MODEL as string) || 'gemini-2.5-flash-image'
+                setImageModel(m)
+            }
+        } catch { void 0 }
+    }, [apiProvider])
     
     const [uiTheme, setUiTheme] = useState({ color: '#1E1E24', opacity: 0.7 }); // matches --color-base-solid
     const [buttonTheme, setButtonTheme] = useState({ color: '#374151', opacity: 0.8 });
@@ -108,9 +127,13 @@ const App: React.FC = () => {
     const [progressMessage, setProgressMessage] = useState<string>('');
     const [imageModel, setImageModel] = useState<string>(() => {
         try {
-            return localStorage.getItem('WHATAI_IMAGE_MODEL') || (process.env.WHATAI_IMAGE_MODEL as string) || 'gemini-2.5-flash-image';
+            const provider = (localStorage.getItem('API_PROVIDER') as 'WHATAI' | 'Grsai') || 'WHATAI'
+            if (provider === 'Grsai') {
+                return localStorage.getItem('GRSAI_IMAGE_MODEL') || 'nano-banana'
+            }
+            return localStorage.getItem('WHATAI_IMAGE_MODEL') || (process.env.WHATAI_IMAGE_MODEL as string) || 'gemini-2.5-flash-image'
         } catch {
-            return (process.env.WHATAI_IMAGE_MODEL as string) || 'gemini-2.5-flash-image';
+            return (process.env.WHATAI_IMAGE_MODEL as string) || 'gemini-2.5-flash-image'
         }
     });
     const [imageSize, setImageSize] = useState<'1K' | '2K' | '4K'>(() => {
@@ -118,25 +141,29 @@ const App: React.FC = () => {
     });
     useEffect(() => {
         try {
-            localStorage.setItem('WHATAI_IMAGE_MODEL', imageModel);
+            if (apiProvider === 'Grsai') localStorage.setItem('GRSAI_IMAGE_MODEL', imageModel);
+            else localStorage.setItem('WHATAI_IMAGE_MODEL', imageModel);
         } catch { void 0; }
-    }, [imageModel]);
+    }, [imageModel, apiProvider]);
     useEffect(() => {
         const onStorage = (e: StorageEvent) => {
-            if (e.key === 'WHATAI_IMAGE_MODEL') {
+            if (apiProvider === 'Grsai' && e.key === 'GRSAI_IMAGE_MODEL') {
+                setImageModel(e.newValue || 'nano-banana');
+            }
+            if (apiProvider === 'WHATAI' && e.key === 'WHATAI_IMAGE_MODEL') {
                 setImageModel(e.newValue || 'gemini-2.5-flash-image');
+            }
+            if (e.key === 'API_PROVIDER') {
+                setApiProvider(((e.newValue || 'WHATAI') as 'WHATAI' | 'Grsai'))
             }
         };
         window.addEventListener('storage', onStorage);
         return () => window.removeEventListener('storage', onStorage);
-    }, []);
+    }, [apiProvider]);
     useEffect(() => {
         const lower = (imageModel || '').toLowerCase();
-        if (lower !== 'nano-banana-2') {
-            setImageSize('1K');
-        } else {
-            setImageSize('1K');
-        }
+        const supportsSize = lower === 'nano-banana-pro' || lower === 'nano-banana-2';
+        if (!supportsSize) setImageSize('1K');
     }, [imageModel]);
 
     const interactionMode = useRef<string | null>(null);
@@ -202,11 +229,11 @@ const App: React.FC = () => {
 
     const setSpacebarDownTimeValue = (v: number | null) => { spacebarDownTime.current = v; };
     const setPreviousToolValue = (t: Tool) => { previousToolRef.current = t; };
-    useKeyboardShortcuts({ editingElement, handleStopEditing, selectedElementIds, setSelectedElementIds, activeTool, setActiveTool, handleUndo, handleRedo, commitAction, getDescendants, spacebarDownTimeRef: spacebarDownTime, previousToolRef: previousToolRef, setSpacebarDownTime: setSpacebarDownTimeValue, setPreviousTool: setPreviousToolValue });
+    useKeyboardShortcuts({ editingElement, handleStopEditing, selectedElementIds, setSelectedElementIds, activeTool, setActiveTool, handleUndo, handleRedo, commitAction, getDescendants, elementsRef, spacebarDownTimeRef: spacebarDownTime, previousToolRef: previousToolRef, setSpacebarDownTime: setSpacebarDownTimeValue, setPreviousTool: setPreviousToolValue });
 
     const { getCanvasPoint } = useCanvasCoords(svgRef, panOffset, zoom);
 
-    const { handleAddImageElement, handleDragOver, handleDrop } = useDragImport({ svgRef, getCanvasPoint, setElements, setSelectedElementIds, setActiveTool, setError, generateId });
+    const { handleAddImageElement, handleDragOver, handleDrop, handleDragLeave } = useDragImport({ svgRef, getCanvasPoint, setElements, setSelectedElementIds, setActiveTool, setError, setIsLoading, setProgressMessage, generateId, elementsRef });
 
     const { handleCopyElement, handleDeleteElement } = useClipboard({
         zoom,
@@ -240,7 +267,7 @@ const App: React.FC = () => {
     
 
 
-    const { handleGenerate } = useGenerationPipeline({ svgRef, getCanvasPoint, elementsRef, selectedElementIds, setSelectedElementIds, commitAction, setIsLoading, setProgressMessage, setError, prompt, generationMode, videoAspectRatio, imageAspectRatio, imageSize, generateId });
+    const { handleGenerate } = useGenerationPipeline({ svgRef, getCanvasPoint, elementsRef, selectedElementIds, setSelectedElementIds, commitAction, setIsLoading, setProgressMessage, setError, prompt, generationMode, videoAspectRatio, imageAspectRatio, imageSize, imageModel, apiProvider, generateId });
 
 
     
@@ -270,7 +297,7 @@ const App: React.FC = () => {
 
 
     return (
-        <div className="w-screen h-screen flex flex-col font-sans podui-theme" onDragOver={handleDragOver} onDrop={handleDrop}>
+        <div className="w-screen h-screen flex flex-col font-sans podui-theme" onDragEnter={handleDragOver} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
             {isLoading && <Loader progressMessage={progressMessage} />}
             <ErrorToast error={error} onClose={() => setError(null)} />
             <BoardPanel
@@ -302,6 +329,10 @@ const App: React.FC = () => {
                 t={t}
                 apiKey={apiKey}
                 setApiKey={setApiKey}
+                apiProvider={apiProvider}
+                setApiProvider={setApiProvider}
+                grsaiApiKey={grsaiApiKey}
+                setGrsaiApiKey={setGrsaiApiKey}
                 systemToken={systemToken}
                 setSystemToken={setSystemToken}
                 userId={userId}
@@ -404,6 +435,7 @@ const App: React.FC = () => {
                 imageAspectRatio={imageAspectRatio}
                 setImageAspectRatio={setImageAspectRatio}
                 setImageModel={setImageModel}
+                apiProvider={apiProvider}
             />
             
             {showUIPreview && <PodUIPreview onClose={() => setShowUIPreview(false)} />}

@@ -15,6 +15,8 @@ export function stripBase64Header(input: string): string {
   return input.replace(/^data:.*?;base64,?/i, '');
 }
 
+export const PLACEHOLDER_DATA_URL = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGMAAQAABQABDQottAAAAABJRU5ErkJggg==';
+
 export function detectMimeFromBase64(b64: string): string {
   try {
     const bin = atob(b64.slice(0, 64));

@@ -62,12 +62,18 @@
     - [x] 添加 `--color-blue-500` 到 `podui.css`
     - [x] `SelectionOverlay.tsx` 颜色硬编码替换为 Token
     - [x] 验证 `ContextToolbar` 尺寸计算逻辑
+- [x] 发布 v1.1.4（已完成）
+    - [x] 提交所有未提交的更改
+    - [x] 创建标签 v1.1.4
+    - [x] 推送更改和标签
+
+- [x] 引入并并行接入 Grsai_API（已完成）
+    - [x] 新增 `src/services/api/grsaiService.ts` 并实现生成与编辑
+    - [x] 更新 `vite.config.ts` 增加 `proxy-grsai` 与环境变量
+    - [x] 添加 `scripts/test-grsai.mjs` 用于接口验证
 
 ### 进行中
-- [ ] 发布 v1.1.4（进行中）
-    - [ ] 提交所有未提交的更改
-    - [ ] 创建标签 v1.1.4
-    - [ ] 推送更改和标签
+- [ ] (无当前任务，等待下一步指示)
 
 ### 待办
 > 总计：43 项（已完成 43，进行中 0，待办 0）

@@ -3,7 +3,8 @@ import type { Dispatch, SetStateAction, MutableRefObject } from 'react'
 import type { Element, ImageElement, PathElement, VideoElement, Point } from '@/types'
 import { rasterizeElement, getElementBounds } from '@/utils/canvas'
 import { loadImageWithFallback } from '@/utils/image'
-import { editImage, generateImageFromText, generateVideo } from '@/services/api/geminiService'
+import { editImage as editImageWhatai, generateImageFromText as generateImageFromTextWhatai, generateVideo } from '@/services/api/geminiService'
+import { editImage as editImageGrsai, generateImageFromText as generateImageFromTextGrsai } from '@/services/api/grsaiService'
 
 type Deps = {
   svgRef: MutableRefObject<SVGSVGElement | null>
@@ -20,6 +21,8 @@ type Deps = {
   videoAspectRatio: string
   imageAspectRatio: string | null
   imageSize: '1K' | '2K' | '4K'
+  imageModel: string
+  apiProvider: 'WHATAI' | 'Grsai'
   generateId: () => string
 }
 
@@ -63,7 +66,7 @@ function rasterizeMask(maskPaths: PathElement[], baseImage: ImageElement): Promi
   })
 }
 
-export function useGenerationPipeline({ svgRef, getCanvasPoint, elementsRef, selectedElementIds, setSelectedElementIds, commitAction, setIsLoading, setProgressMessage, setError, prompt, generationMode, videoAspectRatio, imageAspectRatio, imageSize, generateId }: Deps) {
+export function useGenerationPipeline({ svgRef, getCanvasPoint, elementsRef, selectedElementIds, setSelectedElementIds, commitAction, setIsLoading, setProgressMessage, setError, prompt, generationMode, videoAspectRatio, imageAspectRatio, imageSize, imageModel, apiProvider, generateId }: Deps) {
   const handleGenerate = useCallback(async () => {
     if (!prompt.trim()) {
       setError('Please enter a prompt.')
@@ -73,6 +76,11 @@ export function useGenerationPipeline({ svgRef, getCanvasPoint, elementsRef, sel
     setError(null)
     setProgressMessage('Starting generation...')
     if (generationMode === 'video') {
+      if (apiProvider === 'Grsai') {
+        setError('当前提供方不支持视频生成，请切换到 WHATAI')
+        setIsLoading(false)
+        return
+      }
       try {
         const selectedElements = elementsRef.current.filter(el => selectedElementIds.includes(el.id))
         const imageElement = selectedElements.find(el => el.type === 'image') as ImageElement | undefined
@@ -132,7 +140,12 @@ export function useGenerationPipeline({ svgRef, getCanvasPoint, elementsRef, sel
         if (imageElements.length === 1 && maskPaths.length > 0 && selectedElements.length === (1 + maskPaths.length)) {
           const baseImage = imageElements[0]
           const maskData = await rasterizeMask(maskPaths, baseImage)
-          const result = await editImage(prompt, [{ href: baseImage.href, mimeType: baseImage.mimeType }], { imageSize, mask: { href: maskData.href, mimeType: maskData.mimeType } })
+          if (apiProvider === 'Grsai') {
+            setError('当前提供方不支持局部重绘（mask）')
+            setIsLoading(false)
+            return
+          }
+          const result = await editImageWhatai(prompt, [{ href: baseImage.href, mimeType: baseImage.mimeType }], { imageSize, mask: { href: maskData.href, mimeType: maskData.mimeType } })
           if (result.newImageBase64 && result.newImageMimeType) {
             const { newImageBase64, newImageMimeType } = result
             loadImageWithFallback(newImageBase64, newImageMimeType).then(({ img, href }) => {
@@ -156,7 +169,9 @@ export function useGenerationPipeline({ svgRef, getCanvasPoint, elementsRef, sel
           return rasterizeElement(el as Exclude<Element, ImageElement | VideoElement>)
         })
         const imagesToProcess = await Promise.all(imagePromises)
-        const result = await editImage(prompt, imagesToProcess, { imageSize })
+        const result = apiProvider === 'Grsai'
+          ? await editImageGrsai(prompt, imagesToProcess, { imageSize, model: (imageModel as 'nano-banana' | 'nano-banana-fast' | 'nano-banana-pro') })
+          : await editImageWhatai(prompt, imagesToProcess, { imageSize })
         if (result.newImageBase64 && result.newImageMimeType) {
           const { newImageBase64, newImageMimeType } = result
           loadImageWithFallback(newImageBase64, newImageMimeType).then(({ img, href }) => {
@@ -205,7 +220,9 @@ export function useGenerationPipeline({ svgRef, getCanvasPoint, elementsRef, sel
           }
           aspectRatio = best.ar
         }
-        const result = await generateImageFromText(prompt, undefined, { aspectRatio, imageSize })
+        const result = apiProvider === 'Grsai'
+          ? await generateImageFromTextGrsai(prompt, (imageModel as 'nano-banana' | 'nano-banana-fast' | 'nano-banana-pro') || undefined, { aspectRatio, imageSize })
+          : await generateImageFromTextWhatai(prompt, undefined, { aspectRatio, imageSize })
         if (result.newImageBase64 && result.newImageMimeType) {
           const { newImageBase64, newImageMimeType } = result
           loadImageWithFallback(newImageBase64, newImageMimeType).then(({ img, href }) => {
@@ -234,7 +251,7 @@ export function useGenerationPipeline({ svgRef, getCanvasPoint, elementsRef, sel
     } finally {
       setIsLoading(false)
     }
-  }, [prompt, generationMode, elementsRef, selectedElementIds, setSelectedElementIds, commitAction, setIsLoading, setProgressMessage, setError, svgRef, getCanvasPoint, videoAspectRatio, imageAspectRatio, imageSize, generateId])
+  }, [prompt, generationMode, elementsRef, selectedElementIds, setSelectedElementIds, commitAction, setIsLoading, setProgressMessage, setError, svgRef, getCanvasPoint, videoAspectRatio, imageAspectRatio, imageSize, imageModel, apiProvider, generateId])
 
   return { handleGenerate }
 }

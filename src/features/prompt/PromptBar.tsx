@@ -29,14 +29,8 @@ interface PromptBarProps {
     imageAspectRatio: string;
     setImageAspectRatio: (ratio: string) => void;
     setImageModel: (model: string) => void;
+    apiProvider: 'WHATAI' | 'Grsai';
 }
-
-const MODELS = [
-    { id: 'gemini-2.5-flash-image', label: 'gemini-2.5-flash', short: 'Flash' },
-    { id: 'gemini-3-pro-image-preview', label: 'gemini-3-pro', short: 'Pro 3' },
-    { id: 'nano-banana', label: 'nano-banana', short: 'Nano' },
-    { id: 'nano-banana-2', label: 'nano-banana-2', short: 'NB2' },
-];
 
 function readTokenPx(name: string, fallback: number) {
     try {
@@ -90,7 +84,8 @@ export const PromptBar: React.FC<PromptBarProps> = ({
     containerRef,
     imageAspectRatio,
     setImageAspectRatio,
-    setImageModel
+    setImageModel,
+    apiProvider
 }) => {
     const [isExpanded, setIsExpanded] = useState(false);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -215,9 +210,22 @@ export const PromptBar: React.FC<PromptBarProps> = ({
         setIsExpanded(true);
     };
 
+    const MODELS = apiProvider === 'Grsai'
+        ? [
+            { id: 'nano-banana', label: 'nano-banana', short: 'Nano' },
+            { id: 'nano-banana-fast', label: 'nano-banana-fast', short: 'Fast' },
+            { id: 'nano-banana-pro', label: 'nano-banana-pro', short: 'Pro' },
+          ]
+        : [
+            { id: 'gemini-2.5-flash-image', label: 'gemini-2.5-flash', short: 'Flash' },
+            { id: 'gemini-3-pro-image-preview', label: 'gemini-3-pro', short: 'Pro 3' },
+            { id: 'nano-banana', label: 'nano-banana', short: 'Nano' },
+            { id: 'nano-banana-2', label: 'nano-banana-2', short: 'NB2' },
+          ];
     const activeModelLabel = MODELS.find(m => m.id === activeImageModel)?.label || activeImageModel || 'Model';
-    const effectiveSize = activeImageModel === 'nano-banana-2' ? imageSize : '1K';
-    const sizeDisabled = activeImageModel !== 'nano-banana-2';
+    const sizeAllowed = activeImageModel === 'nano-banana-pro' || activeImageModel === 'nano-banana-2';
+    const effectiveSize = sizeAllowed ? imageSize : '1K';
+    const sizeDisabled = !sizeAllowed;
 
     const space3 = readTokenPx('--space-3', 12);
     const space4 = readTokenPx('--space-4', 16);
@@ -403,7 +411,7 @@ export const PromptBar: React.FC<PromptBarProps> = ({
                                                     ref={modelPortalRef}
                                                     initial={{ opacity: 0, y: -4, scale: 0.95 }}
                                                     animate={{ opacity: 1, y: 0, scale: 1 }}
-                                                    className="pod-prompt-menu-overlay w-48"
+                                                    className="pod-prompt-menu-overlay pod-overlay-position w-48"
                                                     style={{ 
                                                         '--pod-left': `${Math.round(modelMenuAnchor.left + modelMenuAnchor.width / 2 - 192 / 2)}px`, 
                                                         '--pod-bottom': `${Math.round(window.innerHeight - modelMenuAnchor.top + 8)}px` 

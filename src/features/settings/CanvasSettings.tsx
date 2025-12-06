@@ -19,6 +19,10 @@ interface CanvasSettingsProps {
     t: (key: string) => string;
     apiKey: string;
     setApiKey: (key: string) => void;
+    apiProvider: 'WHATAI' | 'Grsai';
+    setApiProvider: (p: 'WHATAI' | 'Grsai') => void;
+    grsaiApiKey: string;
+    setGrsaiApiKey: (key: string) => void;
     systemToken: string;
     setSystemToken: (key: string) => void;
     userId: string;
@@ -42,6 +46,10 @@ export const CanvasSettings: React.FC<CanvasSettingsProps> = ({
     t,
     apiKey,
     setApiKey,
+    apiProvider,
+    setApiProvider,
+    grsaiApiKey,
+    setGrsaiApiKey,
     systemToken,
     setSystemToken,
     userId,
@@ -168,13 +176,33 @@ export const CanvasSettings: React.FC<CanvasSettingsProps> = ({
                         {/* API & Account */}
                         <div className="space-y-3">
                             <div className="space-y-1.5">
+                                <label className="text-xs font-medium text-[var(--text-heading)]">{t('settings.apiProvider')}</label>
+                                <div className="flex p-0.5 rounded-md bg-[var(--bg-input)] border border-[var(--border-color)]">
+                                    <button
+                                        onClick={() => setApiProvider('WHATAI')}
+                                        className={`flex-1 text-xs h-6 rounded-sm transition-colors ${apiProvider === 'WHATAI' ? 'bg-[var(--text-accent)] text-[var(--bg-page)] font-medium' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
+                                    >
+                                        {language === 'ZH' ? '代理A' : 'Proxy A'}
+                                    </button>
+                                    <button
+                                        onClick={() => setApiProvider('Grsai')}
+                                        className={`flex-1 text-xs h-6 rounded-sm transition-colors ${apiProvider === 'Grsai' ? 'bg-[var(--text-accent)] text-[var(--bg-page)] font-medium' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
+                                    >
+                                        {language === 'ZH' ? '代理B' : 'Proxy B'}
+                                    </button>
+                                </div>
+                            </div>
+                            <div className="space-y-1.5">
                                 <label className="text-xs font-medium text-[var(--text-heading)]">{t('settings.apiKey')}</label>
                                 <div className="flex gap-2">
                                     <input
                                         type="password"
-                                        value={apiKey}
-                                        onChange={(e) => setApiKey((e.target as HTMLInputElement).value)}
-                                        placeholder={language === 'ZH' ? '站点 API Key' : 'Site API Key'}
+                                        value={apiProvider === 'Grsai' ? grsaiApiKey : apiKey}
+                                        onChange={(e) => {
+                                            const v = (e.target as HTMLInputElement).value;
+                                            if (apiProvider === 'Grsai') setGrsaiApiKey(v); else setApiKey(v);
+                                        }}
+                                        placeholder={apiProvider === 'Grsai' ? (language === 'ZH' ? '代理B API Key' : 'Proxy B API Key') : (language === 'ZH' ? '代理A API Key' : 'Proxy A API Key')}
                                         className="pod-input pod-input-sm flex-1 text-xs"
                                     />
                                     <Button onClick={onClose} size="sm" className="h-8 px-3 text-xs whitespace-nowrap">{t('settings.apiKeySave')}</Button>

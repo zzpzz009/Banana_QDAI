@@ -3,6 +3,7 @@ import type { MutableRefObject, Dispatch, SetStateAction } from 'react';
 import type { Element, ImageElement, Point } from '@/types';
 import { getElementBounds } from '@/utils/canvas';
 import { SelectionOverlay } from '@/components/SelectionOverlay';
+import { PLACEHOLDER_DATA_URL } from '@/utils/image';
 type Rect = { x: number; y: number; width: number; height: number };
 type Guide = { type: 'v' | 'h'; position: number; start: number; end: number };
 interface CanvasProps {
@@ -86,6 +87,11 @@ export const Canvas: React.FC<CanvasProps> = ({
         <pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse">
           <circle cx="1.5" cy="1.5" r="1.5" className="pod-grid-dot" />
         </pattern>
+        <pattern id="podui-placeholder" width="8" height="8" patternUnits="userSpaceOnUse">
+          <rect width="8" height="8" fill="#1E1E24" />
+          <path d="M0 8 L8 0" stroke="#374151" strokeWidth="1" opacity="0.35" />
+          <path d="M-4 8 L8 -4" stroke="#374151" strokeWidth="1" opacity="0.35" />
+        </pattern>
         {elements.map(el => {
           if (el.type === 'image' && el.borderRadius && el.borderRadius > 0) {
             const clipPathId = `clip-${el.id}`;
@@ -167,8 +173,13 @@ export const Canvas: React.FC<CanvasProps> = ({
           if (el.type === 'image') {
             const hasR = el.borderRadius && el.borderRadius > 0;
             const cid = `clip-${el.id}`;
+            const isPh = el.href === PLACEHOLDER_DATA_URL;
             return (
               <g key={el.id} data-id={el.id}>
+                {isPh && (hasR
+                  ? <rect x={el.x} y={el.y} width={el.width} height={el.height} fill="url(#podui-placeholder)" stroke="#374151" strokeWidth={1 / zoom} clipPath={`url(#${cid})`} />
+                  : <rect x={el.x} y={el.y} width={el.width} height={el.height} fill="url(#podui-placeholder)" stroke="#374151" strokeWidth={1 / zoom} />
+                )}
                 <image transform={`translate(${el.x}, ${el.y})`} href={el.href} width={el.width} height={el.height} className={croppingState && croppingState.elementId !== el.id ? 'opacity-30' : ''} opacity={typeof el.opacity === 'number' ? el.opacity / 100 : 1} clipPath={hasR ? `url(#${cid})` : undefined} />
                 {selectionComponent}
               </g>
