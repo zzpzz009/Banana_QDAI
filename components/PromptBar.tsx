@@ -52,14 +52,11 @@ export const PromptBar: React.FC<PromptBarProps> = ({
     const [bananaButtonSize, setBananaButtonSize] = React.useState<number>(40);
     const bananaWrapperRef = React.useRef<HTMLDivElement>(null);
     const [bananaPanelOffsetPx, setBananaPanelOffsetPx] = React.useState<number>(0);
-    const [inputExpanded, setInputExpanded] = React.useState<boolean>(false);
 
     React.useEffect(() => {
         if (textareaRef.current) {
-            textareaRef.current.style.height = 'auto'; // Reset height
+            textareaRef.current.style.height = 'auto';
             textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
-            const h = textareaRef.current.scrollHeight;
-            setInputExpanded(h > 56);
         }
     }, [prompt]);
     
@@ -138,16 +135,15 @@ export const PromptBar: React.FC<PromptBarProps> = ({
     }, [containerRef, bananaButtonSize, generationMode, activeImageModel]);
 
     return (
-            <div ref={containerRef} className="absolute bottom-6 left-1/2 -translate-x-1/2 z-40 w-full max-w-3xl px-4 transition-all duration-300">
-                {/* Unified Container - Rounded Rectangle Style */}
-                <div className="relative flex items-center w-full bg-[var(--bg-component)] backdrop-blur-md border border-[var(--border-color)] rounded-2xl p-2 shadow-2xl transition-all duration-300 focus-within:border-[var(--brand-accent)] focus-within:shadow-[var(--shadow-glow)] focus-within:bg-[var(--bg-component-solid)]/90">
+            <div ref={containerRef} className="absolute bottom-6 left-1/2 -translate-x-1/2 z-40 w-full max-w-3xl px-4">
+                <div className="relative flex items-center w-full pod-input-group pod-rounded-base p-2">
                     
                     {/* Left Controls Section */}
                     <div className="flex items-center gap-2 pl-1 mr-2 shrink-0">
                         {/* Mode Switch */}
                         <button
                             onClick={() => setGenerationMode(generationMode === 'image' ? 'video' : 'image')}
-                            className={`flex items-center justify-center w-9 h-9 rounded-xl transition-colors ${generationMode === 'image' ? 'text-[var(--brand-primary)] bg-[var(--brand-primary)]/10 hover:bg-[var(--brand-primary)]/20' : 'text-[var(--brand-accent)] bg-[var(--brand-accent)]/10 hover:bg-[var(--brand-accent)]/20'}`}
+                            className={`flex items-center justify-center w-9 h-9 pod-rounded-base transition-colors ${generationMode === 'image' ? 'text-[var(--brand-primary)] bg-[var(--brand-primary)]/10 hover:bg-[var(--brand-primary)]/20' : 'text-[var(--brand-accent)] bg-[var(--brand-accent)]/10 hover:bg-[var(--brand-accent)]/20'}`}
                             title={generationMode === 'image' ? t('promptBar.imageMode') : t('promptBar.videoMode')}
                         >
                             {generationMode === 'image' ? (
@@ -159,13 +155,13 @@ export const PromptBar: React.FC<PromptBarProps> = ({
 
                         {/* Video Aspect Ratio */}
                         {generationMode === 'video' && (
-                            <div className="flex items-center gap-1 bg-[var(--bg-component-solid)]/50 rounded-xl p-1 border border-[var(--border-color)] h-9">
-                                 <button onClick={() => setVideoAspectRatio('16:9')} className={`flex items-center justify-center w-7 h-7 rounded-lg transition-all ${videoAspectRatio === '16:9' ? 'bg-[var(--brand-accent)] text-[var(--bg-page)] shadow-sm' : 'text-[var(--text-secondary)] hover:text-[var(--text-heading)] hover:bg-[var(--bg-component)]'}`} title={t('promptBar.aspectRatioHorizontal')}>
+                            <div className="flex items-center gap-1 bg-[var(--bg-component-solid)]/50 pod-rounded-base p-1 border border-[var(--border-color)] h-9">
+                                 <button onClick={() => setVideoAspectRatio('16:9')} className={`flex items-center justify-center w-7 h-7 pod-rounded-lg transition-all ${videoAspectRatio === '16:9' ? 'bg-[var(--brand-accent)] text-[var(--bg-page)] shadow-sm' : 'text-[var(--text-secondary)] hover:text-[var(--text-heading)] hover:bg-[var(--bg-component)]'}`} title={t('promptBar.aspectRatioHorizontal')}>
                                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="7" width="20" height="10" rx="2" ry="2"></rect></svg>
-                                </button>
-                                <button onClick={() => setVideoAspectRatio('9:16')} className={`flex items-center justify-center w-7 h-7 rounded-lg transition-all ${videoAspectRatio === '9:16' ? 'bg-[var(--brand-accent)] text-[var(--bg-page)] shadow-sm' : 'text-[var(--text-secondary)] hover:text-[var(--text-heading)] hover:bg-[var(--bg-component)]'}`} title={t('promptBar.aspectRatioVertical')}>
+                                 </button>
+                                <button onClick={() => setVideoAspectRatio('9:16')} className={`flex items-center justify-center w-7 h-7 pod-rounded-lg transition-all ${videoAspectRatio === '9:16' ? 'bg-[var(--brand-accent)] text-[var(--bg-page)] shadow-sm' : 'text-[var(--text-secondary)] hover:text-[var(--text-heading)] hover:bg-[var(--bg-component)]'}`} title={t('promptBar.aspectRatioVertical')}>
                                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="7" y="2" width="10" height="20" rx="2" ry="2"></rect></svg>
-                                </button>
+                                 </button>
                             </div>
                         )}
 
@@ -175,17 +171,17 @@ export const PromptBar: React.FC<PromptBarProps> = ({
                                  <button
                                     onClick={() => setIsSizeMenuOpen(!isSizeMenuOpen)}
                                     ref={sizeChipButtonRef}
-                                    className="h-9 min-w-[36px] px-2 rounded-xl flex items-center justify-center text-xs font-bold tracking-wider transition-colors hover:bg-[var(--brand-primary)]/20 text-[var(--brand-primary)] bg-[var(--brand-primary)]/10 border border-transparent hover:border-[var(--brand-primary)]/30"
+                                    className="h-9 min-w-[36px] px-2 pod-rounded-base flex items-center justify-center text-xs font-bold tracking-wider transition-colors hover:bg-[var(--brand-primary)]/20 text-[var(--brand-primary)] bg-[var(--brand-primary)]/10 border border-transparent hover:border-[var(--brand-primary)]/30"
                                 >
                                     {imageSize}
                                 </button>
                                 {isSizeMenuOpen && (
-                                    <div className="absolute bottom-full left-0 mb-2 p-1 rounded-xl pod-glass-strong flex flex-col gap-1 min-w-[60px] z-50 border border-[var(--border-color)]">
+                                    <div className="absolute bottom-full left-0 mb-2 p-1 pod-rounded-base pod-glass-strong flex flex-col gap-1 min-w-[60px] z-50 border border-[var(--border-color)]">
                                         {['1K', '2K', '4K'].map(size => (
                                             <button
                                                 key={size}
-                                                onClick={() => { setImageSize(size as any); setIsSizeMenuOpen(false); }}
-                                                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${imageSize === size ? 'bg-[var(--brand-primary)] text-[var(--bg-page)]' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-component)]'}`}
+                                                onClick={() => { setImageSize(size as '1K' | '2K' | '4K'); setIsSizeMenuOpen(false); }}
+                                                className={`px-3 py-1.5 pod-rounded-lg text-xs font-bold transition-colors ${imageSize === size ? 'bg-[var(--brand-primary)] text-[var(--bg-page)]' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-component)]'}`}
                                             >
                                                 {size}
                                             </button>
@@ -229,7 +225,7 @@ export const PromptBar: React.FC<PromptBarProps> = ({
                             onChange={(e) => setPrompt(e.target.value)}
                             onKeyDown={handleKeyDown}
                             placeholder={getPlaceholderText()}
-                            className="w-full bg-transparent text-[var(--text-heading)] border-none outline-none text-base py-3 max-h-32 resize-none placeholder-[var(--text-muted)] scrollbar-hide font-medium leading-relaxed"
+                            className="pod-textarea w-full text-base py-3 max-h-32 resize-none placeholder-[var(--text-muted)] scrollbar-hide font-medium leading-relaxed"
                             disabled={isLoading}
                         />
                     </div>
@@ -239,7 +235,7 @@ export const PromptBar: React.FC<PromptBarProps> = ({
                         {prompt.trim() && !isLoading && (
                              <button
                                 onClick={handleSaveEffect}
-                                className="p-2.5 rounded-xl text-[var(--text-secondary)] hover:text-[var(--brand-primary)] hover:bg-[var(--bg-component-solid)] transition-colors"
+                                className="p-2.5 pod-rounded-base text-[var(--text-secondary)] hover:text-[var(--brand-primary)] hover:bg-[var(--bg-component-solid)] transition-colors"
                                 title={t('myEffects.saveEffectTooltip')}
                             >
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg>
@@ -252,10 +248,10 @@ export const PromptBar: React.FC<PromptBarProps> = ({
                             disabled={isLoading || !prompt.trim()}
                             aria-label={t('promptBar.generate')}
                             title={t('promptBar.generate')}
-                            className={`flex items-center justify-center w-11 h-11 rounded-xl transition-all duration-300 shadow-lg ${
+                            className={`flex items-center justify-center w-11 h-11 pod-rounded-base transition-all duration-300 shadow-lg ${
                                 isLoading || !prompt.trim() 
                                     ? 'bg-[var(--bg-component-solid)] text-[var(--text-muted)] cursor-not-allowed border border-[var(--border-color)]' 
-                                    : 'bg-[var(--brand-primary)] text-[var(--bg-page)] hover:bg-[var(--brand-accent)] hover:shadow-[var(--shadow-glow)] hover:scale-105'
+                                    : 'pod-generate-button hover:scale-105'
                             }`}
                         >
                             {isLoading ? (

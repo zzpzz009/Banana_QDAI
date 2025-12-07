@@ -39,7 +39,7 @@ export const QuickPrompts: React.FC<QuickPromptsProps> = ({ t, setPrompt, disabl
                 disabled={disabled}
                 aria-label={t('quickPromptsAriaLabel')}
                 title={t('quickPromptsAriaLabel')}
-                className="pod-icon-button no-hover-highlight quick-prompts-button flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center"
+                className="pod-icon-button no-hover-highlight quick-prompts-button flex-shrink-0 w-9 h-9 pod-rounded-base flex items-center justify-center"
             >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2.69l.13.04a7.9 7.9 0 0 1 5.92 6.61 8.27 8.27 0 0 1-1.77 6.13A8.52 8.52 0 0 1 12 21.31a8.52 8.52 0 0 1-4.28-5.83 8.27 8.27 0 0 1-1.77-6.13A7.9 7.9 0 0 1 11.87 2.73L12 2.69zM12 22v-1.16"/><path d="M9 19h6"/></svg>
             </button>
@@ -56,7 +56,7 @@ export const QuickPrompts: React.FC<QuickPromptsProps> = ({ t, setPrompt, disabl
                                     onClick={() => onDeleteUserEffect(effect.id)}
                                     title={t('myEffects.deleteEffectTooltip')}
                                     className="ml-2 pod-icon-button opacity-0 group-hover:opacity-100 flex-shrink-0"
-                                    style={{ color: '#ff6b6b' }}
+                                    style={{ color: 'var(--brand-danger)' }}
                                 >
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                                 </button>

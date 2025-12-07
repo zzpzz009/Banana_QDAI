@@ -37,11 +37,7 @@ const ToolButton: React.FC<{
         aria-label={label}
         title={label}
         disabled={disabled}
-        className={`flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-200 ${
-            isActive 
-                ? 'bg-[var(--brand-primary)] text-[var(--bg-page)] shadow-lg scale-105' 
-                : 'text-[var(--text-primary)] hover:bg-white/10 hover:text-white'
-        } ${className}`}
+        className={`pod-icon-button ${isActive ? 'active' : ''} disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
     >
         {icon}
     </button>
@@ -84,7 +80,7 @@ const ToolGroupButton: React.FC<{
                 onClick={() => setIsOpen(prev => !prev)}
             />
             {isOpen && (
-                <div className="absolute left-full top-0 ml-3 p-1 rounded-xl pod-toolbar-theme shadow-lg flex flex-col gap-1 z-50">
+                <div className="absolute left-full top-0 ml-3 p-1 pod-rounded-base pod-toolbar-theme shadow-lg flex flex-col gap-1 z-50">
                     {tools.map(tool => (
                         <ToolButton
                             key={tool.id}
@@ -138,15 +134,15 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         return (
             <div 
                 style={containerStyle}
-                className="absolute top-1/2 left-4 -translate-y-1/2 z-10 rounded-xl pod-toolbar-theme px-4 py-4 flex flex-col items-center space-y-3 w-auto min-w-[140px]"
+                className="absolute top-1/2 left-4 -translate-y-1/2 z-10 pod-rounded-base pod-toolbar-theme px-4 py-4 flex flex-col items-center space-y-3 w-auto min-w-[140px]"
             >
-                <span className="text-sm font-bold text-[var(--bg-page)]">{t('toolbar.crop.title')}</span>
+                <span className="text-sm font-bold">{t('toolbar.crop.title')}</span>
                 <div className="w-full my-1 h-px bg-[var(--bg-page)]/20"></div>
-                <label className="w-full text-xs font-medium text-[var(--bg-page)]/80">{t('toolbar.crop.aspectRatioLabel')}</label>
+                <label className="w-full text-xs font-medium">{t('toolbar.crop.aspectRatioLabel')}</label>
                 <select
                     value={cropAspectRatio || ''}
                     onChange={(e) => onCropAspectRatioChange(e.target.value ? e.target.value : null)}
-                    className="w-full px-2 py-1.5 rounded-lg text-sm bg-[var(--bg-page)]/10 text-[var(--bg-page)] border border-[var(--bg-page)]/20 outline-none focus:ring-2 ring-[var(--bg-page)]/30 cursor-pointer"
+                    className="w-full pod-select text-sm"
                     aria-label={t('toolbar.crop.aspectRatioLabel')}
                     title={t('toolbar.crop.aspectRatioLabel')}
                 >
@@ -163,8 +159,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                     <option value="21:9" className="text-black">{t('toolbar.crop.ratio_21_9')}</option>
                 </select>
                 <div className="flex flex-col gap-2 w-full pt-2">
-                    <button onClick={onConfirmCrop} className="w-full py-2 rounded-lg text-sm font-bold bg-[var(--bg-page)] text-[var(--brand-primary)] shadow-md hover:scale-105 transition-transform">{t('toolbar.crop.confirm')}</button>
-                    <button onClick={onCancelCrop} className="w-full py-1.5 rounded-lg text-sm font-medium text-[var(--bg-page)] hover:bg-[var(--bg-page)]/10 transition-colors">{t('toolbar.crop.cancel')}</button>
+                    <button onClick={onConfirmCrop} className="pod-primary-button w-full">{t('toolbar.crop.confirm')}</button>
+                    <button onClick={onCancelCrop} className="pod-btn-secondary w-full">{t('toolbar.crop.cancel')}</button>
                 </div>
             </div>
         )
@@ -197,7 +193,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
     return (
         <div 
             style={containerStyle}
-            className="absolute top-1/2 left-4 -translate-y-1/2 z-10 rounded-xl pod-toolbar-theme px-2 py-4 flex flex-col items-center gap-2"
+            className="absolute top-1/2 left-4 -translate-y-1/2 z-10 pod-rounded-base pod-toolbar-theme px-2 py-4 flex flex-col items-center gap-2"
         >
             <ToolButton label="Boards" onClick={onBoardsClick} icon={<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>} />
             <ToolButton label={t('toolbar.layers')} onClick={onLayersClick} icon={<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>} />
@@ -231,7 +227,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                 ))}
 
                 <div className="w-10" style={{ height: '1px', backgroundColor: 'var(--border-color)' }}></div>
-        <input type="color" aria-label={t('toolbar.strokeColor')} title={t('toolbar.strokeColor')} value={drawingOptions.strokeColor} onChange={(e) => setDrawingOptions({ ...drawingOptions, strokeColor: e.target.value })} className="w-7 h-7 p-0 border border-[var(--border-color)] rounded-full cursor-pointer bg-transparent pod-color-swatch-circle" />
+        <input type="color" aria-label={t('toolbar.strokeColor')} title={t('toolbar.strokeColor')} value={drawingOptions.strokeColor} onChange={(e) => setDrawingOptions({ ...drawingOptions, strokeColor: e.target.value })} className="w-7 h-7 p-0 border border-[var(--border-color)] pod-rounded-full cursor-pointer bg-transparent pod-color-swatch-circle" />
                 <input type="range" min="1" max="50" value={drawingOptions.strokeWidth} aria-label={t('toolbar.strokeWidth')} title={t('toolbar.strokeWidth')} onChange={(e) => setDrawingOptions({ ...drawingOptions, strokeWidth: parseInt(e.target.value, 10) })} className="w-10 cursor-pointer pod-slider" />
                 <span className="text-sm w-6 text-center" style={{ color: 'var(--text-primary)' }}>{drawingOptions.strokeWidth}</span>
                 <div className="w-10" style={{ height: '1px', backgroundColor: 'var(--border-color)' }}></div>

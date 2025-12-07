@@ -88,7 +88,7 @@ const BoardItem = forwardRef<HTMLDivElement, BoardItemProps>(({ board, isActive,
             onClick={onClick}
             className={`group relative p-2 pod-list-item cursor-pointer ${isActive ? 'selected' : ''}`}
         >
-            <div className="aspect-[3/2] w-full rounded-md mb-2 overflow-hidden border-2" style={{ borderColor: isActive ? 'var(--brand-accent)' : 'transparent' }}>
+            <div className="aspect-[3/2] w-full pod-rounded-base mb-2 overflow-hidden border-2" style={{ borderColor: isActive ? 'var(--brand-accent)' : 'transparent' }}>
                 <img src={thumbnail} alt={`${board.name} thumbnail`} className="w-full h-full object-cover" />
             </div>
             <div className="flex items-center justify-between">
@@ -293,8 +293,8 @@ export const BoardPanel: React.FC<BoardPanelProps> = ({
     if (!isOpen) return null;
 
     return (
-         <div 
-            className="absolute top-4 left-4 z-20 flex flex-col w-64 h-[calc(100vh-2rem)] pod-glass-strong rounded-xl overflow-hidden"
+        <div 
+            className="absolute top-4 left-4 z-20 flex flex-col w-64 h-[calc(100vh-2rem)] pod-glass-strong pod-rounded-base overflow-hidden"
         >
             <div className="flex-shrink-0 flex justify-between items-center p-3" style={{ borderBottom: '1px solid var(--border-color)' }}>
                 <h3 className="text-base" style={{ color: 'var(--text-heading)', fontWeight: 600 }}>Boards</h3>
@@ -339,7 +339,7 @@ export const BoardPanel: React.FC<BoardPanelProps> = ({
                                     ref={el => { if (el) { elRefs.current[h.savedAt] = el; } else { delete elRefs.current[h.savedAt]; } }}
                                     onClick={() => onImportHistoryBoard && onImportHistoryBoard(h)}
                                 >
-                                    <div className="aspect-[3/2] w-full rounded-md mb-2 overflow-hidden border">
+                                    <div className="aspect-[3/2] w-full pod-rounded-base mb-2 overflow-hidden border">
                                         <img src={h.thumbnail || thumbs[h.savedAt] || generateBoardThumbnail(h.elements)} alt={`${code} history`} className="w-full h-full object-cover" />
                                     </div>
                                     <div className="flex items-center justify-between">

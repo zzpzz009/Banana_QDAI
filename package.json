@@ -16,7 +16,8 @@
     "lint:fix": "eslint . --ext .ts,.tsx,.js,.jsx --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test:banana": "node scripts/test-banana.mjs"
+    "test:banana": "node scripts/test-banana.mjs",
+    "style:check": "node scripts/style-consistency.mjs"
   },
   "dependencies": {
     "@google/genai": "^1.17.0",

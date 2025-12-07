@@ -103,7 +103,7 @@ const LayerItem: React.FC<{
             {...dragProps}
             onClick={onSelect}
             onDoubleClick={() => { setName(element.name || element.type); setIsEditing(true); }}
-            className={`flex items-center space-x-2 p-1.5 rounded-md cursor-pointer text-sm transition-colors group ${
+            className={`flex items-center space-x-2 p-1.5 pod-rounded-base cursor-pointer text-sm transition-colors group ${
                 isSelected ? 'bg-[var(--brand-primary)]/30' : 'hover:bg-white/10'
             } ${element.isVisible === false ? 'opacity-50' : ''}`}
             style={{ paddingLeft: `${10 + level * 20}px` }}
@@ -126,7 +126,7 @@ const LayerItem: React.FC<{
             <div className="flex-shrink-0 flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
                 <button
                     onClick={(e) => { e.stopPropagation(); onToggleLock(); }}
-                    className={`p-1 rounded-full hover:bg-white/20 ${element.isLocked ? 'text-white' : 'text-gray-400'}`}
+                    className={`p-1 pod-rounded-full hover:bg-white/20 ${element.isLocked ? 'text-white' : 'text-gray-400'}`}
                     title={element.isLocked ? "Unlock" : "Lock"}
                 >
                     {element.isLocked ? 
@@ -136,7 +136,7 @@ const LayerItem: React.FC<{
                 </button>
                 <button
                     onClick={(e) => { e.stopPropagation(); onToggleVisibility(); }}
-                    className="p-1 rounded-full hover:bg-white/20 text-gray-400"
+                    className="p-1 pod-rounded-full hover:bg-white/20 text-gray-400"
                     title={element.isVisible === false ? "Show" : "Hide"}
                 >
                     {element.isVisible === false ? 
@@ -214,7 +214,7 @@ export const LayerPanel: React.FC<LayerPanelProps> = ({ isOpen, onClose, element
     return (
         <div 
             ref={panelRef}
-            className="absolute top-4 right-4 z-20 flex flex-col sm:w-60 md:w-64 lg:w-72 max-w-[90vw] h-[calc(100vh-2rem)] pod-glass-strong rounded-xl overflow-hidden"
+            className="absolute top-4 right-4 z-20 flex flex-col sm:w-60 md:w-64 lg:w-72 max-w-[90vw] h-[calc(100vh-2rem)] pod-glass-strong pod-rounded-base overflow-hidden"
         >
             <div className="flex-shrink-0 flex justify-between items-center p-3 cursor-move" style={{ borderBottom: '1px solid var(--border-color)' }}>
                 <h3 className="text-base" style={{ color: 'var(--text-heading)', fontWeight: 600 }}>Layers</h3>

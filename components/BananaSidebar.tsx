@@ -38,12 +38,22 @@ const BananaIcon: React.FC<{ size?: number }> = ({ size = 40 }) => {
   );
 };
 
-// Create a simple SVG data URL thumbnail using the preset name
+const getCssVar = (name: string, fallback: string) => {
+  try {
+    const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    return v || fallback;
+  } catch {
+    return fallback;
+  }
+};
+
 const makeSvgDataUrl = (label: string) => {
   const safe = label.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const c1 = getCssVar('--brand-primary', '#14b8a6');
+  const c2 = getCssVar('--bg-component-solid', '#0f172a');
   const svg = `<?xml version='1.0' encoding='UTF-8'?>\n` +
     `<svg xmlns='http://www.w3.org/2000/svg' width='120' height='80'>\n` +
-    `<defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%' stop-color='#14b8a6'/><stop offset='100%' stop-color='#0f172a'/></linearGradient></defs>\n` +
+    `<defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%' stop-color='${c1}'/><stop offset='100%' stop-color='${c2}'/></linearGradient></defs>\n` +
     `<rect width='100%' height='100%' rx='8' ry='8' fill='url(#g)'/>\n` +
     `<text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' font-family='"Montserrat Alternates", sans-serif' font-size='12' fill='#FFFFFF'>${safe}</text>\n` +
     `</svg>`;
@@ -153,12 +163,12 @@ export const BananaSidebar: React.FC<BananaSidebarProps> = ({ t, setPrompt, onGe
         disabled={disabled}
         aria-label="Banana Presets"
         title="Banana Presets"
-        className={`flex items-center justify-center rounded-xl transition-all duration-300 shadow-lg group ${
+        className={`flex items-center justify-center pod-rounded-base transition-all duration-300 shadow-lg group ${
           disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer hover:scale-105 hover:shadow-[var(--shadow-glow)]'
         }`}
         style={{
-          width: 36,
-          height: 36,
+          width: typeof buttonSize === 'number' ? buttonSize : 36,
+          height: typeof buttonSize === 'number' ? buttonSize : 36,
           background: 'var(--brand-primary)',
           color: 'var(--bg-page)',
         }}
@@ -182,7 +192,7 @@ export const BananaSidebar: React.FC<BananaSidebarProps> = ({ t, setPrompt, onGe
                 className="group relative cursor-pointer transform transition-all duration-500 hover:scale-105 hover:-translate-y-1 flex-shrink-0 w-32"
                 style={{ padding: 0 }}
               >
-                <div className="pod-card-glass rounded-3xl overflow-hidden">
+                <div className="pod-card-glass pod-rounded-lg overflow-hidden">
                   <div className="aspect-square relative overflow-hidden">
                     <img
                       src={getCardImageSrc(item.name)}
@@ -219,13 +229,13 @@ export const BananaSidebar: React.FC<BananaSidebarProps> = ({ t, setPrompt, onGe
                     <div className="absolute bottom-0 left-0 right-0 p-2">
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex gap-1">
-                          <span className="w-1.5 h-1.5 bg-white/40 rounded-full"/>
-                          <span className="w-1.5 h-1.5 bg-white/30 rounded-full"/>
-                          <span className="w-1.5 h-1.5 bg-white/20 rounded-full"/>
-                          <span className="w-1.5 h-1.5 bg-white/10 rounded-full"/>
-                          <span className="w-1.5 h-1.5 bg-white/5 rounded-full"/>
+                          <span className="w-1.5 h-1.5 bg-white/40 pod-rounded-full"/>
+                          <span className="w-1.5 h-1.5 bg-white/30 pod-rounded-full"/>
+                          <span className="w-1.5 h-1.5 bg-white/20 pod-rounded-full"/>
+                          <span className="w-1.5 h-1.5 bg-white/10 pod-rounded-full"/>
+                          <span className="w-1.5 h-1.5 bg-white/5 pod-rounded-full"/>
                         </div>
-                        <span className="text-[10px] text-white/80 bg-white/15 backdrop-blur-xl px-1.5 py-0.5 rounded-lg">
+                        <span className="text-[10px] text-white/80 bg-white/15 backdrop-blur-xl px-1.5 py-0.5 pod-rounded-lg">
                           {t('bananaSidebar.presetLabel')}
                         </span>
                       </div>

@@ -79,7 +79,7 @@ const LayerItem: React.FC<{
             {...dragProps}
             onClick={onSelect}
             onDoubleClick={() => setIsEditing(true)}
-            className={`flex items-center space-x-2 p-1.5 rounded-md cursor-pointer text-sm transition-colors group ${
+            className={`flex items-center space-x-2 p-1.5 pod-rounded-base cursor-pointer text-sm transition-colors group ${
                 isSelected ? 'bg-blue-500/30' : 'hover:bg-white/10'
             } ${element.isVisible === false ? 'opacity-50' : ''}`}
             style={{ paddingLeft: `${10 + level * 20}px` }}
@@ -102,14 +102,14 @@ const LayerItem: React.FC<{
             <div className="flex-shrink-0 flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
                 <button
                     onClick={(e) => { e.stopPropagation(); onToggleLock(); }}
-                    className={`p-1 rounded-full hover:bg-white/20 ${element.isLocked ? 'text-white' : 'text-gray-500'}`}
+                    className={`p-1 pod-rounded-full hover:bg-white/20 ${element.isLocked ? 'text-white' : 'text-gray-500'}`}
                     title={element.isLocked ? "Unlock" : "Lock"}
                 >
                     {element.isLocked ? '🔒' : '🔓'}
                 </button>
                 <button
                     onClick={(e) => { e.stopPropagation(); onToggleVisibility(); }}
-                    className="p-1 rounded-full hover:bg-white/20"
+                    className="p-1 pod-rounded-full hover:bg-white/20"
                     title={element.isVisible === false ? "Show" : "Hide"}
                 >
                     {element.isVisible === false ? '🙈' : '👁️'}
@@ -220,7 +220,7 @@ export const LayerPanel: React.FC<LayerPanelProps> = ({ isOpen, onClose, element
     return (
         <div 
             ref={panelRef}
-            className="absolute top-4 right-4 z-20 flex flex-col w-64 h-[calc(100vh-2rem)] backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl text-white overflow-hidden"
+            className="absolute top-4 right-4 z-20 flex flex-col w-64 h-[calc(100vh-2rem)] backdrop-blur-xl border border-white/10 pod-rounded-lg shadow-2xl text-white overflow-hidden"
             style={{ backgroundColor: 'var(--ui-bg-color)' }}
         >
             <div className="flex-shrink-0 flex justify-between items-center p-3 border-b border-white/10 cursor-move">
@@ -229,13 +229,13 @@ export const LayerPanel: React.FC<LayerPanelProps> = ({ isOpen, onClose, element
                     {onMergeLayers && (
                         <button
                             onClick={(e) => { e.stopPropagation(); onMergeLayers(selectedElementIds.length > 0 ? 'selected' : 'visible'); }}
-                            className="px-2 py-1 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-xs"
+                            className="px-2 py-1 pod-rounded-base bg-blue-600 hover:bg-blue-700 text-white text-xs"
                             title="合并选中图层（未选中则合并可见图层）"
                         >
                             合并图层
                         </button>
                     )}
-                    <button onClick={onClose} className="text-gray-400 hover:text-white p-1 rounded-full">
+                    <button onClick={onClose} className="text-gray-400 hover:text-white p-1 pod-rounded-full">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                     </button>
                 </div>

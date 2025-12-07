@@ -11,6 +11,7 @@
   --brand-primary: #14b8a6; /* Teal 500 */
   --brand-accent: #2dd4bf; /* Teal 400 */
   --brand-dark: #042f2e; /* Teal 900 */
+  --brand-danger: #ff6b6b;
   
   --text-heading: #ffffff;
   --text-primary: #cbd5e1; /* Slate 300 */
@@ -25,11 +26,14 @@
   
   --font-heading: 'Montserrat Alternates', sans-serif;
   --font-body: 'Montserrat', sans-serif;
+  --font-display: 'Montserrat Alternates', sans-serif;
   
   --border-radius-base: 12px;
   --border-radius-lg: 24px;
   --transition-speed-fast: 0.2s;
   --transition-speed-normal: 0.3s;
+  --bg-component-strong: rgba(15, 23, 42, 0.9);
+  --bg-page-glass: rgba(2, 6, 23, 0.8);
 }
 
 body {
@@ -250,6 +254,24 @@ h1, h2, h3, h4, h5, h6 {
   border-radius: var(--border-radius-base);
 }
 
+.pod-panel-transparent {
+  background: var(--bg-component);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-color);
+}
+
+.pod-panel-rounded-xl {
+  border-radius: var(--border-radius-lg);
+}
+
+.pod-card-glass {
+  background: var(--bg-component);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-glass);
+}
+
 /* Branding Badge */
 .pod-branding-badge {
   position: fixed;
@@ -259,7 +281,7 @@ h1, h2, h3, h4, h5, h6 {
   align-items: center;
   gap: 8px;
   padding: 8px 16px;
-  background: rgba(2, 6, 23, 0.8);
+  background: var(--bg-page-glass);
   backdrop-filter: blur(8px);
   border: 1px solid var(--border-color);
   border-radius: 9999px;
@@ -287,6 +309,22 @@ h1, h2, h3, h4, h5, h6 {
   @apply pod-glass;
 }
 
+.pod-rounded-none {
+  border-radius: 0;
+}
+
+.pod-rounded-base {
+  border-radius: var(--border-radius-base);
+}
+
+.pod-rounded-lg {
+  border-radius: var(--border-radius-lg);
+}
+
+.pod-rounded-full {
+  border-radius: 9999px;
+}
+
 /* Animations */
 @keyframes pulse-glow {
   0%, 100% { box-shadow: 0 0 10px rgba(45, 212, 191, 0.2); }
@@ -299,10 +337,10 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Toolbar Theme (Agewell Agent Style) */
 .pod-toolbar-theme {
-  background-color: rgba(15, 23, 42, 0.9); /* Navy 800 @ 90% */
+  background-color: var(--bg-component-strong);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(20, 184, 166, 0.3); /* Teal 500 @ 30% */
+  border: 1px solid var(--border-active);
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); /* shadow-2xl equivalent */
   color: white;
 }

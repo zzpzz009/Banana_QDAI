@@ -88,11 +88,11 @@ export const CanvasSettings: React.FC<CanvasSettingsProps> = ({
             onClick={onClose}
         >
             <div 
-                className="relative pod-glass-strong rounded-xl p-4 flex flex-col space-y-2 w-72"
+                className="relative pod-glass-strong pod-rounded-base p-4 flex flex-col space-y-2 w-72"
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="flex justify-between items-center">
-                    <h3 className="text-lg" style={{ color: 'var(--text-heading)', fontWeight: 600 }}>{t('settings.title')}</h3>
+                    <h3 className="text-lg text-[var(--text-heading)] font-semibold">{t('settings.title')}</h3>
                     <button onClick={onClose} aria-label={t('settings.close')} className="pod-icon-button">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                     </button>
@@ -100,7 +100,7 @@ export const CanvasSettings: React.FC<CanvasSettingsProps> = ({
                 <div className="-mx-6" style={{ borderTop: '1px solid var(--border-color)' }}></div>
 
                 <div className="space-y-1">
-                    <label className="text-xs" style={{ color: 'var(--text-heading)', fontWeight: 500 }}>{t('settings.apiKey')}</label>
+                    <label className="text-xs text-[var(--text-heading)] font-medium">{t('settings.apiKey')}</label>
                     <div className="flex items-center gap-1 pod-input-group">
                         <input
                             type="password"
@@ -119,7 +119,7 @@ export const CanvasSettings: React.FC<CanvasSettingsProps> = ({
                 </div>
 
                 <div className="space-y-1">
-                    <label className="text-xs" style={{ color: 'var(--text-heading)', fontWeight: 500 }}>{t('settings.systemToken')}</label>
+                    <label className="text-xs text-[var(--text-heading)] font-medium">{t('settings.systemToken')}</label>
                     <div className="pod-input-group">
                         <input
                             type="password"
@@ -132,7 +132,7 @@ export const CanvasSettings: React.FC<CanvasSettingsProps> = ({
                 </div>
 
                 <div className="space-y-1">
-                    <label className="text-xs" style={{ color: 'var(--text-heading)', fontWeight: 500 }}>{t('settings.userId')}</label>
+                    <label className="text-xs text-[var(--text-heading)] font-medium">{t('settings.userId')}</label>
                     <div className="pod-input-group">
                         <input
                             type="text"
@@ -149,10 +149,10 @@ export const CanvasSettings: React.FC<CanvasSettingsProps> = ({
                     </div>
                     {balanceData && (
                         <div className="mt-1 space-y-1">
-                            <div className="text-xs" style={{ color: 'var(--text-primary)' }}>
+                            <div className="text-xs text-[var(--text-primary)]">
                                 {t('settings.siteBalancePrefix')}{new Intl.NumberFormat(language === 'zho' ? 'zh-CN' : 'en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(balanceData.quota / 500000)}
                             </div>
-                            <div className="text-xs" style={{ color: 'var(--text-primary)' }}>
+                            <div className="text-xs text-[var(--text-primary)]">
                                 {t('settings.siteUsedPrefix')}{new Intl.NumberFormat(language === 'zho' ? 'zh-CN' : 'en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(balanceData.used / 500000)}
                             </div>
                         </div>
@@ -211,8 +211,8 @@ export const CanvasSettings: React.FC<CanvasSettingsProps> = ({
 
                 {/* Language Settings */}
                 <div className="space-y-2">
-                    <label className="text-sm" style={{ color: 'var(--text-heading)', fontWeight: 500 }}>{t('settings.language')}</label>
-                    <div className="flex items-center gap-2 p-1 rounded-md">
+                    <label className="text-sm text-[var(--text-heading)] font-medium">{t('settings.language')}</label>
+                    <div className="flex items-center gap-2 p-1 pod-rounded-base">
                         <button 
                             onClick={() => setLanguage('en')}
                             className={`flex-1 text-sm pod-chip ${language === 'en' ? 'active' : ''}`}
@@ -234,8 +234,8 @@ export const CanvasSettings: React.FC<CanvasSettingsProps> = ({
                 
                 {/* Mouse Wheel Settings */}
                 <div className="space-y-2">
-                    <label className="text-sm" style={{ color: 'var(--text-heading)', fontWeight: 500 }}>{t('settings.mouseWheel')}</label>
-                    <div className="flex items-center gap-2 p-1 rounded-md">
+                    <label className="text-sm text-[var(--text-heading)] font-medium">{t('settings.mouseWheel')}</label>
+                    <div className="flex items-center gap-2 p-1 pod-rounded-base">
                         <button 
                             onClick={() => setWheelAction('zoom')}
                             className={`flex-1 text-sm pod-chip ${wheelAction === 'zoom' ? 'active' : ''}`}
@@ -254,15 +254,15 @@ export const CanvasSettings: React.FC<CanvasSettingsProps> = ({
 
                 {/* Canvas Settings */}
                 <div className="space-y-3">
-                     <h4 className="text-sm" style={{ color: 'var(--text-heading)', fontWeight: 500 }}>{t('settings.canvas')}</h4>
+                     <h4 className="text-sm text-[var(--text-heading)] font-medium">{t('settings.canvas')}</h4>
                     <div className="flex items-center justify-between">
-                        <label htmlFor="bg-color" className="text-sm" style={{ color: 'var(--text-primary)' }}>{t('settings.backgroundColor')}</label>
+                        <label htmlFor="bg-color" className="text-sm text-[var(--text-primary)]">{t('settings.backgroundColor')}</label>
                         <input
                             id="bg-color"
                             type="color"
                             value={canvasBackgroundColor}
                             onChange={(e) => onCanvasBackgroundColorChange(e.target.value)}
-                            className="w-8 h-8 p-0 border-none rounded-md cursor-pointer bg-transparent"
+                            className="w-7 h-7 p-0 border border-[var(--border-color)] pod-rounded-full cursor-pointer bg-transparent pod-color-swatch-circle"
                         />
                     </div>
                 </div>
