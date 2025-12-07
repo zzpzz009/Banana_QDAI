@@ -50,7 +50,18 @@
 | 14 | **文本编辑框样式** | ✅ 完成 | 已增加 `--text-heading` 回退 |
 | 15 | **残留硬编码清理** | ✅ 完成 | 关键组件已清理完毕 |
 
-## 执行者反馈或请求帮助
-- **Toolbar 样式**：已修正为 `PodUI copy.html` 中的 "图示样式" (Agewell Agent Card)。解决了用户反馈的“颜色不对”问题（之前使用了过深的 Teal 900 或纯色 #14B8A6，现在统一为 Navy 800 Glass + Teal Border）。
+- [x] 09. 版本发布 qd0.1.0 <!-- id: 9 -->
+  - [x] 提交所有更改
+  - [x] 合并到主支 (main)
+  - [x] 打标签 qd0.1.0
+  - [ ] 推送到远程仓库 (HTTPS 尝试失败: 403 Permission Denied)
+
+### 当前状态/进度跟踪
+- **Toolbar 样式修复**：已修正 `src/styles/podui.css` 中的 `.pod-toolbar-theme`，使其与 `PodUI copy.html` 中的 "Agewell Agent Analysis" 卡片样式（Navy 800 背景，Teal 边框）完全一致。
+- **版本发布**：尝试推送到 `https://github.com/zzpzz009/Banana_QDAI.git` 失败。错误信息显示 `Permission to zzpzz009/Banana_QDAI.git denied to cction`。当前环境似乎使用了 `cction` 用户的凭证，而目标仓库属于 `zzpzz009`。
+
+### 执行者反馈或请求帮助
+- **Git 推送权限问题**：由于权限拒绝 (403)，无法将代码推送到 GitHub。这通常是因为本地 Git 配置了错误的全局用户凭证，或者缺少对目标仓库的写入权限。建议用户在终端中手动处理凭证，或检查是否有正确的 Access Token。
+- **样式一致性**：已根据 `PodUI copy.html` 将 Toolbar 样式调整为深色 Navy 玻璃风格，解决了之前颜色不对的问题。
 
 ```

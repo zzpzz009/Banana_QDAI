@@ -303,7 +303,7 @@ h1, h2, h3, h4, h5, h6 {
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(20, 184, 166, 0.3); /* Teal 500 @ 30% */
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); /* shadow-2xl equivalent with higher opacity */
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); /* shadow-2xl equivalent */
   color: white;
 }
 
