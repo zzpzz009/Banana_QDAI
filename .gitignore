@@ -28,3 +28,9 @@ release2/
  
 # Local-only scripts
 scripts/style-consistency.mjs
+
+# Backups and bundles
+*.broken
+release-*.bundle
+* copy.html
+tmp/
