@@ -289,7 +289,13 @@
 - 验证：已运行 `npm run lint`，通过。
 
 ### 标签计划（待确认）
-- 建议创建新标签：`qd1.0.4`
-  - 说明：包含“醒目描述与占位文案更新、提示词优化、metadata 描述更新”。
-  - 推送：`git tag -a qd1.0.4 -m "chore: prominent descriptions & prompts" && git push origin qd1.0.4`
-  - 注意：如需包含本次文件修改，需先 `commit`；若只重标记，不影响工作树。
+已发布标签：`qd1.0.4`
+  - 内容：包含“醒目描述与占位文案更新、提示词优化、metadata 描述更新、README/CHANGELOG 更新”。
+  - 提交：`rollback-qd0.1.0` 分支最新提交 `74ae434`。
+  - 推送：已执行 `git add -A`、`git commit -m "docs: README/CHANGELOG v0.9.8; prominent descriptions & bilingual prompts"`、`git tag -a qd1.0.4 -m "qd1.0.4: prominent descriptions across prompts; README/CHANGELOG updated"`、`git push origin qd1.0.4`。
+  - 结果：远程 `origin` 已新增标签 `qd1.0.4`，可在 GitHub 查看。
+
+### 执行者反馈或请求帮助（网络）
+- 已尝试推送分支：`git push -u origin rollback-qd0.1.0`，出现网络错误（`Connection was reset / Could not connect to server`）。
+- 建议在网络恢复后重试：`git push -u origin rollback-qd0.1.0`。
+- 标签已成功推送，不影响版本发布的可见性。

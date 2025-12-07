@@ -230,14 +230,20 @@ const App: React.FC = () => {
             else localStorage.removeItem('WHATAI_SYSTEM_TOKEN');
         } catch { void 0; }
     }, [systemToken]);
-    useEffect(() => {
-        try {
-            if (userId) localStorage.setItem('WHATAI_USER_ID', userId);
-            else localStorage.removeItem('WHATAI_USER_ID');
-        } catch { void 0; }
-    }, [userId]);
+  useEffect(() => {
+    try {
+      if (userId) localStorage.setItem('WHATAI_USER_ID', userId);
+      else localStorage.removeItem('WHATAI_USER_ID');
+    } catch { void 0; }
+  }, [userId]);
     const [uiTheme, setUiTheme] = useState({ color: '#171717', opacity: 0.7 });
-    const [buttonTheme, setButtonTheme] = useState({ color: '#374151', opacity: 0.8 });
+  const [buttonTheme, setButtonTheme] = useState({ color: '#374151', opacity: 0.8 });
+  const [persistRemote, setPersistRemote] = useState<boolean>(() => {
+    try { return localStorage.getItem('BANANAPOD_REMOTE_HISTORY') === 'true' } catch { return false }
+  });
+  useEffect(() => {
+    try { localStorage.setItem('BANANAPOD_REMOTE_HISTORY', persistRemote ? 'true' : 'false') } catch { void 0 }
+  }, [persistRemote]);
     
     const [userEffects, setUserEffects] = useState<UserEffect[]>(() => {
         try {
@@ -572,22 +578,26 @@ const App: React.FC = () => {
     }, [panOffset, zoom]);
 
     const handleAddImageElement = useCallback(async (file: File) => {
-        if (!file.type.startsWith('image/')) {
-            setError('Only image files are supported.');
-            return;
-        }
         setError(null);
         try {
             const { dataUrl, mimeType } = await fileToDataUrl(file);
-            const resized = await resizeBase64ToMax(dataUrl, mimeType, 2048, 2048);
-            const usedDataUrl = resized && resized.scale < 1 ? `data:${mimeType};base64,${resized.base64}` : dataUrl;
+            const isImageMime = !!mimeType && mimeType.startsWith('image/');
+            const safeMime = isImageMime ? mimeType : undefined;
+            const resized = await resizeBase64ToMax(dataUrl, safeMime, 2048, 2048);
+            let loadSrc: string;
+            if (resized && resized.scale < 1) {
+                loadSrc = `data:${safeMime || 'image/png'};base64,${resized.base64}`;
+            } else if (dataUrl.startsWith('data:image/')) {
+                loadSrc = dataUrl;
+            } else {
+                loadSrc = URL.createObjectURL(file);
+            }
             const img = new Image();
             img.onload = () => {
                 if (!svgRef.current) return;
                 const svgBounds = svgRef.current.getBoundingClientRect();
                 const screenCenter = { x: svgBounds.left + svgBounds.width / 2, y: svgBounds.top + svgBounds.height / 2 };
                 const canvasPoint = getCanvasPoint(screenCenter.x, screenCenter.y);
-
                 const newImage: ImageElement = {
                     id: generateId(),
                     type: 'image',
@@ -596,15 +606,16 @@ const App: React.FC = () => {
                     y: canvasPoint.y - (img.height / 2),
                     width: img.width,
                     height: img.height,
-                    href: usedDataUrl,
-                    mimeType: mimeType,
+                    href: loadSrc,
+                    mimeType: safeMime || 'image/png',
                     opacity: 100,
                 };
                 setElements(prev => [...prev, newImage]);
                 setSelectedElementIds([newImage.id]);
                 setActiveTool('select');
             };
-            img.src = usedDataUrl;
+            img.onerror = () => { setError('Failed to load image.'); };
+            img.src = loadSrc;
         } catch (err) {
             setError('Failed to load image.');
             console.error(err);
@@ -1619,6 +1630,17 @@ const App: React.FC = () => {
     const handleDragOver = useCallback((e: React.DragEvent) => { e.preventDefault(); }, []);
     const handleDrop = useCallback((e: React.DragEvent) => { e.preventDefault(); if (e.dataTransfer.files && e.dataTransfer.files[0]) { handleAddImageElement(e.dataTransfer.files[0]); } }, [handleAddImageElement]);
 
+    useEffect(() => {
+        const onGlobalDragOver = (e: DragEvent) => { e.preventDefault(); };
+        const onGlobalDrop = (e: DragEvent) => { e.preventDefault(); const f = e.dataTransfer?.files?.[0]; if (f) handleAddImageElement(f as unknown as File); };
+        window.addEventListener('dragover', onGlobalDragOver);
+        window.addEventListener('drop', onGlobalDrop);
+        return () => {
+            window.removeEventListener('dragover', onGlobalDragOver);
+            window.removeEventListener('drop', onGlobalDrop);
+        };
+    }, [handleAddImageElement]);
+
     const handlePropertyChange = (elementId: string, updates: Partial<Element>) => {
         commitAction(prev => prev.map(el => {
             if (el.id === elementId) {
@@ -2038,6 +2060,8 @@ const App: React.FC = () => {
                 setUserId={setUserId}
                 imageModel={imageModel}
                 setImageModel={setImageModel}
+                persistRemote={persistRemote}
+                setPersistRemote={setPersistRemote}
             />
             <Toolbar
                 t={t}
@@ -2093,6 +2117,8 @@ const App: React.FC = () => {
                 <svg
                     ref={svgRef}
                     className="w-full h-full"
+                    onDragOver={handleDragOver}
+                    onDrop={handleDrop}
                     onMouseDown={handleMouseDown}
                     onMouseMove={handleMouseMove}
                     onMouseUp={handleMouseUp}

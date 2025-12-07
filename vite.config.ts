@@ -34,10 +34,16 @@ export default defineConfig(({ mode }) => {
                 if (!proxyReq.getHeader('Accept')) {
                   proxyReq.setHeader('Accept', 'application/json');
                 }
-                // 不强制设置Content-Type，让客户端代码自己设置
               });
             },
-          }
+          },
+          ...(env.BANANAPOD_API_BASE_URL ? {
+            '/api/bananapod': {
+              target: env.BANANAPOD_API_BASE_URL,
+              changeOrigin: true,
+              secure: false,
+            }
+          } : {})
         }
       },
       plugins: [react()],
@@ -49,7 +55,8 @@ export default defineConfig(({ mode }) => {
         'process.env.WHATAI_IMAGE_GENERATION_MODEL': JSON.stringify(env.WHATAI_IMAGE_GENERATION_MODEL || env.WHATAI_IMAGE_MODEL || 'gemini-2.5-flash-image'),
         'process.env.WHATAI_IMAGE_EDIT_MODEL': JSON.stringify(env.WHATAI_IMAGE_EDIT_MODEL || env.WHATAI_IMAGE_MODEL || 'gemini-2.5-flash-image'),
         'process.env.WHATAI_VIDEO_MODEL': JSON.stringify(env.WHATAI_VIDEO_MODEL || 'vidu-1'),
-        'process.env.PROXY_VIA_VITE': JSON.stringify(isElectron ? 'false' : (env.PROXY_VIA_VITE || 'true'))
+        'process.env.PROXY_VIA_VITE': JSON.stringify(isElectron ? 'false' : (env.PROXY_VIA_VITE || 'true')),
+        'process.env.BANANAPOD_API_BASE_URL': JSON.stringify(env.BANANAPOD_API_BASE_URL || '')
       },
       resolve: {
         alias: {

@@ -26,6 +26,8 @@ interface CanvasSettingsProps {
     setUserId: (id: string) => void;
     imageModel: string;
     setImageModel: (m: string) => void;
+    persistRemote: boolean;
+    setPersistRemote: (v: boolean) => void;
     
 }
 
@@ -50,7 +52,9 @@ export const CanvasSettings: React.FC<CanvasSettingsProps> = ({
     userId,
     setUserId,
     imageModel,
-    setImageModel
+    setImageModel,
+    persistRemote,
+    setPersistRemote
 }) => {
     void uiTheme; void setUiTheme; void buttonTheme; void setButtonTheme;
     const handleSetModel = (m: string) => {
@@ -264,6 +268,10 @@ export const CanvasSettings: React.FC<CanvasSettingsProps> = ({
                             onChange={(e) => onCanvasBackgroundColorChange(e.target.value)}
                             className="w-7 h-7 p-0 border border-[var(--border-color)] pod-rounded-full cursor-pointer bg-transparent pod-color-swatch-circle"
                         />
+                    </div>
+                    <div className="flex items-center justify-between">
+                        <label className="text-sm text-[var(--text-primary)]">{language === 'zho' ? '历史保存到服务器' : 'Save history to server'}</label>
+                        <button onClick={() => setPersistRemote(!persistRemote)} className={`pod-chip text-sm ${persistRemote ? 'active' : ''}`}>{persistRemote ? (language === 'zho' ? '开启' : 'On') : (language === 'zho' ? '关闭' : 'Off')}</button>
                     </div>
                 </div>
             </div>

@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
-import { touchLastSessionPending } from '@/src/services/boardsStorage';
+import { touchLastSessionPending, saveLastSessionDebounced } from '@/src/services/boardsStorage';
 import type { Board, Element } from '@/types';
 
 export function useBoardActions(
@@ -11,6 +11,7 @@ export function useBoardActions(
     setBoards(prevBoards => {
       const next: Board[] = prevBoards.map(board => (board.id === activeBoardId ? updater(board) : board));
       touchLastSessionPending({ boards: next, activeBoardId });
+      saveLastSessionDebounced({ boards: next, activeBoardId });
       return next;
     });
   }, [activeBoardId, setBoards]);
@@ -19,6 +20,7 @@ export function useBoardActions(
     setBoards(prevBoards => {
       const next: Board[] = prevBoards.map(board => (board.id === activeBoardId ? updater(board) : board));
       touchLastSessionPending({ boards: next, activeBoardId });
+      saveLastSessionDebounced({ boards: next, activeBoardId });
       return next;
     });
   }, [activeBoardId, setBoards]);
