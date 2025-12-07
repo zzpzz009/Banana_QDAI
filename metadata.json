@@ -1,5 +1,5 @@
 {
   "name": "🍌 BananaPod｜ZHO (v0.9.2)",
-  "description": "An infinite canvas powered by Gemini (Nano Banana model) for generating and editing images with text prompts. Features basic drawing tools and allows users to upload, drag, and paste images onto a Miro-like whiteboard.",
+  "description": "Aura-themed, bilingual infinite canvas for image generation and editing. Optimized for clear, prominent descriptions and high-clarity visual results. Upload, drag, paste, draw, and edit on a Miro-like whiteboard powered by Gemini/Nano Banana.",
   "requestFramePermissions": []
 }

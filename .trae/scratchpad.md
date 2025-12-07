@@ -278,3 +278,18 @@
   - 菜单项统一 `rounded-lg transition-all` 与变量化 hover 颜色（`App.tsx:2473-2492`）。
   - 分隔线统一 `border-[var(--border-color)]`。
   - 再次运行 `npm run lint` 与 `npm run build`，验证通过。
+
+### 文案与醒目描述（新增）
+- 已更新 `translations.ts` 的输入占位文案（`en.promptBar.placeholder*` 与 `zho.promptBar.placeholder*`），强调“清晰醒目”的描述方式，提升提示词可读性与选择效率。
+- 已优化部分快捷效果的提示词：
+  - `剖面生成` 与 `Section Generation` 强调“突出室内装修、功能分区与流线/Highlight key elements”。
+  - `爆炸分析图` 与 `Exploded Axon Diagram` 强调“结构层次清晰醒目/clear visual hierarchy”。
+  - `方案线稿` 增加“层次清晰、重点醒目”的表达。
+- 已更新 `metadata.json` 的项目描述，使其更简洁且强调“醒目呈现与高清晰度”的目标。
+- 验证：已运行 `npm run lint`，通过。
+
+### 标签计划（待确认）
+- 建议创建新标签：`qd1.0.4`
+  - 说明：包含“醒目描述与占位文案更新、提示词优化、metadata 描述更新”。
+  - 推送：`git tag -a qd1.0.4 -m "chore: prominent descriptions & prompts" && git push origin qd1.0.4`
+  - 注意：如需包含本次文件修改，需先 `commit`；若只重标记，不影响工作树。
