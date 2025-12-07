@@ -12,6 +12,8 @@ export default defineConfig(({ mode }) => {
         host: '0.0.0.0',
         hmr: {
           host: 'localhost',
+          port: 3001,
+          clientPort: 3001,
           protocol: 'ws',
         },
         proxy: {
@@ -34,90 +36,6 @@ export default defineConfig(({ mode }) => {
                 }
                 // 不强制设置Content-Type，让客户端代码自己设置
               });
-              proxy.on('proxyRes', (proxyRes) => {
-                const location = proxyRes.headers['location'];
-                if (typeof location === 'string' && location.startsWith('/')) {
-                  proxyRes.headers['location'] = `/proxy-whatai${location}`;
-                }
-              });
-            },
-          }
-          ,
-          '/proxy-grsai': {
-            target: env.GRSAI_BASE_URL || 'https://grsai.dakka.com.cn',
-            changeOrigin: true,
-            secure: true,
-            rewrite: (path) => {
-              const p = path.replace(/^\/proxy-grsai/, '')
-              return p.replace(/^\/zh\//, '/').replace(/^\/zh/, '')
-            },
-            configure: (proxy) => {
-              proxy.on('proxyReq', (proxyReq, req) => {
-                const existingAuth = proxyReq.getHeader('Authorization') || req.headers['authorization'];
-                if (!existingAuth) {
-                  const key = env.GRSAI_API_KEY;
-                  if (key) {
-                    proxyReq.setHeader('Authorization', `Bearer ${key}`);
-                  }
-                }
-                if (!proxyReq.getHeader('Accept')) {
-                  proxyReq.setHeader('Accept', 'application/json');
-                }
-                if (!proxyReq.getHeader('Accept-Language')) {
-                  proxyReq.setHeader('Accept-Language', 'en;q=0.8,zh;q=0.7');
-                }
-              });
-              proxy.on('proxyRes', (proxyRes) => {
-                const location = proxyRes.headers['location'];
-                if (typeof location === 'string') {
-                  let pathname = location
-                  try {
-                    if (/^https?:\/\//i.test(location)) {
-                      const u = new URL(location)
-                      pathname = `${u.pathname}${u.search || ''}`
-                    }
-                  } catch { /* ignore */ }
-                  const normalized = pathname.replace(/^\/zh\//, '/').replace(/^\/zh/, '')
-                  proxyRes.headers['location'] = `/proxy-grsai${normalized}`;
-                }
-              });
-            },
-          },
-          '/zh/v1': {
-            target: env.GRSAI_BASE_URL || 'https://grsai.dakka.com.cn',
-            changeOrigin: true,
-            secure: true,
-            rewrite: (path) => path.replace(/^\/zh/, ''),
-            configure: (proxy) => {
-              proxy.on('proxyReq', (proxyReq, req) => {
-                const existingAuth = proxyReq.getHeader('Authorization') || req.headers['authorization'];
-                if (!existingAuth) {
-                  const key = env.GRSAI_API_KEY;
-                  if (key) {
-                    proxyReq.setHeader('Authorization', `Bearer ${key}`);
-                  }
-                }
-                if (!proxyReq.getHeader('Accept')) {
-                  proxyReq.setHeader('Accept', 'application/json');
-                }
-                if (!proxyReq.getHeader('Accept-Language')) {
-                  proxyReq.setHeader('Accept-Language', 'en;q=0.8,zh;q=0.7');
-                }
-              });
-              proxy.on('proxyRes', (proxyRes) => {
-                const location = proxyRes.headers['location'];
-                if (typeof location === 'string') {
-                  let pathname = location
-                  try {
-                    if (/^https?:\/\//i.test(location)) {
-                      const u = new URL(location)
-                      pathname = `${u.pathname}${u.search || ''}`
-                    }
-                  } catch { /* ignore */ }
-                  const normalized = pathname.replace(/^\/zh\//, '/').replace(/^\/zh/, '')
-                  proxyRes.headers['location'] = `/proxy-grsai${normalized}`;
-                }
-              });
             },
           }
         }
@@ -131,13 +49,11 @@ export default defineConfig(({ mode }) => {
         'process.env.WHATAI_IMAGE_GENERATION_MODEL': JSON.stringify(env.WHATAI_IMAGE_GENERATION_MODEL || env.WHATAI_IMAGE_MODEL || 'gemini-2.5-flash-image'),
         'process.env.WHATAI_IMAGE_EDIT_MODEL': JSON.stringify(env.WHATAI_IMAGE_EDIT_MODEL || env.WHATAI_IMAGE_MODEL || 'gemini-2.5-flash-image'),
         'process.env.WHATAI_VIDEO_MODEL': JSON.stringify(env.WHATAI_VIDEO_MODEL || 'vidu-1'),
-        'process.env.PROXY_VIA_VITE': JSON.stringify(isElectron ? 'false' : (env.PROXY_VIA_VITE || 'true')),
-        'process.env.GRSAI_BASE_URL': JSON.stringify(env.GRSAI_BASE_URL || 'https://grsai.dakka.com.cn'),
-        'process.env.GRSAI_API_KEY': JSON.stringify(env.GRSAI_API_KEY)
+        'process.env.PROXY_VIA_VITE': JSON.stringify(isElectron ? 'false' : (env.PROXY_VIA_VITE || 'true'))
       },
       resolve: {
         alias: {
-          '@': path.resolve(__dirname, 'src'),
+          '@': path.resolve(__dirname, '.'),
         }
       }
     };

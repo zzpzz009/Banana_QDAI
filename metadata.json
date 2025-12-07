@@ -1,5 +1,5 @@
 {
-  "name": "🍌 BananaPod_Arch (v1.0.2.1)",
-  "description": "A lightweight, extensible image generation and editing workbench built with React 19, Vite, and Electron. Features the PodUI theme, supports nano-banana series models for generation and editing, layer management, and a bilingual interface optimized for desktop and tablet use.",
+  "name": "🍌 BananaPod｜ZHO (v0.9.2)",
+  "description": "An infinite canvas powered by Gemini (Nano Banana model) for generating and editing images with text prompts. Features basic drawing tools and allows users to upload, drag, and paste images onto a Miro-like whiteboard.",
   "requestFramePermissions": []
 }

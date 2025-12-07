@@ -1,12 +1,12 @@
-# BananaPod｜图像生成与编辑工作台（v1.0.2.1）
+# BananaPod｜图像生成与编辑工作台（v0.9.7）
 
 轻量、可扩展的图像生成与编辑工作台，采用 PodUI 主题。统一第三方 API 为 OpenAI 风格接口（基于 `whatai.cc`），支持图层系统、裁剪与合并、双语界面、iPad/Apple Pencil 场景。
 
-## 核心更新（v1.0.2.1）
-- 容器编排优化：`src/App.tsx` 仅注入依赖，交互/选择/裁剪/合并等逻辑下沉到 Hooks 与组件
-- 模块化重构完成：抽取并接入 `useCanvasInteraction/useSelection/useBoardActions/useBoardManager/useClipboard/useKeyboardShortcuts/useLayerMerge/useCrop/useTextEditing/useContextMenuActions/useDragImport/useGenerationPipeline/useUserEffects/useI18n/useCredentials/useCanvasCoords/useElementOps`
-- 统一 `t` 返回类型为 `string`，移除类型断言，国际化接线更稳定
-- 清理重复与废弃：移除重复 `LayerPanel` 与旧版 `useI18n`，统一路径到 `src/*`
+## 核心更新（v0.9.7）
+- 图片接口统一返回 `url`（优先解析 `url`，`b64_json` 兜底）
+- `nano-banana-2`：强制枚举比例，输入图非枚举时自动居中裁剪到最近枚举比例
+- `images/edits` 移除 `size`，避免与 `aspect_ratio` 冲突
+- 新增脚本 `npm run test:banana` 验证生图与编辑链路（含 `url` 下载校验）
 
 ## 模型与接口
 - 生图（Generations）：`nano-banana`、`nano-banana-hd`、`nano-banana-2`
@@ -25,15 +25,12 @@
 - 环境：Node.js 18+（建议 LTS）
 - 安装：`npm install`
 - 启动：`npm run dev`，访问 `http://localhost:3001/`
-- 预览构建：`npm run preview`（默认尝试 `4173`，占用时自动递增）
 - API 密钥：在应用内“设置”面板填写后保存（保存在 `localStorage('WHATAI_API_KEY')`）
 
 ## 常用命令
 - 开发：`npm run dev`
 - 构建：`npm run build`
 - 预览：`npm run preview`
-- Lint：`npm run lint`
-- 类型检查：`npx tsc --noEmit`
 - Electron 构建：`npm run build:electron`、`npm run dist:win`
 - 测试生图与编辑：`npm run test:banana`
   - 环境变量运行：`$env:WHATAI_API_KEY='<你的key>'; npm run test:banana`
@@ -58,20 +55,11 @@
 ## 目录结构（简）
 ```
 BananaPod/
-├── src/
-│  ├── App.tsx                 # 容器编排（仅依赖注入与组合）
-│  ├── components/             # 画布相关组件（Canvas/SelectionOverlay/ContextMenuOverlay 等）
-│  ├── features/               # 业务功能（toolbar/prompt/settings/boards 等）
-│  ├── hooks/                  # 交互/选择/裁剪/合并/生成等逻辑 Hooks
-│  ├── ui/                     # 通用 UI 组件（Panel/IconButton/Loader 等）
-│  ├── services/               # API 与存储（api/geminiService、boardsStorage）
-│  ├── utils/                  # 工具函数（canvas/fileUtils/image/retry）
-│  ├── i18n/                   # 语言与文案（translations）
-│  ├── styles/                 # 样式（tailwind.css/podui.css）
-│  └── types/                  # 类型定义
-├── public/api调用方式/        # 接口对接说明（OpenAI 风格）
-├── vite.config.ts             # 开发代理与别名配置
-├── index.tsx                  # 应用入口（挂载 App）
+├── components/           # 主要 UI 组件
+├── src/                  # 业务组件、样式与服务
+├── services/geminiService.ts  # 统一图片 API 与处理逻辑
+├── public/api调用方式/    # 对接文档（OpenAPI 片段）
+├── vite.config.ts        # 开发代理配置
 └── README.md
 ```
 
@@ -80,11 +68,11 @@ BananaPod/
 - 应用内密钥保存在 `localStorage`，不会在日志中打印；仅在请求头附加
 
 ## 版本与发布
-- 当前版本：`1.0.2.1`
+- 当前版本：`0.9.7`
 - 关键变更：
-  - 容器编排优化与模块化重构完成（Hooks/组件抽取）
-  - 统一国际化 `t` 返回类型为 `string`
-  - 清理重复实现（旧版 i18n/LayerPanel）与路径统一到 `src/*`
+  - 统一图片返回 `url`
+  - NB2 自动裁剪到最近枚举比例，`edits` 去除 `size`
+  - 新增脚本验证与调试日志
 
 ## 致谢
 - 模型：`nano-banana` 系列、`gemini-3-pro-image-preview`

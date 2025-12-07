@@ -1,7 +1,7 @@
 
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import App from '@/App';
+import App from './App';
 import { StartupGate } from './src/bootstrap/StartupGate';
 import './src/styles/tailwind.css';
 import './src/styles/podui.css';
@@ -14,10 +14,8 @@ if (!rootElement) {
 const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
-    <div className="podui-theme-dark">
-      <StartupGate>
-        <App />
-      </StartupGate>
-    </div>
+    <StartupGate>
+      <App />
+    </StartupGate>
   </React.StrictMode>
 );
