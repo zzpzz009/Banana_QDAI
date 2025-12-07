@@ -25,3 +25,6 @@ release2/
 *.njsproj
 *.sln
 *.sw?
+ 
+# Local-only scripts
+scripts/style-consistency.mjs
