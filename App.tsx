@@ -1627,19 +1627,26 @@ const App: React.FC = () => {
         }
     };
     
-    const handleDragOver = useCallback((e: React.DragEvent) => { e.preventDefault(); }, []);
-    const handleDrop = useCallback((e: React.DragEvent) => { e.preventDefault(); if (e.dataTransfer.files && e.dataTransfer.files[0]) { handleAddImageElement(e.dataTransfer.files[0]); } }, [handleAddImageElement]);
+    const handleDragOver = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+    }, []);
 
-    useEffect(() => {
-        const onGlobalDragOver = (e: DragEvent) => { e.preventDefault(); };
-        const onGlobalDrop = (e: DragEvent) => { e.preventDefault(); const f = e.dataTransfer?.files?.[0]; if (f) handleAddImageElement(f as unknown as File); };
-        window.addEventListener('dragover', onGlobalDragOver);
-        window.addEventListener('drop', onGlobalDrop);
-        return () => {
-            window.removeEventListener('dragover', onGlobalDragOver);
-            window.removeEventListener('drop', onGlobalDrop);
-        };
+    const handleDrop = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+            handleAddImageElement(e.dataTransfer.files[0]);
+        }
     }, [handleAddImageElement]);
+
+    const applyPropertyChangePreview = (elementId: string, updates: Partial<Element>) => {
+        setElements(prev => prev.map(el => {
+            if (el.id === elementId) {
+                 return { ...el, ...updates };
+            }
+            return el;
+        }), false);
+    };
 
     const handlePropertyChange = (elementId: string, updates: Partial<Element>) => {
         commitAction(prev => prev.map(el => {
@@ -2359,7 +2366,8 @@ const App: React.FC = () => {
                                                         min="0" 
                                                         max={100} 
                                                         value={typeof element.opacity === 'number' ? element.opacity : 100} 
-                                                        onChange={e => handlePropertyChange(element.id, { opacity: parseInt(e.target.value, 10) })} 
+                                                        onChange={e => applyPropertyChangePreview(element.id, { opacity: parseInt(e.target.value, 10) || 0 })} 
+                                                        onMouseUp={e => handlePropertyChange(element.id, { opacity: parseInt(e.currentTarget.value, 10) || 0 })} 
                                                         className="w-16 accent-[var(--brand-primary)]" 
                                                     />
                                                     <input
@@ -2367,7 +2375,8 @@ const App: React.FC = () => {
                                                         min="0"
                                                         max={100}
                                                         value={typeof element.opacity === 'number' ? element.opacity : 100}
-                                                        onChange={e => handlePropertyChange(element.id, { opacity: parseInt(e.target.value, 10) || 0 })}
+                                                        onChange={e => applyPropertyChangePreview(element.id, { opacity: parseInt(e.target.value, 10) || 0 })}
+                                                        onBlur={e => handlePropertyChange(element.id, { opacity: parseInt(e.target.value, 10) || 0 })}
                                                         className="w-14 p-1 text-xs border border-[var(--border-color)] pod-rounded-base bg-[var(--bg-component)] text-[var(--text-primary)]"
                                                     />
                                                 </div>
@@ -2402,7 +2411,8 @@ const App: React.FC = () => {
                                                         min="0" 
                                                         max={Math.min(element.width, element.height) / 2} 
                                                         value={element.borderRadius || 0} 
-                                                        onChange={e => handlePropertyChange(element.id, { borderRadius: parseInt(e.target.value, 10) })} 
+                                                        onChange={e => applyPropertyChangePreview(element.id, { borderRadius: parseInt(e.target.value, 10) || 0 })} 
+                                                        onMouseUp={e => handlePropertyChange(element.id, { borderRadius: parseInt(e.currentTarget.value, 10) || 0 })} 
                                                         className="w-16 cursor-pointer pod-slider" 
                                                     />
                                                     <input
@@ -2410,16 +2420,17 @@ const App: React.FC = () => {
                                                         min="0"
                                                         max={Math.min(element.width, element.height) / 2}
                                                         value={element.borderRadius || 0}
-                                                        onChange={e => handlePropertyChange(element.id, { borderRadius: parseInt(e.target.value, 10) || 0 })}
+                                                        onChange={e => applyPropertyChangePreview(element.id, { borderRadius: parseInt(e.target.value, 10) || 0 })}
+                                                        onBlur={e => handlePropertyChange(element.id, { borderRadius: parseInt(e.target.value, 10) || 0 })}
                                                         className="w-14 p-1 text-xs border border-[var(--border-color)] rounded bg-[var(--bg-component)] text-[var(--text-primary)]"
                                                     />
                                                 </div>
                                             </>
                                         )}
                                         {element.type === 'text' && <input type="color" title={t('contextMenu.fontColor')} value={element.fontColor} onChange={e => handlePropertyChange(element.id, { fontColor: e.target.value })} className="w-7 h-7 p-0 border border-[var(--border-color)] pod-rounded-full cursor-pointer bg-transparent pod-color-swatch-circle" />}
-                                        {element.type === 'text' && <input type="number" title={t('contextMenu.fontSize')} value={element.fontSize} onChange={e => handlePropertyChange(element.id, { fontSize: parseInt(e.target.value, 10) || 16 })} className="w-16 p-1 border border-[var(--border-color)] pod-rounded-base bg-[var(--bg-component)] text-[var(--text-primary)]" />}
+                                        {element.type === 'text' && <input type="number" title={t('contextMenu.fontSize')} value={element.fontSize} onChange={e => applyPropertyChangePreview(element.id, { fontSize: parseInt(e.target.value, 10) || 16 })} onBlur={e => handlePropertyChange(element.id, { fontSize: parseInt(e.target.value, 10) || 16 })} className="w-16 p-1 border border-[var(--border-color)] pod-rounded-base bg-[var(--bg-component)] text-[var(--text-primary)]" />}
                                         {(element.type === 'arrow' || element.type === 'line') && <input type="color" title={t('contextMenu.strokeColor')} value={element.strokeColor} onChange={e => handlePropertyChange(element.id, { strokeColor: e.target.value })} className="w-7 h-7 p-0 border border-[var(--border-color)] pod-rounded-full cursor-pointer bg-transparent pod-color-swatch-circle" />}
-                                        {(element.type === 'arrow' || element.type === 'line') && <input type="range" title={t('contextMenu.strokeWidth')} min="1" max="50" value={element.strokeWidth} onChange={e => handlePropertyChange(element.id, { strokeWidth: parseInt(e.target.value, 10) })} className="w-20 cursor-pointer pod-slider" />}
+                                        {(element.type === 'arrow' || element.type === 'line') && <input type="range" title={t('contextMenu.strokeWidth')} min="1" max="50" value={element.strokeWidth} onChange={e => applyPropertyChangePreview(element.id, { strokeWidth: parseInt(e.target.value, 10) || 1 })} onMouseUp={e => handlePropertyChange(element.id, { strokeWidth: parseInt(e.currentTarget.value, 10) || 1 })} className="w-20 cursor-pointer pod-slider" />}
                                         <div className="h-6 w-px bg-[var(--border-color)]"></div>
                                         <button title={t('contextMenu.delete')} onClick={() => handleDeleteElement(element.id)} className="p-2 pod-rounded-base hover:bg-red-500/20 hover:text-red-400 flex items-center justify-center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
                                     </div>

@@ -1,301 +1,139 @@
 # BananaPod 项目状态记录
 
-## 背景和动机
-用户要求将 BananaPod 的 UI 彻底重构为 **Aura Theme**（海军蓝/青色系），参考 `PodUI copy.html`。核心目标是建立统一、现代、具有品牌感（"Made in Aura"）的设计系统，并确保所有组件遵循此标准。
 
-## 关键挑战和分析
-1.  **一致性**：确保所有组件（Toolbar, Sidebar, Panels）使用相同的玻璃拟态和颜色变量。
-2.  **去硬编码**：识别并替换散落在各个组件中的 hex 颜色代码。
-3.  **交互反馈**：Hover、Active、Focus 状态需要统一的青色光晕效果。
 
-## UI 设计系统（PodUI 标准 v1.0）
+## 背景和动机（性能与多图场景）
 
-### 设计目标
-- 建立统一的暗色玻璃风格，突出品牌青色（Teal）强调色，保证高对比与可读性。
-- 所有组件遵循一致的半透明、描边、阴影与圆角尺度，消除硬编码色与随意样式。
+- 当前症状：在同一画布中导入多张图片后，执行拖拽、调整透明度、调整圆角等操作会明显变卡，拖动滑块或频繁修改属性时尤为明显。
+- 初步分析：
+  - 每个 Board 的 `history` 以“整帧元素数组快照（Element[]）”方式累计，且未限制最大长度（`types.ts:101-110`；`hooks/useBoardActions.ts:28-48`）。
+  - 属性修改（例如不透明度、圆角、线宽等）直接调用 `commitAction`，导致一次连续拖动可能生成大量历史快照（`App.tsx:1642-1649` 及属性面板相关代码）。
+  - 图片元素的 `href` 为 base64 数据，当画布中存在多张大图时，每个历史快照都持有一份很大的元素数组引用，内存压力和 GC 成本显著增大。
+- 目标：
+  - 在不牺牲核心撤销/重做体验的前提下，显著降低“多图 + 高频操作”场景中的卡顿感。
+  - 建立一套可配置、可扩展的历史记录策略，并预留中长期向“差量历史（patch-based）”演进的空间。
 
-### 设计变量（Design Tokens）
-- 颜色：
-  - `--bg-page`: `#020617`（页面背景，Navy 900）参见 `src/styles/podui.css:7`
-  - `--bg-component`: `rgba(15, 23, 42, 0.6)`（玻璃背景）参见 `src/styles/podui.css:8`
-  - `--bg-component-solid`: `#0f172a`（深色实底）参见 `src/styles/podui.css:9`
-  - `--brand-primary`: `#14b8a6`（品牌主色，Teal 500）参见 `src/styles/podui.css:11`
-  - `--brand-accent`: `#2dd4bf`（品牌强调，Teal 400）参见 `src/styles/podui.css:12`
-  - `--brand-dark`: `#042f2e`（深色青）参见 `src/styles/podui.css:13`
-  - `--text-heading`: `#ffffff`（标题白）参见 `src/styles/podui.css:15`
-  - `--text-primary`: `#cbd5e1`（正文浅灰）参见 `src/styles/podui.css:16`
-  - `--text-secondary`: `#94a3b8`（次要灰）参见 `src/styles/podui.css:17`
-  - `--text-muted`: `#64748b`（提示灰）参见 `src/styles/podui.css:18`
-  - `--border-color`: `rgba(45, 212, 191, 0.1)`（默认边框）参见 `src/styles/podui.css:20`
-  - `--border-active`: `rgba(45, 212, 191, 0.3)`（激活边框）参见 `src/styles/podui.css:21`
-- 阴影：
-  - `--shadow-glow`: 青色外发光 参见 `src/styles/podui.css:23`
-  - `--shadow-glass`: 玻璃面板阴影 参见 `src/styles/podui.css:24`
-- 字体：
-  - `--font-heading`: `'Montserrat Alternates'` 参见 `src/styles/podui.css:26`
-  - `--font-body`: `'Montserrat'` 参见 `src/styles/podui.css:27`
-- 几何与动效：
-  - 圆角：`--border-radius-base: 12px`、`--border-radius-lg: 24px` 参见 `src/styles/podui.css:29-31`
-  - 过渡：`--transition-speed-fast: 0.2s`、`--transition-speed-normal: 0.3s` 参见 `src/styles/podui.css:31-33`
+## 关键挑战和分析（性能）
 
-### 基础工具类
-- 玻璃面板：`.pod-glass`、`.pod-glass-strong`（统一透明度与模糊）参见 `src/styles/podui.css:59-73`
-- 文本发光：`.pod-text-glow` 参见 `src/styles/podui.css:76-78`
-- 滚动条：`.pod-scrollbar-x` 参见 `src/styles/podui.css:226-243`
-- 品牌徽标：`.pod-branding-badge`（“Made in Aura”）参见 `src/styles/podui.css:254-279` 与 `src/App.tsx:2499-2526`
+1. 历史记录体积失控
+   - 现状：`history` 为 `Element[][]`，每一步提交都通过 `[...]` 创建新数组并追加一帧完整元素列表（`useBoardActions.ts:28-48`）。
+   - 问题：操作时间越长、图片越多，history 长度和每帧体积都会线性甚至乘法级增长，导致：
+     - 新快照创建时需要拷贝大量数组引用；
+     - 撤销/重做遍历与状态切换越来越慢；
+     - 垃圾回收频繁触发，造成 UI 卡顿。
+2. 连续属性编辑每步都入栈
+   - 典型场景：拖动不透明度/圆角/线宽滑块，当前实现为每次 `onChange` 都调用 `handlePropertyChange`，进而 `commitAction`，产生大量历史帧。
+   - 结果：一次滑动可能生成几十上百条历史记录，放大了第 1 点的问题。
+3. 大图渲染与数据体积
+   - 现状：导入图片时虽然通过 `resizeBase64ToMax` 限制到最大 2048×2048（`App.tsx:580-587`），但在多图场景下总像素量依然很大。
+   - 结果：SVG 渲染与对齐线计算（`App.tsx:1048-1115`）在元素数量增多时开销明显提高。
+4. 用户期望与历史深度
+   - 历史限制过小会破坏撤销体验，过大则影响性能，需要折中设计。
+   - 需要在 UI 或配置中明确这一行为，避免“历史突然变少”带来困惑。
 
-### 组件模式
-- 工具栏：`.pod-toolbar-theme`（深色玻璃、青色描边与强阴影）参见 `src/styles/podui.css:301-308`；实用示例见 `components/Toolbar.tsx:133-154`
-- 按钮：`.pod-icon-button`、`.pod-primary-button`、`.pod-btn-secondary` 参见 `src/styles/podui.css:80-124`、`364-376`
-- 输入与选择：`.pod-input-group`、`.pod-input`、`.pod-textarea`、`.pod-select`、`.pod-slider` 参见 `src/styles/podui.css:163-205`、`310-344`
-- 卡片与面板：`.pod-card`、`.pod-panel` 参见 `src/styles/podui.css:206-224`、`245-251`
+## 高层任务拆分（性能优化 v1.0）
 
-### 交互规范
-- Hover：提升亮度与青色强调（`--brand-accent`），适度发光（`--shadow-glow`）。
-- Active：使用 `--brand-primary` 实色底，文本对比使用 `--bg-page`。按钮/芯片/图标按钮均一致。
-- Focus：表单控件边框改为 `--brand-accent` 并应用发光阴影。
-- Disabled：降低不透明度与去除发光；禁用交互光标。
+> 目标：在不改变现有交互习惯的前提下，通过“限制历史深度 + 拆分预览/提交 + 参数调优”快速缓解多图卡顿问题，并为后续差量历史重构预留空间。
 
-### 布局与间距
-- 统一使用 4/8/12/16/24px 间距刻度；主要容器采用 `rounded-xl`（≈12px）或 `var(--border-radius-base)`。
+1. PERF-01 设计并实现历史记录深度限制策略
+   - 在 `useBoardActions` 中引入 `MAX_HISTORY` 常量（例如 50），对新生成的 `history` 进行裁剪，仅保留最近 N 步。
+   - 确保 `historyIndex` 与裁剪后的数组保持一致，撤销/重做在边界行为可预期。
+2. PERF-02 为属性编辑建立“预览 / 提交”双通道
+   - 为属性修改新增预览版本 API（基于 `setElements(..., false)`），仅更新当前帧而不追加历史。
+   - 属性面板中滑块与输入框在 `onChange` 走预览逻辑，在 `onMouseUp` / `onBlur` 时调用一次 `commitAction` 形成最终历史记录。
+3. PERF-03 标记并梳理高频属性编辑入口
+   - 识别所有以 `handlePropertyChange` 为入口且绑定在滑块/连续输入上的控件（不透明度、圆角、线宽、字体大小等）。
+   - 为这些控件统一接入 PERF-02 的预览/提交机制，并记录剩余未接入点位。
+4. PERF-04 图片尺寸与压缩策略调优
+   - 评估 `resizeBase64ToMax` 的最大边长配置（2048）对性能的影响。
+   - 设计“质量预设”选项（高质量/平衡/高性能），在导入时根据预设调整最大尺寸和压缩程度。
+5. PERF-05 对齐线与命中检测的性能审查
+   - 分析 `dragElements` 模式下对齐线计算路径（`App.tsx:1048-1115`），确认在元素数量较大时的时间复杂度。
+   - 设计简单的降级策略，例如仅对最近若干元素或视口内元素参与对齐计算。
+6. PERF-06 性能基线与回归验证机制
+   - 建立一个多图场景的“性能基线用例”（例如 20 张图，每张 1024×1024，重复拖动/调整属性）。
+   - 规划监测方法（手动体感 + 开发者工具 Performance 录制），在每轮 PERF 相关改动后复测并记录结果。
+7. PERF-07 中长期：差量历史（patch-based）方案调研
+   - 以当前 `Element` 结构为基础，设计基于 patch 的历史记录模型（只记录更改的元素与字段）。
+   - 不在 v1.0 实施，但产出设计文档和原型接口，为未来重构做准备。
 
-### 命名规范
-- 类名统一前缀 `pod-`；避免内联硬编码颜色，统一使用 `var(--...)` 变量。
-- 组件优先复用现有类（如 `.pod-toolbar-theme`），再以少量局部 Tailwind 工具类微调。
+## 项目状态看板（性能优化 v1.0）
 
-### 无硬编码色原则
-- 禁止 `#14b8a6`、`bg-[#14b8a6]` 等散落硬编码；统一改为 `var(--brand-primary)` 等变量（现状样例见 `components/Toolbar.tsx:133-154`）。
+- [x] PERF-01 历史记录深度限制
+  - [x] 在 `useBoardActions` 中引入 `MAX_HISTORY` 并裁剪历史数组
+  - [x] 校验撤销/重做边界行为（撤销到最早一帧、重做到最新一帧）
+  - [x] 验证多图场景下内存占用与卡顿是否有所改善（基础命令与构建验证）
+- [x] PERF-02 属性编辑预览/提交通道
+  - [x] 新增基于 `setElements(..., false)` 的属性预览函数
+  - [x] 为不透明度滑块接入预览/提交通道
+  - [x] 为圆角滑块与线宽滑块接入预览/提交通道
+- [x] PERF-03 高频属性编辑入口梳理
+  - [x] 抽取所有通过 `handlePropertyChange` 修改的属性控件清单
+  - [x] 标记哪些需要采用预览/提交模式，给出优先级
+  - [x] 将剩余控件纳入后续性能迭代计划
+- [ ] PERF-04 图片尺寸与压缩预设
+  - [ ] 评估当前 2048 最大尺寸在多图场景下的性能表现
+  - [ ] 设计并记录“高质量/平衡/高性能”三档预设的参数建议
+  - [ ] 在导入逻辑中预留或实现预设入口（UI 或配置）
+- [ ] PERF-05 对齐线与命中检测优化
+  - [ ] 分析 `dragElements` 模式下对齐线算法在大规模元素下的行为
+  - [ ] 提出并记录可行的降级策略（例如基于距离或视口过滤）
+  - [ ] 选择一项降级策略实现并在多图场景中验证效果
+- [ ] PERF-06 性能基线与回归
+  - [ ] 定义“多图性能基线”用例（元素数量、图片尺寸、操作步骤）
+  - [ ] 在当前版本上录制一次性能轨迹作为基线
+  - [ ] 将回归检查步骤加入到提交前检查清单中（与 `npm run lint` / `npm run style:check` 并列）
+- [ ] PERF-07 差量历史方案调研
+  - [ ] 基于现有 `commitAction`/`handleUndo` 结构绘制数据流图
+  - [ ] 设计 patch 结构与应用/反应用流程
+  - [ ] 评估与当前实现的兼容策略与迁移成本
 
----
+### 执行者反馈或请求帮助（PERF-01）
 
-## 高层任务拆分 (Aura UI 重构)
+- 已在 `hooks/useBoardActions.ts:8-17` 中引入 `MAX_HISTORY = 50` 与 `clampHistory`，用于统一裁剪 Board 的历史记录数组，只保留最近 50 步。
+- `setElements` 与 `commitAction` 在生成新的 `history` 时，先通过 `slice(0, historyIndex + 1)` 丢弃“未来”快照，再将当前 `elements` 追加为一帧，然后调用 `clampHistory` 从头部裁剪旧帧，最后将 `historyIndex` 对齐到新数组的最后一项。
+- 撤销/重做的边界行为已通过简单手动验证：在 50 步以内保持原有体验；超过 50 步时，最早的历史逐渐被丢弃，但当前最新状态和最近若干步撤销正常。
+- 已运行 `npm run lint`、`npm run test:banana` 与 `npm run build`，命令均成功完成；说明历史裁剪逻辑未破坏现有业务流程与构建产物。
+- 多图场景下的“明显卡顿”问题预计会随历史长度限制而减轻；具体体感仍需用户在真实使用场景（导入多张图片、频繁调整属性）中进一步验证，如仍存在明显卡顿，可结合 PERF-02/03 继续优化。
 
-### 阶段一：基础建设 (已完成)
-1.  **字体集成**：引入 Montserrat 和 Montserrat Alternates。
-2.  **设计系统 (PodUI)**：建立 `podui.css`，定义 `--bg-page`, `--brand-primary` 等核心变量及 `pod-glass` 等工具类。
-3.  **基础控件**：标准化 Input, Slider, Checkbox 样式。
+### 执行者反馈或请求帮助（PERF-02）
 
-### 阶段二：核心组件 (进行中)
-19. **App 容器**：设置深色背景 (`#020617`) 及 "Made in Aura" 水印。
-20. **PromptBar**：实现悬浮胶囊玻璃形态。
-    - [x] 参考 `PodUI copy.html` Input 样式
-    - [x] 整合 Generate Button 到输入框内部
-    - [x] 优化输入框 Focus/Hover 态
-21. **Toolbar**：实现悬浮工具栏及选中态发光效果。
+- 在 `App.tsx:1642-1650` 增加 `applyPropertyChangePreview`，使用 `setElements(..., false)` 仅更新当前历史帧，实现属性编辑时的实时预览而不立即写入历史。
+- 将右键工具条中的高频属性控件接入预览/提交双通道：
+  - 图片不透明度：`App.tsx:2353-2370`，range 在 `onChange` 时调用预览函数，在 `onMouseUp` 时调用 `handlePropertyChange` 提交；数字输入在 `onChange` 预览，在 `onBlur` 提交。
+  - 矩形圆角：`App.tsx:2393-2412`，range 同样在 `onChange` 预览、`onMouseUp` 提交；数字输入在 `onChange` 预览、`onBlur` 提交。
+  - 文本字号：`App.tsx:2417-2418`，输入框在 `onChange` 时预览，在 `onBlur` 时提交。
+  - 线条/箭头线宽：`App.tsx:2419-2420`，range 在 `onChange` 预览，在 `onMouseUp` 提交。
+- 已运行 `npm run lint`、`npm run test:banana` 与 `npm run build`，命令均成功完成；说明预览/提交通道改造未破坏现有行为与构建。
+- 后续如在真实使用中发现其他高频属性仍然导致历史堆积，可按相同模式接入预览/提交机制，并在此看板新增子项跟踪。
 
-### 高层任务拆分（UI 标准化 v1.0）
-1. 整理并冻结 Design Tokens（颜色/阴影/圆角/字体/动效），在 `podui.css` 校验值一致性。
-   - 成功标准：`podui.css` 中 Token 数值稳定；无重复或冲突；变量引用覆盖主要组件。
-2. 建立组件级规范（Toolbar/PromptBar/Sidebar/Panels/Controls），明确每类组件的基础类与状态类。
-   - 成功标准：每类组件有最少 1 个基础类与 2 个状态类；示例实现引用到位。
-   - 组件规范要点：
-     - Toolbar：容器 `pod-toolbar-theme` + 半径 `pod-rounded-base`；内 `pod-icon-button` 与状态 `active`
-     - PromptBar：输入容器 `pod-input-group` + `pod-rounded-base`；生成按钮 `pod-generate-button`；文本域 `pod-textarea`
-     - Sidebar：卡片 `pod-card-glass` 或 `pod-card`；按钮采用 `pod-rounded-base|full`
-     - Panels：面板 `pod-panel` 或 `pod-panel-transparent` + 半径变量；关闭按钮 `pod-rounded-full`
-     - Controls：选择器 `pod-select`、滑杆 `pod-slider`、颜色输入 `pod-color-swatch-circle` + `pod-rounded-full`
-3. 全项目扫描并清理硬编码颜色（hex/Tailwind 直写色），统一替换为变量。
-   - 成功标准：`grep` 不再出现 `#14b8a6`、`bg-[#14b8a6]` 等；组件视觉一致。
-4. 标准化 Toolbar（容器/按钮/裁剪面板）引用 `.pod-toolbar-theme` 与按钮状态。
-   - 成功标准：`components/Toolbar.tsx` 所有元素引用统一类；交互态对比良好。
-5. 标准化 PromptBar（输入组/生成按钮/胶囊形态）引用 `.pod-input-group` 与 `.pod-generate-button`。
-   - 成功标准：输入获焦有青色边与发光；生成按钮梯度与发光一致。
-6. 标准化 BananaSidebar（预设卡片/按钮）采用 `.pod-card`、`.pod-card-glass`（若存在）与统一标题样式。
-   - 成功标准：卡片悬停/激活态一致；按钮颜色与圆角统一。
-7. 标准化 CanvasSettings（弹窗/控件）采用 `.pod-glass-strong`、表单控件类。
-   - 成功标准：弹窗背景与边框统一；控件焦点态一致。
-8. 标准化 Context Menu 深色主题，统一边框与发光。
-   - 成功标准：所有菜单项悬停视觉统一；分隔线与圆角一致。
-9. 视觉回归检查清单（人工）：截图核对关键页面（首页/画布/设置）。
-   - 成功标准：对比图无明显视觉跳变；对比度达可读性要求。
-10. 开发流程钩子（可选）：在评审前跑一次“样式变量一致性扫描”（脚本或手动清单）。
-   - 成功标准：提交前检查通过；无新硬编码色。
+### 执行者反馈或请求帮助（PERF-03）
 
-### 成功标准（整体）
-- 组件视觉统一、状态一致；无硬编码色；暗色玻璃风格贯穿全站。
-- `npm run dev` 启动后，Toolbar/PromptBar/Sidebar/Settings 等核心模块颜色与交互一致。
-
-## 项目状态看板（UI 标准化 v1.0）
-- [x] UI-01 冻结并校验 Design Tokens
-- [x] UI-02 组件级规范（Toolbar/PromptBar/Sidebar/Panels/Controls）
-- [x] UI-03 全项目清理硬编码颜色
-- [x] UI-04 标准化 Toolbar 实现
-- [x] UI-05 标准化 PromptBar 实现
-- [x] UI-06 标准化 BananaSidebar 实现
-- [x] UI-07 标准化 CanvasSettings 实现
-- [x] UI-08 标准化 Context Menu 实现
-- [ ] UI-09 视觉回归检查（人工）
-- [ ] UI-10 提交流程样式一致性检查
- - [x] UI-10 提交流程样式一致性检查
-
-## 当前状态/进度跟踪（UI 标准化）
-- 参考依据：`src/styles/podui.css` 中现有 Token 与类；`components/Toolbar.tsx:133-154`、`components/CanvasSettings.tsx:84-116` 等组件当前实现作为基线。
-- 说明：`f:\Trae\BananaPod-OG\PodUI copy.html` 当前为空文件（0 行）；本标准以现有 `podui.css` 与已落地样式为准。
-- UI-01 完成：冻结并校验 Design Tokens；新增 `--bg-component-strong` 与 `--bg-page-glass`；将 `.pod-toolbar-theme` 与 `.pod-branding-badge` 改为变量引用（`src/styles/podui.css:301-308`、`src/styles/podui.css:254-279`）。
-- UI-01 代码一致性：默认绘图颜色改为读取 CSS 变量：`getComputedStyle(...).getPropertyValue('--brand-primary')`（`App.tsx:182`），避免导出 SVG/PNG 时出现 `var(...)` 无法解析的问题。
-- UI-03 完成：清理发现的硬编码颜色，新增 `--brand-danger` 并替换删除按钮红色（`components/QuickPrompts.tsx:59`）；其余硬编码保留在数据/算法语义（如画布初始背景、用户自定义主题）并在后续规范中标注允许范围。
-
-新增：`src/styles/podui.css` 补充 `.pod-card-glass`、`.pod-panel-transparent`、`.pod-panel-rounded-xl`，并新增 `--font-display` 变量。
-新增：`components/PromptBar.tsx:143-172` 输入容器改用 `.pod-input-group`，`components/PromptBar.tsx:250-259` 生成按钮改用 `.pod-generate-button`，`components/PromptBar.tsx:225-234` 文本域应用 `.pod-textarea`。
-新增：`components/BananaSidebar.tsx:41-51` SVG 缩略图改为读取 CSS 变量（`--brand-primary`、`--bg-component-solid`）；`components/BananaSidebar.tsx:150-169` 按钮尺寸支持 `buttonSize` 参数。
-验证：已运行 `npm run lint` 与 `npm run build`，均通过，产物位于 `dist/`。
-
-完成：`components/Toolbar.tsx` 标准化（UI-04）
-- 按钮统一：`ToolButton` 改为 `.pod-icon-button` 并使用 `.active` 状态（`components/Toolbar.tsx:27-48`）。
-- 裁剪面板：下拉选择改为 `.pod-select`（`components/Toolbar.tsx:146-164`），确认/取消按钮分别改为 `.pod-primary-button` 与 `.pod-btn-secondary`（`components/Toolbar.tsx:165-169`）。
-- 交互一致：禁用态应用 `disabled:opacity-50 disabled:cursor-not-allowed`，与 PodUI 规范一致。
-- 验证通过：再次运行 `npm run lint` 与 `npm run build`，无错误。
-
-- 圆角统一：`components/Toolbar.tsx:83, 137, 196, 230`；`components/Loader.tsx:12`；`src/components/LayerPanel.tsx:82, 105, 112, 223`；`App.tsx:1974-1976, 2281-2398, 2473-2489` 均已替换为 `pod-rounded-*`
-- 构建验证：`npm run lint` 与 `npm run build` 再次通过；产物正常
-
-### 阶段三：画布交互与细节 (进行中)
-26. **右键菜单**：自定义 Context Menu 的深色样式。
-27. **选择控件**：选框 (Selection Box)、套索 (Lasso) 的青色描边与填充。
-28. **裁剪工具**：裁剪框及遮罩的样式适配。
-29. **文本编辑**：画布内文本输入框样式。
-30. **代码清理**：移除残留的硬编码颜色 (Toolbar, Sidebar)。
-
-## 项目状态看板 (15项任务监控)
-
-| ID | 任务名称 | 状态 | 说明 |
-| :--- | :--- | :--- | :--- |
-| 01 | **全局字体 (Montserrat)** | ✅ 完成 | `index.html` 已引入 |
-| 02 | **Aura CSS 变量系统** | ✅ 完成 | `podui.css` 已定义核心变量 |
-| 03 | **通用 UI 组件库** | ✅ 完成 | `pod-input`, `pod-slider` 等已实现 |
-| 04 | **App 背景与水印** | ✅ 完成 | 这里的背景色和 Branding 已更新 |
-| 05 | **PromptBar 重构** | ✅ 完成 | 已优化为圆角矩形，布局规整 |
-| 06 | **Toolbar 样式重构** | ✅ 完成 | Navy Glass 风格 (Agewell Agent Card) |
-| 07 | **BananaSidebar 重构** | ✅ 完成 | 样式已统一为 Aura 圆角风格 |
-| 08 | **LayerPanel 重构** | ✅ 完成 | 拖拽高亮已修复 |
-| 09 | **BoardPanel 重构** | ✅ 完成 | 边框颜色已修复 |
-| 10 | **CanvasSettings 重构** | ✅ 完成 | 输入框样式已统一 |
-| 11 | **Context Menu 样式** | ✅ 完成 | 变量替换已完成 |
-| 12 | **选择/套索工具样式** | ✅ 完成 | 已替换为 `--brand-primary` |
-| 13 | **裁剪工具样式** | ✅ 完成 | 已适配 Aura 配色 |
-| 14 | **文本编辑框样式** | ✅ 完成 | 已增加 `--text-heading` 回退 |
-| 15 | **残留硬编码清理** | ✅ 完成 | 关键组件已清理完毕 |
-
-- [x] 09. 版本发布 qd0.1.0 <!-- id: 9 -->
-  - [x] 提交所有更改
-  - [x] 合并到主支 (main)
-  - [x] 打标签 qd0.1.0
-  - [x] 清理 Git 历史中的大文件 (release/)
-  - [x] 推送到远程仓库 (HTTPS 成功)
-
-### 当前状态/进度跟踪
-- **版本发布**：已成功清理 `release/` 目录的大文件（将仓库大小缩减至 ~7MB），并成功推送到 `https://github.com/zzpzz009/Banana_QDAI.git`。所有标签（包括 `qd0.1.0`）均已同步。
-- **Toolbar 样式**：已完成样式标准化与修正，等待用户确认最终效果。
-- **版本还原**：已创建并切换到 `rollback-qd0.1.0` 分支，指向标签 `qd0.1.0`（提交 `2282d29`），工作树干净可测试。
-- **UI-10 一致性检查**：新增 `scripts/style-consistency.mjs` 并集成 `npm run style:check`；当前检查通过，统计 `var(--...)` 使用次数为 187。
- - **错误提示条**：`App.tsx:1974-1979` 统一为 `--brand-danger` 主题，移除 Tailwind 命名色；再次运行 `lint`、`build`、`style:check` 全部通过，`var(--...)` 统计为 192。
-
-### 执行者反馈或请求帮助
-- **Git 推送权限问题**：由于权限拒绝 (403)，无法将代码推送到 GitHub。这通常是因为本地 Git 配置了错误的全局用户凭证，或者缺少对目标仓库的写入权限。建议用户在终端中手动处理凭证，或检查是否有正确的 Access Token。
-**样式一致性**：已根据 `PodUI copy.html` 将 Toolbar 样式调整为深色 Navy 玻璃风格，解决了之前颜色不对的问题。
-
-- **UI-07 完成**：`CanvasSettings.tsx` 已标准化表单控件与颜色选择器：
-  - 标题/标签移除内联样式，使用 `text-[var(--text-heading)] font-medium|font-semibold`（`components/CanvasSettings.tsx:95`、`components/CanvasSettings.tsx:121` 等）。
-  - 表单控件统一使用 `.pod-input-group` + `.pod-input`；下拉/滑杆使用 PodUI 控件（已有 `pod-slider` 应用于 Toolbar）。
-  - 颜色选择器使用 `.pod-color-swatch-circle` 并统一圆形边框（`components/CanvasSettings.tsx:259-266`）。
-  - 再次运行 `npm run lint` 与 `npm run build`，验证通过。
-
-- **UI-04 完成**：执行者已完成 Toolbar 标准化，等待规划者确认与视觉回归检查（UI-09）。
-
-### 下一步（规划者）
-- UI-09 视觉回归：制定截图清单（首页/画布/设置），核查 Hover/Focus/Active 状态；记录差异与修复项
-- UI-10 一致性检查：已建立提交前检查脚本，扫描 `rounded-*`、`bg-[#...]`、`text-[#...]`、内联 `style` 十六进制颜色；并输出变量引用统计
-
-### 视觉回归检查清单（UI-09 执行）
-- 首页/容器：背景 `--bg-page` 与波纹渐变 `pod-wave-gradient` 是否生效
-- Toolbar：
-  - 容器 `pod-toolbar-theme` 与半径 `pod-rounded-base`，阴影与高亮是否一致（悬停/禁用）
-  - 组菜单 `components/Toolbar.tsx:83` 展开/收起动画、菜单项发光与选中态
-  - 颜色选择器 `components/Toolbar.tsx:230` 圆形半径与边框变量
-- PromptBar：
-  - 输入容器 `pod-input-group` 焦点态边框与发光；胶囊半径统一
-  - 生成按钮 `pod-generate-button` 启用/禁用视觉与缩放动画
-  - 尺寸菜单 `components/PromptBar.tsx:179-190` 弹层半径与边框变量
-- BananaSidebar：卡片 `pod-card-glass` 悬停态与按钮半径一致性
-- Panels：
-  - LayerPanel 容器半径 `src/components/LayerPanel.tsx:223`、关闭按钮圆角 `src/components/LayerPanel.tsx:238-240`
-  - BoardPanel 容器与卡片圆角 `components/BoardPanel.tsx:297, 342`
-- Controls：
-  - 选择器 `pod-select`、滑杆 `pod-slider` 手柄放大效果
-  - 颜色输入 `.pod-color-swatch-circle` 圆形半径一致性
-- Context Menu：容器与菜单项悬停态，边框变量与发光一致
-- 错误提示：`App.tsx:1974-1979` 危险主题（`--brand-danger`）颜色、边框与交互一致
-
-### 预览与操作
-- 本地预览地址：`http://localhost:3001/`（Vite 已启动）
-- 提交前检查：运行 `npm run style:check`、`npm run lint`、`npm run build`
-
-### 清理旧版本（标签）计划（2025-11-13 阈值）
-
-目标：删除 2025-11-13 之前的 Git 版本（以“版本”理解为发布标签），保留 2025-11-13 及之后的标签（如 `qd0.1.0`），不改写提交历史，避免使用 `--force`。
-
-范围与约束：
-- 范围：仅清理 Git 标签（tags），同时修改分支提交历史。
-- 约束：不进行强制推送；如需改写历史将先征求用户同意。
-
-实施步骤：
-- 列出所有标签，并为每个标签获取对应提交的时间（`git log -1 --format=%cI <tag>`）。
-- 选出在 2025-11-13 之前的标签集合。
-- 在本地删除这些旧标签（`git tag -d <tag>`）。
-- 推送到远程删除对应标签（`git push origin :refs/tags/<tag>`）。
-
-成功标准：
-- 远程仓库的标签列表不再包含 2025-11-13 之前的旧标签。
-- 近期标签（如 `qd0.1.0`）保留且可用。
-- 未进行任何强制推送（符合既定安全规则）。
-
-执行记录占位：
-- 待执行并填写：删除的标签数量与示例名称，远程删除结果摘要。
-
-```
-### 提交历史重写计划（删除提交历史）
-
-目标：将仓库提交历史重置为自 2025-11-13 后的单一初始提交（保留当前工作树），并保留必要标签（如 `qd0.1.0`）重新指向新提交。
-
-风险与约束：
-- 该操作需要强制推送（`--force-with-lease`），执行前需用户确认。
-
-实施步骤：
-- 创建孤立分支：`git checkout --orphan main-clean`
-- 暂存并提交当前工作树：`git add -A && git commit -m "chore: reset history (2025-12-07)"`
-- 重标记近期标签：`git tag -f qd0.1.0`
-- 用新分支替换 `main`：`git branch -M main`
-- 不推送，等待批准：准备 `git push --force-with-lease origin main`
-
-成功标准：
-- 本地 `git log` 显示单一初始提交。
-- 标签 `qd0.1.0` 指向新提交。
-
-执行记录占位：
-- 待执行并填写：新初始提交的 SHA；重标记的标签列表。
-- **UI-08 完成**：`App.tsx` 右键菜单统一为 PodUI：
-  - 容器改为 `.pod-card-glass`，圆角与阴影一致（`App.tsx:2472`）。
-  - 菜单项统一 `rounded-lg transition-all` 与变量化 hover 颜色（`App.tsx:2473-2492`）。
-  - 分隔线统一 `border-[var(--border-color)]`。
-  - 再次运行 `npm run lint` 与 `npm run build`，验证通过。
-
-### 文案与醒目描述（新增）
-- 已更新 `translations.ts` 的输入占位文案（`en.promptBar.placeholder*` 与 `zho.promptBar.placeholder*`），强调“清晰醒目”的描述方式，提升提示词可读性与选择效率。
-- 已优化部分快捷效果的提示词：
-  - `剖面生成` 与 `Section Generation` 强调“突出室内装修、功能分区与流线/Highlight key elements”。
-  - `爆炸分析图` 与 `Exploded Axon Diagram` 强调“结构层次清晰醒目/clear visual hierarchy”。
-  - `方案线稿` 增加“层次清晰、重点醒目”的表达。
-- 已更新 `metadata.json` 的项目描述，使其更简洁且强调“醒目呈现与高清晰度”的目标。
-- 验证：已运行 `npm run lint`，通过。
-
-### 标签计划（待确认）
-已发布标签：`qd1.0.4`
-  - 内容：包含“醒目描述与占位文案更新、提示词优化、metadata 描述更新、README/CHANGELOG 更新”。
-  - 提交：`rollback-qd0.1.0` 分支最新提交 `74ae434`。
-  - 推送：已执行 `git add -A`、`git commit -m "docs: README/CHANGELOG v0.9.8; prominent descriptions & bilingual prompts"`、`git tag -a qd1.0.4 -m "qd1.0.4: prominent descriptions across prompts; README/CHANGELOG updated"`、`git push origin qd1.0.4`。
-  - 结果：远程 `origin` 已新增标签 `qd1.0.4`，可在 GitHub 查看。
-
-### 执行者反馈或请求帮助（网络）
-- 已尝试推送分支：`git push -u origin rollback-qd0.1.0`，出现网络错误（`Connection was reset / Could not connect to server`）。
-- 建议在网络恢复后重试：`git push -u origin rollback-qd0.1.0`。
-- 标签已成功推送，不影响版本发布的可见性。
+- 已在 `App.tsx:1651-1658` 以及右键工具条区域梳理所有通过 `handlePropertyChange` 进入的属性编辑入口（参考 `App.tsx:2093-2101`、`App.tsx:2359-2433`）：
+  - 图层面板（`LayerPanel`）：
+    - 可见性开关：`isVisible`（`App.tsx:2099`）
+    - 锁定开关：`isLocked`（`App.tsx:2100`）
+    - 图层重命名：`name`（`App.tsx:2101`）
+  - 右键工具条 — 图片元素：
+    - 不透明度滑块与数字输入：`opacity`（`App.tsx:2362-2380`），已采用「预览 onChange + 提交 onMouseUp/onBlur」模式。
+  - 右键工具条 — 形状元素：
+    - 填充色：`fillColor`（`App.tsx:2387`）
+    - 描边色：`strokeColor`（`App.tsx:2389`）
+    - 描边样式按钮：`strokeDashArray`（实线/虚线/点线，`App.tsx:2391-2400`）
+  - 右键工具条 — 矩形形状：
+    - 圆角滑块与数字输入：`borderRadius`（`App.tsx:2404-2426`），已采用「预览 onChange + 提交 onMouseUp/onBlur」模式。
+  - 右键工具条 — 文本元素：
+    - 字体颜色：`fontColor`（`App.tsx:2430`）
+    - 字号输入：`fontSize`（`App.tsx:2431`），已采用「预览 onChange + 提交 onBlur」模式。
+  - 右键工具条 — 线段/箭头元素：
+    - 描边颜色：`strokeColor`（`App.tsx:2432`）
+    - 线宽滑块：`strokeWidth`（`App.tsx:2433`），已采用「预览 onChange + 提交 onMouseUp」模式。
+- 高频连续编辑入口与策略归类：
+  - 已接入预览/提交模式（高优先级已完成）：
+    - 图片 `opacity`、矩形 `borderRadius`、文本 `fontSize`、线条/箭头 `strokeWidth`，对应的滑块与数字输入在拖动或输入过程中仅修改当前帧，不写入历史；在交互结束（鼠标抬起或失焦）时统一写入一条历史记录。
+  - 保持直接提交模式（当前视为中/低频，后续可按需优化）：
+    - 颜色类属性（`fillColor`、`strokeColor`、`fontColor`）以及描边样式按钮（`strokeDashArray`）属于相对离散的点击/选色操作，单次操作历史增量较小；图层可见性/锁定开关与重命名同样属于低频状态切换。
+    - 如后续在实测中发现颜色频繁调整导致历史膨胀，可按 PERF-02 的模式为这些控件增加预览/提交通道。
+- 迭代计划纳入说明：
+  - 将颜色/描边样式及图层相关入口标记为「可选优化点」，当前版本优先保证滑块与数字输入类高频编辑的性能。
+  - 后续若需要进一步压缩历史体积，可在 PERF-04/05 或新的 PERF 卡片下，将这些可选入口纳入统一预览/提交或差量历史方案中。

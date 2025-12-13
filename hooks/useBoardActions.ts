@@ -3,6 +3,13 @@ import type { Dispatch, SetStateAction } from 'react';
 import { touchLastSessionPending, saveLastSessionDebounced } from '@/src/services/boardsStorage';
 import type { Board, Element } from '@/types';
 
+const MAX_HISTORY = 50;
+
+function clampHistory(history: Element[][]): Element[][] {
+  if (history.length <= MAX_HISTORY) return history;
+  return history.slice(history.length - MAX_HISTORY);
+}
+
 export function useBoardActions(
   activeBoardId: string,
   setBoards: Dispatch<SetStateAction<Board[]>>
@@ -30,7 +37,8 @@ export function useBoardActions(
     apply(board => {
       const newElements = updater(board.elements);
       if (commit) {
-        const newHistory = [...board.history.slice(0, board.historyIndex + 1), newElements];
+        const baseHistory = [...board.history.slice(0, board.historyIndex + 1), newElements];
+        const newHistory = clampHistory(baseHistory);
         return { ...board, elements: newElements, history: newHistory, historyIndex: newHistory.length - 1 };
       } else {
         const tempHistory = [...board.history];
@@ -43,7 +51,8 @@ export function useBoardActions(
   const commitAction = useCallback((updater: (prev: Element[]) => Element[]) => {
     updateActiveBoard(board => {
       const newElements = updater(board.elements);
-      const newHistory = [...board.history.slice(0, board.historyIndex + 1), newElements];
+      const baseHistory = [...board.history.slice(0, board.historyIndex + 1), newElements];
+      const newHistory = clampHistory(baseHistory);
       return { ...board, elements: newElements, history: newHistory, historyIndex: newHistory.length - 1 };
     });
   }, [updateActiveBoard]);
