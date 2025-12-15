@@ -17,6 +17,8 @@ const withBase = (p: string) => {
   return `${BASE_URL}${normalized}`;
 };
 
+const LEADERAI_URL = 'https://www.leaderai.top/mid-api/lab/image_prompt/index.html';
+
 const BananaIcon: React.FC<{ size?: number }> = ({ size = 40 }) => {
   const primary = withBase('logo/icons8-banana-100.png');
   const fallback = withBase('logo/BA-color.png');
@@ -128,11 +130,44 @@ const getCardImageSrc = (label: string) => {
   return makeSvgDataUrl(label);
 };
 
-// Local icon fallback mapping (runtime image error handler will use this)
 const getLocalIconSrc = (label: string): string | null => resolveIconUrl(label);
+
+const extractPromptFromData = (data: unknown): string | null => {
+  if (typeof data === 'string') return data;
+  if (!data || typeof data !== 'object') return null;
+  const visited = new Set<unknown>();
+  const queue: unknown[] = [data];
+  const preferredKeys = ['prompt', 'value', 'text', 'content', 'message', 'msg', 'payload'];
+  while (queue.length) {
+    const current = queue.shift();
+    if (!current || typeof current !== 'object') continue;
+    if (visited.has(current)) continue;
+    visited.add(current);
+    if (Array.isArray(current)) {
+      for (const item of current) {
+        if (typeof item === 'string' && item.trim()) return item;
+        queue.push(item);
+      }
+      continue;
+    }
+    const obj = current as Record<string, unknown>;
+    for (const key of preferredKeys) {
+      const v = obj[key];
+      if (typeof v === 'string' && v.trim()) return v;
+    }
+    for (const key in obj) {
+      const v = obj[key];
+      if (typeof v === 'string' && v.trim()) return v;
+      queue.push(v);
+    }
+  }
+  return null;
+};
 
 export const BananaSidebar: React.FC<BananaSidebarProps> = ({ t, setPrompt, onGenerate, disabled = false, promptBarOffsetPx = 0, buttonSize }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [cardsCollapsed, setCardsCollapsed] = useState(false);
+  const [clipboardSyncActive, setClipboardSyncActive] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const builtInPrompts = t('bananaCards') as { name: string; value: string }[];
   void onGenerate;
@@ -147,13 +182,69 @@ export const BananaSidebar: React.FC<BananaSidebarProps> = ({ t, setPrompt, onGe
     return () => document.removeEventListener('mousedown', onClickOutside);
   }, []);
 
+  useEffect(() => {
+    const handler = () => {
+      setIsOpen(false);
+    };
+    window.addEventListener('banana:promptbar-click', handler);
+    return () => {
+      window.removeEventListener('banana:promptbar-click', handler);
+    };
+  }, []);
+
+  useEffect(() => {
+    const handler = (e: MessageEvent) => {
+      if (!e || typeof e !== 'object') return;
+      const text = extractPromptFromData(e.data);
+      if (!text) return;
+      const trimmed = text.trim();
+      if (!trimmed) return;
+      setPrompt(trimmed);
+    };
+    window.addEventListener('message', handler);
+    return () => window.removeEventListener('message', handler);
+  }, [setPrompt]);
+
+  useEffect(() => {
+    if (!isOpen || !clipboardSyncActive) return;
+    if (typeof navigator === 'undefined' || !navigator.clipboard || typeof navigator.clipboard.readText !== 'function') return;
+    let last = '';
+    let stopped = false;
+    const tick = async () => {
+      if (stopped) return;
+      try {
+        if (typeof document !== 'undefined') {
+          if (document.visibilityState !== 'visible' || !document.hasFocus()) {
+            window.setTimeout(tick, 800);
+            return;
+          }
+        }
+        const text = await navigator.clipboard.readText();
+        if (typeof text === 'string') {
+          const trimmed = text.trim();
+          if (trimmed && trimmed !== last) {
+            last = trimmed;
+            setPrompt(trimmed);
+          }
+        }
+      } catch (error) {
+        void error;
+      } finally {
+        if (!stopped) {
+          window.setTimeout(tick, 800);
+        }
+      }
+    };
+    tick();
+    return () => {
+      stopped = true;
+    };
+  }, [clipboardSyncActive, isOpen, setPrompt]);
+
   const handleSelect = (value: string) => {
     if (disabled) return;
     setPrompt(value);
     setIsOpen(false);
-    // Do not auto-generate; leave control to user.
-    // Uncomment to auto-generate on click:
-    // onGenerate();
   };
 
   return (
@@ -181,70 +272,111 @@ export const BananaSidebar: React.FC<BananaSidebarProps> = ({ t, setPrompt, onGe
       {isOpen && (
         <div
           className="absolute bottom-full mb-3 sm:w-full md:w-[48rem] lg:w-[64rem] max-w-[90vw] pod-panel pod-panel-transparent pod-panel-rounded-xl p-3 overflow-x-auto overflow-y-hidden pod-scrollbar-x"
-          style={{ left: '50%', transform: `translateX(calc(-50% + ${Number(promptBarOffsetPx || 0)}px))` }}
+          style={{
+            left: '50%',
+            transform: `translateX(calc(-50% + ${Number(promptBarOffsetPx || 0)}px)) translateY(-40px)`
+          }}
         >
-          <div className="flex flex-row gap-2 justify-center flex-wrap md:flex-nowrap">
-            {(builtInPrompts || []).slice(0, 7).map((item, idx) => (
-              <button
-                key={idx}
-                onClick={() => handleSelect(item.value)}
-                title={item.name}
-                className="group relative cursor-pointer transform transition-all duration-500 hover:scale-105 hover:-translate-y-1 flex-shrink-0 w-32"
-                style={{ padding: 0 }}
+          <div className="flex flex-col gap-3" style={{ height: 'min(600px, 80vh)' }}>
+            <div className="w-full flex-1 flex flex-col">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-medium text-[var(--text-secondary)]">
+                  LeaderAI Prompt Lab
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setCardsCollapsed(prev => !prev)}
+                  className="inline-flex items-center justify-center w-6 h-6 pod-rounded-full text-[var(--text-secondary)] hover:text-[var(--brand-primary)] hover:bg-[var(--bg-component-solid)] transition-colors text-xs"
+                  aria-label="Toggle banana cards"
+                >
+                  {cardsCollapsed ? '▾' : '▴'}
+                </button>
+              </div>
+              <div
+                className="w-full flex-1 pod-rounded-lg overflow-hidden border border-[var(--border-color)] bg-[var(--bg-component)]"
+                style={{ minHeight: 0 }}
+                onMouseEnter={() => setClipboardSyncActive(true)}
+                onMouseLeave={() => setClipboardSyncActive(false)}
               >
-                <div className="pod-card-glass pod-rounded-lg overflow-hidden">
-                  <div className="aspect-square relative overflow-hidden">
-                    <img
-                      src={getCardImageSrc(item.name)}
-                      alt={item.name}
-                      loading="lazy"
-                      decoding="async"
-                      referrerPolicy="no-referrer"
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                      onError={(e) => {
-                        const fb = getLocalIconSrc(item.name);
-                        e.currentTarget.src = fb ?? makeSvgDataUrl(item.name);
-                      }}
-                    />
-                    {/* bottom gradient overlay for readability */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent"></div>
-                    {/* centered title overlay */}
-                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                      <h3
-                        className="font-semibold text-white text-base leading-tight drop-shadow-md text-center px-2"
-                        style={{
-                          fontFamily:
-                            "'Montserrat Alternates', sans-serif",
-                          fontSize: '1.2em',
-                          textShadow:
-                            '0 2px 6px rgba(0,0,0,0.45), 0 1px 2px rgba(0,0,0,0.35)',
-                          letterSpacing: '0.06em'
-                        }}
-                        title={item.name}
-                      >
-                        {item.name}
-                      </h3>
-                    </div>
-                    {/* content area */}
-                    <div className="absolute bottom-0 left-0 right-0 p-2">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex gap-1">
-                          <span className="w-1.5 h-1.5 bg-white/40 pod-rounded-full"/>
-                          <span className="w-1.5 h-1.5 bg-white/30 pod-rounded-full"/>
-                          <span className="w-1.5 h-1.5 bg-white/20 pod-rounded-full"/>
-                          <span className="w-1.5 h-1.5 bg-white/10 pod-rounded-full"/>
-                          <span className="w-1.5 h-1.5 bg-white/5 pod-rounded-full"/>
+                <iframe
+                  src={LEADERAI_URL}
+                  title="LeaderAI Prompt Lab"
+                  className="w-full h-full border-0"
+                  loading="lazy"
+                  allow="clipboard-read; clipboard-write"
+                  referrerPolicy="no-referrer"
+                  style={{
+                    width: '125%',
+                    height: '125%',
+                    transform: 'scale(0.8)',
+                    transformOrigin: 'top left',
+                  }}
+                />
+              </div>
+            </div>
+            {!cardsCollapsed && (
+              <div className="w-full">
+                <div className="flex flex-row gap-2 justify-center flex-wrap md:flex-nowrap mt-2">
+                  {(builtInPrompts || []).slice(0, 7).map((item, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => handleSelect(item.value)}
+                      title={item.name}
+                      className="group relative cursor-pointer transform transition-all duration-500 hover:scale-105 hover:-translate-y-1 flex-shrink-0 w-32"
+                      style={{ padding: 0 }}
+                    >
+                      <div className="pod-card-glass pod-rounded-lg overflow-hidden">
+                        <div className="aspect-square relative overflow-hidden">
+                          <img
+                            src={getCardImageSrc(item.name)}
+                            alt={item.name}
+                            loading="lazy"
+                            decoding="async"
+                            referrerPolicy="no-referrer"
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                            onError={(e) => {
+                              const fb = getLocalIconSrc(item.name);
+                              e.currentTarget.src = fb ?? makeSvgDataUrl(item.name);
+                            }}
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent"></div>
+                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <h3
+                              className="font-semibold text-white text-base leading-tight drop-shadow-md text-center px-2"
+                              style={{
+                                fontFamily:
+                                  "'Montserrat Alternates', sans-serif",
+                                fontSize: '1.2em',
+                                textShadow:
+                                  '0 2px 6px rgba(0,0,0,0.45), 0 1px 2px rgba(0,0,0,0.35)',
+                                letterSpacing: '0.06em'
+                              }}
+                              title={item.name}
+                            >
+                              {item.name}
+                            </h3>
+                          </div>
+                          <div className="absolute bottom-0 left-0 right-0 p-2">
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex gap-1">
+                                <span className="w-1.5 h-1.5 bg-white/40 pod-rounded-full"/>
+                                <span className="w-1.5 h-1.5 bg-white/30 pod-rounded-full"/>
+                                <span className="w-1.5 h-1.5 bg-white/20 pod-rounded-full"/>
+                                <span className="w-1.5 h-1.5 bg-white/10 pod-rounded-full"/>
+                                <span className="w-1.5 h-1.5 bg-white/5 pod-rounded-full"/>
+                              </div>
+                              <span className="text-[10px] text-white/80 bg-white/15 backdrop-blur-xl px-1.5 py-0.5 pod-rounded-lg">
+                                {t('bananaSidebar.presetLabel')}
+                              </span>
+                            </div>
+                          </div>
                         </div>
-                        <span className="text-[10px] text-white/80 bg-white/15 backdrop-blur-xl px-1.5 py-0.5 pod-rounded-lg">
-                          {t('bananaSidebar.presetLabel')}
-                        </span>
                       </div>
-                      {/* 移除CTA按钮：卡片底部不再显示“使用” */}
-                    </div>
-                  </div>
+                    </button>
+                  ))}
                 </div>
-              </button>
-            ))}
+              </div>
+            )}
           </div>
         </div>
       )}

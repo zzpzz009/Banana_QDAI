@@ -134,8 +134,21 @@ export const PromptBar: React.FC<PromptBarProps> = ({
         return () => window.removeEventListener('resize', updateOffset);
     }, [containerRef, bananaButtonSize, generationMode, activeImageModel]);
 
+    const handlePromptBarMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+        if (bananaWrapperRef.current && bananaWrapperRef.current.contains(e.target as Node)) {
+            return;
+        }
+        if (typeof window !== 'undefined') {
+            window.dispatchEvent(new Event('banana:promptbar-click'));
+        }
+    };
+
     return (
-            <div ref={containerRef} className="absolute bottom-6 left-1/2 -translate-x-1/2 z-40 w-full max-w-3xl px-4">
+            <div
+                ref={containerRef}
+                className="absolute bottom-6 left-1/2 -translate-x-1/2 z-40 w-full max-w-3xl px-4"
+                onMouseDown={handlePromptBarMouseDown}
+            >
                 <div className="relative flex items-center w-full pod-input-group pod-rounded-base p-2">
                     
                     {/* Left Controls Section */}
