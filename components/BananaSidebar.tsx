@@ -1,4 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
+import bananaPrimary from '/logo/icons8-banana-100.png';
+import bananaFallback from '/logo/BA-color.png';
+import bananaSvgFallback from '/logo/OpenMoji-color_1F34C.svg';
 
 interface BananaSidebarProps {
   t: (key: string, ...args: unknown[]) => unknown;
@@ -10,7 +13,6 @@ interface BananaSidebarProps {
   buttonSize?: number;
 }
 
-// Base URL helper to support dev ("/") and electron build ("./")
 const BASE_URL = ((import.meta as unknown as { env?: { BASE_URL?: string } })?.env?.BASE_URL) || '/';
 const withBase = (p: string) => {
   const normalized = p.startsWith('/') ? p.slice(1) : p;
@@ -20,12 +22,9 @@ const withBase = (p: string) => {
 const LEADERAI_URL = 'https://www.leaderai.top/mid-api/lab/image_prompt/index.html';
 
 const BananaIcon: React.FC<{ size?: number }> = ({ size = 40 }) => {
-  const primary = withBase('logo/icons8-banana-100.png');
-  const fallback = withBase('logo/BA-color.png');
-  const svgFallback = withBase('logo/OpenMoji-color_1F34C.svg');
   return (
     <img
-      src={primary}
+      src={bananaPrimary}
       width={size}
       height={size}
       alt="banana"
@@ -33,8 +32,8 @@ const BananaIcon: React.FC<{ size?: number }> = ({ size = 40 }) => {
       onError={(e) => {
         const t = e.currentTarget;
         t.onerror = null;
-        t.src = fallback;
-        setTimeout(() => { if (t.naturalWidth === 0) t.src = svgFallback; }, 0);
+        t.src = bananaFallback;
+        setTimeout(() => { if (t.naturalWidth === 0) t.src = bananaSvgFallback; }, 0);
       }}
     />
   );
@@ -132,42 +131,9 @@ const getCardImageSrc = (label: string) => {
 
 const getLocalIconSrc = (label: string): string | null => resolveIconUrl(label);
 
-const extractPromptFromData = (data: unknown): string | null => {
-  if (typeof data === 'string') return data;
-  if (!data || typeof data !== 'object') return null;
-  const visited = new Set<unknown>();
-  const queue: unknown[] = [data];
-  const preferredKeys = ['prompt', 'value', 'text', 'content', 'message', 'msg', 'payload'];
-  while (queue.length) {
-    const current = queue.shift();
-    if (!current || typeof current !== 'object') continue;
-    if (visited.has(current)) continue;
-    visited.add(current);
-    if (Array.isArray(current)) {
-      for (const item of current) {
-        if (typeof item === 'string' && item.trim()) return item;
-        queue.push(item);
-      }
-      continue;
-    }
-    const obj = current as Record<string, unknown>;
-    for (const key of preferredKeys) {
-      const v = obj[key];
-      if (typeof v === 'string' && v.trim()) return v;
-    }
-    for (const key in obj) {
-      const v = obj[key];
-      if (typeof v === 'string' && v.trim()) return v;
-      queue.push(v);
-    }
-  }
-  return null;
-};
-
 export const BananaSidebar: React.FC<BananaSidebarProps> = ({ t, setPrompt, onGenerate, disabled = false, promptBarOffsetPx = 0, buttonSize }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [cardsCollapsed, setCardsCollapsed] = useState(false);
-  const [clipboardSyncActive, setClipboardSyncActive] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const builtInPrompts = t('bananaCards') as { name: string; value: string }[];
   void onGenerate;
@@ -182,69 +148,14 @@ export const BananaSidebar: React.FC<BananaSidebarProps> = ({ t, setPrompt, onGe
     return () => document.removeEventListener('mousedown', onClickOutside);
   }, []);
 
-  useEffect(() => {
-    const handler = () => {
-      setIsOpen(false);
-    };
-    window.addEventListener('banana:promptbar-click', handler);
-    return () => {
-      window.removeEventListener('banana:promptbar-click', handler);
-    };
-  }, []);
-
-  useEffect(() => {
-    const handler = (e: MessageEvent) => {
-      if (!e || typeof e !== 'object') return;
-      const text = extractPromptFromData(e.data);
-      if (!text) return;
-      const trimmed = text.trim();
-      if (!trimmed) return;
-      setPrompt(trimmed);
-    };
-    window.addEventListener('message', handler);
-    return () => window.removeEventListener('message', handler);
-  }, [setPrompt]);
-
-  useEffect(() => {
-    if (!isOpen || !clipboardSyncActive) return;
-    if (typeof navigator === 'undefined' || !navigator.clipboard || typeof navigator.clipboard.readText !== 'function') return;
-    let last = '';
-    let stopped = false;
-    const tick = async () => {
-      if (stopped) return;
-      try {
-        if (typeof document !== 'undefined') {
-          if (document.visibilityState !== 'visible' || !document.hasFocus()) {
-            window.setTimeout(tick, 800);
-            return;
-          }
-        }
-        const text = await navigator.clipboard.readText();
-        if (typeof text === 'string') {
-          const trimmed = text.trim();
-          if (trimmed && trimmed !== last) {
-            last = trimmed;
-            setPrompt(trimmed);
-          }
-        }
-      } catch (error) {
-        void error;
-      } finally {
-        if (!stopped) {
-          window.setTimeout(tick, 800);
-        }
-      }
-    };
-    tick();
-    return () => {
-      stopped = true;
-    };
-  }, [clipboardSyncActive, isOpen, setPrompt]);
-
   const handleSelect = (value: string) => {
     if (disabled) return;
     setPrompt(value);
     setIsOpen(false);
+  };
+
+  const handleToggleCards = () => {
+    setCardsCollapsed(prev => !prev);
   };
 
   return (
@@ -280,12 +191,24 @@ export const BananaSidebar: React.FC<BananaSidebarProps> = ({ t, setPrompt, onGe
           <div className="flex flex-col gap-3" style={{ height: 'min(600px, 80vh)' }}>
             <div className="w-full flex-1 flex flex-col">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-medium text-[var(--text-secondary)]">
-                  LeaderAI Prompt Lab
-                </span>
                 <button
                   type="button"
-                  onClick={() => setCardsCollapsed(prev => !prev)}
+                  onClick={() => {
+                    try {
+                      if (typeof window !== 'undefined') {
+                        window.open(LEADERAI_URL, '_blank', 'noopener,noreferrer');
+                      }
+                    } catch (error) {
+                      console.error('[BananaSidebar] open LeaderAI failed', error);
+                    }
+                  }}
+                  className="text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--brand-primary)] underline decoration-dotted"
+                >
+                  LeaderAI Prompt Lab
+                </button>
+                <button
+                  type="button"
+                  onClick={handleToggleCards}
                   className="inline-flex items-center justify-center w-6 h-6 pod-rounded-full text-[var(--text-secondary)] hover:text-[var(--brand-primary)] hover:bg-[var(--bg-component-solid)] transition-colors text-xs"
                   aria-label="Toggle banana cards"
                 >
@@ -295,8 +218,6 @@ export const BananaSidebar: React.FC<BananaSidebarProps> = ({ t, setPrompt, onGe
               <div
                 className="w-full flex-1 pod-rounded-lg overflow-hidden border border-[var(--border-color)] bg-[var(--bg-component)]"
                 style={{ minHeight: 0 }}
-                onMouseEnter={() => setClipboardSyncActive(true)}
-                onMouseLeave={() => setClipboardSyncActive(false)}
               >
                 <iframe
                   src={LEADERAI_URL}

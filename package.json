@@ -62,7 +62,9 @@
     "extraMetadata": {
       "main": "electron/main.cjs"
     },
+    "icon": "public/logo/icons8-banana-100.png",
     "win": {
+      "icon": "public/logo/icons8-banana-100.png",
       "target": [
         {
           "target": "portable",

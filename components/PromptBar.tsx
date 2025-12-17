@@ -138,9 +138,7 @@ export const PromptBar: React.FC<PromptBarProps> = ({
         if (bananaWrapperRef.current && bananaWrapperRef.current.contains(e.target as Node)) {
             return;
         }
-        if (typeof window !== 'undefined') {
-            window.dispatchEvent(new Event('banana:promptbar-click'));
-        }
+        e.stopPropagation();
     };
 
     return (
