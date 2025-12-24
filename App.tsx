@@ -19,6 +19,7 @@ import { fileToDataUrl } from './utils/fileUtils';
 import { resizeBase64ToMax } from './utils/image';
 import { translations } from './translations';
 import { touchLastSessionPending } from '@/src/services/boardsStorage';
+import changelogContent from '../CHANGELOG.md?raw';
 
 const generateId = () => `id_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
@@ -199,6 +200,37 @@ const App: React.FC = () => {
     const [contextMenu, setContextMenu] = useState<{ x: number; y: number; elementId: string | null } | null>(null);
     const [editingElement, setEditingElement] = useState<{ id: string; text: string; } | null>(null);
     const [lassoPath, setLassoPath] = useState<Point[] | null>(null);
+    const [isChangelogOpen, setIsChangelogOpen] = useState(false);
+
+    const changelogVersions = useMemo(() => {
+        try {
+            const versions = [];
+            const lines = changelogContent.split('\n');
+            let currentVersion: { title: string; items: string[] } | null = null;
+
+            for (const line of lines) {
+                if (line.startsWith('## ')) {
+                    if (currentVersion) {
+                        versions.push(currentVersion);
+                        if (versions.length >= 3) break;
+                    }
+                    currentVersion = {
+                        title: line.replace('## ', '').trim(),
+                        items: []
+                    };
+                } else if (line.trim().startsWith('- ') && currentVersion) {
+                    currentVersion.items.push(line.trim().replace('- ', ''));
+                }
+            }
+            if (currentVersion && versions.length < 3) {
+                versions.push(currentVersion);
+            }
+            return versions;
+        } catch (e) {
+            console.error('Failed to parse changelog', e);
+            return [];
+        }
+    }, []);
 
     const [language, setLanguage] = useState<'en' | 'zho'>('zho');
     const [apiKey, setApiKey] = useState<string>(() => {
@@ -2553,7 +2585,35 @@ const App: React.FC = () => {
             />}
 
             {/* Aura Branding Badge */}
-            <div className="pod-branding-badge">
+            <div 
+                className="pod-branding-badge cursor-pointer hover:text-[var(--brand-primary)]"
+                onClick={() => setIsChangelogOpen(!isChangelogOpen)}
+            >
+                {isChangelogOpen && (
+                    <div 
+                        className="absolute bottom-full right-0 mb-4 w-80 pod-panel p-4 cursor-default text-left shadow-xl"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="flex items-center justify-between mb-3">
+                            <h3 className="font-bold text-[var(--text-heading)] m-0 text-base">Recent Updates</h3>
+                            <button onClick={() => setIsChangelogOpen(false)} className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                            </button>
+                        </div>
+                        <div className="space-y-4 max-h-[60vh] overflow-y-auto pod-scrollbar-x">
+                            {changelogVersions.map((version, idx) => (
+                                <div key={idx}>
+                                    <h4 className="font-medium text-[var(--brand-primary)] text-sm mb-1">{version.title}</h4>
+                                    <ul className="list-disc list-outside ml-4 space-y-1">
+                                        {version.items.map((item, i) => (
+                                            <li key={i} className="text-xs text-[var(--text-secondary)] leading-relaxed">{item}</li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
                 </svg>
