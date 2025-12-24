@@ -19,7 +19,7 @@ const withBase = (p: string) => {
   return `${BASE_URL}${normalized}`;
 };
 
-const LEADERAI_URL = 'https://www.leaderai.top/mid-api/lab/image_prompt/index.html';
+const LEADERAI_URL = 'http://120.26.199.136:8189/category/建筑设计';
 
 const BananaIcon: React.FC<{ size?: number }> = ({ size = 40 }) => {
   return (
@@ -190,7 +190,7 @@ export const BananaSidebar: React.FC<BananaSidebarProps> = ({ t, setPrompt, onGe
         >
           <div className="flex flex-col gap-3" style={{ height: 'min(600px, 80vh)' }}>
             <div className="w-full flex-1 flex flex-col">
-              <div className="flex items-center justify-between mb-2">
+              <div className="relative flex items-center justify-center mb-2 h-10">
                 <button
                   type="button"
                   onClick={() => {
@@ -202,14 +202,20 @@ export const BananaSidebar: React.FC<BananaSidebarProps> = ({ t, setPrompt, onGe
                       console.error('[BananaSidebar] open LeaderAI failed', error);
                     }
                   }}
-                  className="text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--brand-primary)] underline decoration-dotted"
+                  className="font-bold text-[var(--text-heading)] hover:text-[var(--brand-primary)] transition-colors absolute left-1/2 -translate-x-1/2"
+                  style={{
+                    fontFamily: "'Montserrat Alternates', sans-serif",
+                    fontSize: '1.5em',
+                    textShadow: '0 2px 4px rgba(0,0,0,0.3)',
+                    letterSpacing: '0.05em'
+                  }}
                 >
-                  LeaderAI Prompt Lab
+                  Prompt Lab
                 </button>
                 <button
                   type="button"
                   onClick={handleToggleCards}
-                  className="inline-flex items-center justify-center w-6 h-6 pod-rounded-full text-[var(--text-secondary)] hover:text-[var(--brand-primary)] hover:bg-[var(--bg-component-solid)] transition-colors text-xs"
+                  className="inline-flex items-center justify-center w-6 h-6 pod-rounded-full text-[var(--text-secondary)] hover:text-[var(--brand-primary)] hover:bg-[var(--bg-component-solid)] transition-colors text-xs absolute right-0 top-1/2 -translate-y-1/2"
                   aria-label="Toggle banana cards"
                 >
                   {cardsCollapsed ? '▾' : '▴'}
@@ -221,16 +227,17 @@ export const BananaSidebar: React.FC<BananaSidebarProps> = ({ t, setPrompt, onGe
               >
                 <iframe
                   src={LEADERAI_URL}
-                  title="LeaderAI Prompt Lab"
+                  title="Prompt Lab"
                   className="w-full h-full border-0"
                   loading="lazy"
                   allow="clipboard-read; clipboard-write"
                   referrerPolicy="no-referrer"
                   style={{
                     width: '125%',
-                    height: '125%',
+                    height: '140%',
                     transform: 'scale(0.8)',
                     transformOrigin: 'top left',
+                    marginTop: '-60px',
                   }}
                 />
               </div>
