@@ -19,7 +19,9 @@ import { fileToDataUrl } from './utils/fileUtils';
 import { resizeBase64ToMax } from './utils/image';
 import { translations } from './translations';
 import { touchLastSessionPending } from '@/src/services/boardsStorage';
-import changelogContent from '../CHANGELOG.md?raw';
+import changelogContent from './CHANGELOG.md?raw';
+import { shouldEnableTouch } from './src/touch/touchEnvironment';
+import { useTouchCanvas, type SingleTouchInfo } from './src/touch/useTouchCanvas';
 
 const generateId = () => `id_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
@@ -201,6 +203,13 @@ const App: React.FC = () => {
     const [editingElement, setEditingElement] = useState<{ id: string; text: string; } | null>(null);
     const [lassoPath, setLassoPath] = useState<Point[] | null>(null);
     const [isChangelogOpen, setIsChangelogOpen] = useState(false);
+    const [isTouchEnabled] = useState<boolean>(() => shouldEnableTouch());
+
+    useEffect(() => {
+        if (!isTouchEnabled) return;
+        if (typeof document === 'undefined') return;
+        document.documentElement.dataset.bananapodTouchEnabled = '1';
+    }, [isTouchEnabled]);
 
     const changelogVersions = useMemo(() => {
         try {
@@ -330,6 +339,9 @@ const App: React.FC = () => {
     const previousToolRef = useRef<Tool>('select');
     const spacebarDownTime = useRef<number | null>(null);
     const promptBarRef = useRef<HTMLDivElement>(null);
+    const touchLongPressTimeoutRef = useRef<number | null>(null);
+    const touchLongPressStartInfoRef = useRef<SingleTouchInfo | null>(null);
+    const touchSinglePendingRef = useRef(false);
     elementsRef.current = elements;
 
     const SUPPORTED_CROP_RATIOS = ['1:1','2:3','3:2','3:4','4:3','4:5','5:4','9:16','16:9','21:9'] as const;
@@ -383,6 +395,109 @@ const App: React.FC = () => {
             return prev;
         });
     };
+
+    const clearTouchLongPress = () => {
+        if (touchLongPressTimeoutRef.current !== null && typeof window !== 'undefined') {
+            window.clearTimeout(touchLongPressTimeoutRef.current);
+        }
+        touchLongPressTimeoutRef.current = null;
+        touchSinglePendingRef.current = false;
+    };
+
+    const scheduleTouchLongPress = (info: SingleTouchInfo) => {
+        if (activeTool !== 'select') return;
+        if (editingElement) return;
+        if (croppingState) return;
+        if (typeof window === 'undefined') return;
+        clearTouchLongPress();
+        touchLongPressStartInfoRef.current = info;
+        touchSinglePendingRef.current = true;
+        touchLongPressTimeoutRef.current = window.setTimeout(() => {
+            const startInfo = touchLongPressStartInfoRef.current;
+            if (!startInfo) return;
+            if (!touchSinglePendingRef.current) return;
+            const canvasPoint = startInfo.canvasPoint;
+            touchSinglePendingRef.current = false;
+            startPoint.current = { x: startInfo.clientX, y: startInfo.clientY };
+            setSelectedElementIds([]);
+            setSelectionBox({
+                x: canvasPoint.x,
+                y: canvasPoint.y,
+                width: 0,
+                height: 0
+            });
+            interactionMode.current = 'selectBox';
+            console.debug('touch long-press selectBox start', {
+                clientX: startInfo.clientX,
+                clientY: startInfo.clientY,
+                canvasX: canvasPoint.x,
+                canvasY: canvasPoint.y
+            });
+        }, 500);
+    };
+
+    const touchHandlers = useTouchCanvas({
+        svgRef,
+        zoom,
+        panOffset,
+        wheelAction,
+        activeTool,
+        isEditing: !!editingElement,
+        isCropping: !!croppingState,
+        onPanZoomChange: ({ zoom: nextZoom, panOffset: nextPanOffset }) => {
+            updateActiveBoardSilent(b => ({
+                ...b,
+                zoom: nextZoom,
+                panOffset: nextPanOffset
+            }));
+        },
+        onSingleTouchStart: (info: SingleTouchInfo) => {
+            scheduleTouchLongPress(info);
+            if (activeTool === 'select' && !editingElement && !croppingState) {
+                return;
+            }
+            handleCanvasPointerDown({
+                clientX: info.clientX,
+                clientY: info.clientY,
+                detail: info.detail,
+                shiftKey: false,
+                target: info.target,
+                isMiddleButton: false
+            });
+        },
+        onSingleTouchMove: (info: SingleTouchInfo) => {
+            const startInfo = touchLongPressStartInfoRef.current;
+            if (startInfo) {
+                const dx = info.canvasPoint.x - startInfo.canvasPoint.x;
+                const dy = info.canvasPoint.y - startInfo.canvasPoint.y;
+                const distance = Math.hypot(dx, dy);
+                if (distance > 5 && touchSinglePendingRef.current && activeTool === 'select' && !editingElement && !croppingState) {
+                    clearTouchLongPress();
+                    touchSinglePendingRef.current = false;
+                    interactionMode.current = 'pan';
+                    startPoint.current = { x: info.clientX, y: info.clientY };
+                    console.debug('touch single-finger pan start', {
+                        clientX: info.clientX,
+                        clientY: info.clientY
+                    });
+                } else if (distance > 5 && startInfo === touchLongPressStartInfoRef.current) {
+                    clearTouchLongPress();
+                }
+            }
+            if (!touchSinglePendingRef.current || activeTool !== 'select' || editingElement || croppingState) {
+                handleCanvasPointerMove({
+                    clientX: info.clientX,
+                    clientY: info.clientY,
+                    shiftKey: false
+                });
+            }
+        },
+        onSingleTouchEnd: () => {
+            clearTouchLongPress();
+            touchLongPressStartInfoRef.current = null;
+            handleMouseUp();
+        }
+    });
 
     
 
@@ -654,7 +769,7 @@ const App: React.FC = () => {
         }
     }, [getCanvasPoint, setElements]);
 
-     const getSelectableElement = (elementId: string, allElements: Element[]): Element | null => {
+    const getSelectableElement = (elementId: string, allElements: Element[]): Element | null => {
         const element = allElements.find(el => el.id === elementId);
         if (!element) return null;
         if (element.isLocked) return null;
@@ -668,23 +783,39 @@ const App: React.FC = () => {
         }
         return current;
     };
-    
-    const handleMouseDown = (e: React.MouseEvent<SVGSVGElement>) => {
+
+    type CanvasPointerDownParams = {
+        clientX: number;
+        clientY: number;
+        detail: number;
+        shiftKey: boolean;
+        target: EventTarget | null;
+        isMiddleButton: boolean;
+        preventDefault?: () => void;
+    };
+
+    type CanvasPointerMoveParams = {
+        clientX: number;
+        clientY: number;
+        shiftKey: boolean;
+    };
+
+    function handleCanvasPointerDown(params: CanvasPointerDownParams) {
         if (editingElement) return;
         if (contextMenu) setContextMenu(null);
 
-        if (e.button === 1) { // Middle mouse button for panning
+        if (params.isMiddleButton) {
             interactionMode.current = 'pan';
-            startPoint.current = { x: e.clientX, y: e.clientY };
-            e.preventDefault();
+            startPoint.current = { x: params.clientX, y: params.clientY };
+            if (params.preventDefault) params.preventDefault();
             return;
         }
 
-        startPoint.current = { x: e.clientX, y: e.clientY };
-        const canvasStartPoint = getCanvasPoint(e.clientX, e.clientY);
+        startPoint.current = { x: params.clientX, y: params.clientY };
+        const canvasStartPoint = getCanvasPoint(params.clientX, params.clientY);
 
-        const target = e.target as SVGElement;
-        const handleName = target.getAttribute('data-handle');
+        const target = params.target as SVGElement | null;
+        const handleName = target ? target.getAttribute('data-handle') : null;
 
         if (croppingState) {
             if (handleName) {
@@ -699,7 +830,7 @@ const App: React.FC = () => {
             }
             return;
         }
-         if (activeTool === 'text') {
+        if (activeTool === 'text') {
             const newText: TextElement = {
                 id: generateId(), type: 'text', name: 'Text',
                 x: canvasStartPoint.x, y: canvasStartPoint.y,
@@ -725,7 +856,7 @@ const App: React.FC = () => {
                 originalElement: { ...element },
                 startCanvasPoint: canvasStartPoint,
                 handle: handleName,
-                shiftKey: e.shiftKey,
+                shiftKey: params.shiftKey,
             };
             return;
         }
@@ -785,19 +916,19 @@ const App: React.FC = () => {
             interactionMode.current = 'lasso';
             setLassoPath([canvasStartPoint]);
         } else if (activeTool === 'select') {
-            const clickedElementId = target.closest('[data-id]')?.getAttribute('data-id');
+            const clickedElementId = target ? target.closest('[data-id]')?.getAttribute('data-id') : null;
             const selectableElement = clickedElementId ? getSelectableElement(clickedElementId, elementsRef.current) : null;
             const selectableElementId = selectableElement?.id;
 
             if (selectableElementId) {
-                if (e.detail === 2 && elements.find(el => el.id === selectableElementId)?.type === 'text') {
+                if (params.detail === 2 && elements.find(el => el.id === selectableElementId)?.type === 'text') {
                      const textEl = elements.find(el => el.id === selectableElementId) as TextElement;
                      setEditingElement({ id: textEl.id, text: textEl.text });
                      return;
                 }
-                if (!e.shiftKey && !selectedElementIds.includes(selectableElementId)) {
+                if (!params.shiftKey && !selectedElementIds.includes(selectableElementId)) {
                      setSelectedElementIds([selectableElementId]);
-                } else if (e.shiftKey) {
+                } else if (params.shiftKey) {
                     setSelectedElementIds(prev => 
                         prev.includes(selectableElementId) ? prev.filter(id => id !== selectableElementId) : [...prev, selectableElementId]
                     );
@@ -840,11 +971,31 @@ const App: React.FC = () => {
                 setSelectionBox({ x: canvasStartPoint.x, y: canvasStartPoint.y, width: 0, height: 0 });
             }
         }
+    }
+
+    const handleMouseDown = (e: React.MouseEvent<SVGSVGElement>) => {
+        handleCanvasPointerDown({
+            clientX: e.clientX,
+            clientY: e.clientY,
+            detail: e.detail,
+            shiftKey: e.shiftKey,
+            target: e.target,
+            isMiddleButton: e.button === 1,
+            preventDefault: () => e.preventDefault()
+        });
     };
 
     const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
+        handleCanvasPointerMove({
+            clientX: e.clientX,
+            clientY: e.clientY,
+            shiftKey: e.shiftKey
+        });
+    };
+    
+    function handleCanvasPointerMove(params: CanvasPointerMoveParams) {
         if (!interactionMode.current) return;
-        const point = getCanvasPoint(e.clientX, e.clientY);
+        const point = getCanvasPoint(params.clientX, params.clientY);
         const startCanvasPoint = getCanvasPoint(startPoint.current.x, startPoint.current.y);
 
         if (interactionMode.current === 'erase') {
@@ -997,7 +1148,7 @@ const App: React.FC = () => {
 
         switch(interactionMode.current) {
             case 'pan': {
-                panLastPointRef.current = { x: e.clientX, y: e.clientY };
+                panLastPointRef.current = { x: params.clientX, y: params.clientY };
                 if (panRafRef.current == null) {
                     panRafRef.current = requestAnimationFrame(() => {
                         panRafRef.current = null;
@@ -1035,7 +1186,7 @@ const App: React.FC = () => {
                             let newX = Math.min(point.x, startCanvasPoint.x);
                             let newY = Math.min(point.y, startCanvasPoint.y);
                             
-                            if (e.shiftKey) {
+                            if (params.shiftKey) {
                                 if (el.shapeType === 'rectangle' || el.shapeType === 'circle') {
                                     const side = Math.max(newWidth, newHeight);
                                     newWidth = side;
@@ -2156,6 +2307,10 @@ const App: React.FC = () => {
                 <svg
                     ref={svgRef}
                     className="w-full h-full"
+                    onPointerDown={touchHandlers.onPointerDown}
+                    onPointerMove={touchHandlers.onPointerMove}
+                    onPointerUp={touchHandlers.onPointerUp}
+                    onPointerCancel={touchHandlers.onPointerCancel}
                     onDragOver={handleDragOver}
                     onDrop={handleDrop}
                     onMouseDown={handleMouseDown}
@@ -2163,7 +2318,12 @@ const App: React.FC = () => {
                     onMouseUp={handleMouseUp}
                     onMouseLeave={handleMouseUp}
                     onContextMenu={handleContextMenu}
-                    style={{ cursor }}
+                    style={{
+                        cursor,
+                        touchAction: 'none',
+                        WebkitUserSelect: 'none',
+                        userSelect: 'none'
+                    }}
                 >
                     <defs>
                         <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
@@ -2200,7 +2360,7 @@ const App: React.FC = () => {
                                      const bounds = getElementBounds(el, elements);
                                      selectionComponent = <rect x={bounds.x} y={bounds.y} width={bounds.width} height={bounds.height} fill="none" stroke="var(--brand-primary)" strokeWidth={2/zoom} strokeDasharray={`${6/zoom} ${4/zoom}`} pointerEvents="none" />
                                 } else if ((el.type === 'image' || el.type === 'shape' || el.type === 'text' || el.type === 'video')) {
-                                    const handleSize = 8 / zoom;
+                                    const handleSize = (isTouchEnabled ? 16 : 8) / zoom;
                                     const handles = [
                                         { name: 'tl', x: el.x, y: el.y, cursor: 'nwse-resize' }, { name: 'tm', x: el.x + el.width / 2, y: el.y, cursor: 'ns-resize' }, { name: 'tr', x: el.x + el.width, y: el.y, cursor: 'nesw-resize' },
                                         { name: 'ml', x: el.x, y: el.y + el.height / 2, cursor: 'ew-resize' }, { name: 'mr', x: el.x + el.width, y: el.y + el.height / 2, cursor: 'ew-resize' },
@@ -2509,7 +2669,7 @@ const App: React.FC = () => {
                                 <rect x={croppingState.cropBox.x} y={croppingState.cropBox.y} width={croppingState.cropBox.width} height={croppingState.cropBox.height} fill="none" stroke="var(--brand-primary)" strokeWidth={2 / zoom} pointerEvents="all" />
                                 {(() => {
                                     const { x, y, width, height } = croppingState.cropBox;
-                                    const handleSize = 10 / zoom;
+                                    const handleSize = (isTouchEnabled ? 18 : 10) / zoom;
                                     const handles = [
                                         { name: 'tl', x, y, cursor: 'nwse-resize' }, { name: 'tr', x: x + width, y, cursor: 'nesw-resize' },
                                         { name: 'bl', x, y: y + height, cursor: 'nesw-resize' }, { name: 'br', x: x + width, y: y + height, cursor: 'nwse-resize' },

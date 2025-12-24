@@ -17,6 +17,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test:banana": "node scripts/test-banana.mjs",
+    "test:touchState": "npx tsc src/touch/touchState.ts --outDir tmp/touch-tests --module ESNext --target ES2022 --moduleResolution bundler --skipLibCheck true --noEmit false && node scripts/test-touchState.mjs",
+    "test:touchGesture": "npx tsc src/touch/touchState.ts src/touch/touchGestureEngine.ts --outDir tmp/touch-tests --module ESNext --target ES2022 --moduleResolution bundler --skipLibCheck true --noEmit false && node scripts/test-touchGestureEngine.mjs",
     "style:check": "node scripts/style-consistency.mjs"
   },
   "dependencies": {
