@@ -1,31 +1,54 @@
-import React from 'react'
+import React from 'react';
 
-interface Props {
-  onContinue: () => void
-  onNew: () => void
-  lastName?: string
-  lastTime?: number
+interface SessionRestoreDialogProps {
+  onContinue: () => void;
+  onNew: () => void;
+  lastName: string;
+  lastTime: number;
 }
 
-export const SessionRestoreDialog: React.FC<Props> = ({ onContinue, onNew, lastName, lastTime }) => {
+export const SessionRestoreDialog: React.FC<SessionRestoreDialogProps> = ({
+  onContinue,
+  onNew,
+  lastName,
+  lastTime,
+}) => {
+  const date = new Date(lastTime);
+  const formattedTime = date.toLocaleString();
+
+  const title = lastName || '未命名画布';
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onNew}>
-      <div className="pod-panel p-4 w-80" onClick={e => e.stopPropagation()}>
-        <div className="flex justify-between items-center mb-2">
-          <h3 className="text-lg" style={{ color: 'var(--text-heading)', fontWeight: 600 }}>发现上次图版</h3>
-          <button className="pod-icon-button" onClick={onNew}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
+      <div className="w-full max-w-md pod-rounded-xl border border-slate-700 bg-slate-900/95 p-6 shadow-xl backdrop-blur">
+        <h2 className="mb-2 text-lg font-semibold text-slate-50">
+          继续上次的创作？
+        </h2>
+        <p className="mb-4 text-sm leading-relaxed text-slate-300">
+          上次编辑的画布
+          <span className="mx-1 font-medium text-slate-50">「{title}」</span>
+          ，时间
+          <span className="ml-1 tabular-nums text-slate-200">
+            {formattedTime}
+          </span>
+        </p>
+        <div className="flex justify-end gap-3">
+          <button
+            type="button"
+            className="rounded-lg border border-slate-600 bg-slate-800 px-3 py-1.5 text-sm font-medium text-slate-100 hover:bg-slate-700 active:bg-slate-800"
+            onClick={onNew}
+          >
+            开始新画布
           </button>
-        </div>
-        <div className="text-sm" style={{ color: 'var(--text-primary)' }}>
-          <div>上次活动图版：{lastName || '未命名'}</div>
-          <div>保存时间：{lastTime ? new Date(lastTime).toLocaleString() : '-'}</div>
-        </div>
-        <div className="mt-3 flex gap-2">
-          <button className="pod-primary-button flex-1" onClick={onContinue}>继续上次图版</button>
-          <button className="pod-btn-secondary flex-1" onClick={onNew}>打开新图版</button>
+          <button
+            type="button"
+            className="rounded-lg bg-yellow-400 px-3 py-1.5 text-sm font-semibold text-slate-900 hover:bg-yellow-300 active:bg-yellow-400"
+            onClick={onContinue}
+          >
+            继续上次
+          </button>
         </div>
       </div>
     </div>
-  )
-}
+  );
+};

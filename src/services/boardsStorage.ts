@@ -1,6 +1,6 @@
 import type { Board, Element, Point, HistoryBoardSnapshot, ImageElement } from '@/types'
 const dbName = 'BananaPodDB'
-const dbVersion = 2
+const dbVersion = 3
 let dbPromise: Promise<IDBDatabase> | null = null
 function remoteEnabled(): boolean {
   try { return typeof window !== 'undefined' && (localStorage.getItem('BANANAPOD_REMOTE_HISTORY') === 'true'); } catch { return false }

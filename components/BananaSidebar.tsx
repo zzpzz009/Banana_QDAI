@@ -182,13 +182,13 @@ export const BananaSidebar: React.FC<BananaSidebarProps> = ({ t, setPrompt, onGe
 
       {isOpen && (
         <div
-          className="absolute bottom-full mb-3 sm:w-full md:w-[48rem] lg:w-[64rem] max-w-[90vw] pod-panel pod-panel-transparent pod-panel-rounded-xl p-3 overflow-x-auto overflow-y-hidden pod-scrollbar-x"
+          className="absolute bottom-full mb-3 sm:w-full md:w-[72rem] lg:w-[72rem] max-w-[96vw] pod-panel pod-panel-transparent pod-panel-rounded-xl p-3 overflow-x-auto overflow-y-auto pod-scrollbar-x"
           style={{
             left: '50%',
             transform: `translateX(calc(-50% + ${Number(promptBarOffsetPx || 0)}px)) translateY(-40px)`
           }}
         >
-          <div className="flex flex-col gap-3" style={{ height: 'min(600px, 80vh)' }}>
+          <div className="flex flex-col gap-3" style={{ height: 'min(720px, 80vh)' }}>
             <div className="w-full flex-1 flex flex-col">
               <div className="relative flex items-center justify-center mb-2 h-10">
                 <button
@@ -234,10 +234,10 @@ export const BananaSidebar: React.FC<BananaSidebarProps> = ({ t, setPrompt, onGe
                   referrerPolicy="no-referrer"
                   style={{
                     width: '125%',
-                    height: '140%',
+                    height: 'calc((100% + 65px) / 0.8)',
                     transform: 'scale(0.8)',
                     transformOrigin: 'top left',
-                    marginTop: '-60px',
+                    marginTop: '-65px',
                   }}
                 />
               </div>
