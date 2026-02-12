@@ -1,0 +1,414 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Aura / Agewell Theme Variables */
+  --bg-page: #020617; /* Navy 900 */
+  --bg-component: rgba(15, 23, 42, 0.6); /* Navy Glass */
+  --bg-component-solid: #0f172a; /* Navy 800 */
+  
+  --brand-primary: #14b8a6; /* Teal 500 */
+  --brand-accent: #2dd4bf; /* Teal 400 */
+  --brand-dark: #042f2e; /* Teal 900 */
+  --brand-danger: #ff6b6b;
+  
+  --text-heading: #ffffff;
+  --text-primary: #cbd5e1; /* Slate 300 */
+  --text-secondary: #94a3b8; /* Slate 400 */
+  --text-muted: #64748b; /* Slate 500 */
+  
+  --border-color: rgba(45, 212, 191, 0.1); /* Teal tint */
+  --border-active: rgba(45, 212, 191, 0.3);
+  
+  --shadow-glow: 0 0 20px rgba(45, 212, 191, 0.2);
+  --shadow-glass: 0 8px 32px 0 rgba(0, 0, 0, 0.36);
+  
+  --font-heading: 'Montserrat Alternates', sans-serif;
+  --font-body: 'Montserrat', sans-serif;
+  --font-display: 'Montserrat Alternates', sans-serif;
+  
+  --border-radius-base: 12px;
+  --border-radius-lg: 24px;
+  --transition-speed-fast: 0.2s;
+  --transition-speed-normal: 0.3s;
+  --bg-component-strong: rgba(15, 23, 42, 0.9);
+  --bg-page-glass: rgba(2, 6, 23, 0.8);
+}
+
+body {
+  background-color: var(--bg-page);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  color: var(--text-heading);
+  letter-spacing: -0.02em;
+}
+
+/* Background Effects */
+.pod-wave-gradient {
+  background-color: var(--bg-page);
+  background-image: 
+    radial-gradient(circle at 80% 20%, rgba(45, 212, 191, 0.08) 0%, transparent 40%),
+    radial-gradient(circle at 20% 80%, rgba(15, 23, 42, 1) 0%, transparent 40%);
+  background-attachment: fixed;
+}
+
+/* Glass Panel Utility (Agewell Style) */
+.pod-glass {
+  background: var(--bg-component);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-glass);
+}
+
+.pod-glass-strong {
+  background: rgba(15, 23, 42, 0.8);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-glass);
+}
+
+/* Text Glow */
+.pod-text-glow {
+  text-shadow: 0 0 20px rgba(45, 212, 191, 0.3);
+}
+
+/* Buttons */
+.pod-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: transparent;
+  color: var(--text-secondary);
+  border: 1px solid transparent;
+  transition: all var(--transition-speed-fast);
+  cursor: pointer;
+}
+
+.pod-icon-button:hover {
+  background-color: rgba(45, 212, 191, 0.1);
+  color: var(--brand-accent);
+  border-color: var(--border-color);
+  box-shadow: var(--shadow-glow);
+}
+
+.pod-icon-button.active {
+  background-color: var(--brand-primary);
+  color: var(--bg-page);
+  box-shadow: var(--shadow-glow);
+}
+
+.pod-primary-button {
+  background: var(--brand-primary);
+  color: var(--bg-page);
+  font-family: var(--font-body);
+  font-weight: 600;
+  padding: 8px 20px;
+  border-radius: 9999px;
+  border: none;
+  transition: all var(--transition-speed-fast);
+  box-shadow: 0 0 15px rgba(45, 212, 191, 0.2);
+}
+
+.pod-primary-button:hover {
+  background: var(--brand-accent);
+  box-shadow: 0 0 25px rgba(45, 212, 191, 0.4);
+  transform: translateY(-1px);
+}
+
+.pod-generate-button {
+  background: linear-gradient(135deg, var(--brand-primary), var(--brand-accent));
+  color: var(--bg-page);
+  font-weight: 600;
+  border: none;
+  box-shadow: var(--shadow-glow);
+}
+.pod-generate-button:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 0 30px rgba(45, 212, 191, 0.5);
+}
+
+/* Chips */
+.pod-chip {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  padding: 6px 16px;
+  border-radius: 9999px;
+  font-size: 0.9rem;
+  transition: all var(--transition-speed-fast);
+  cursor: pointer;
+}
+
+.pod-chip:hover {
+  background: rgba(45, 212, 191, 0.1);
+  color: var(--text-heading);
+  border-color: var(--brand-accent);
+}
+
+.pod-chip.active {
+  background: var(--brand-primary);
+  color: var(--bg-page);
+  border-color: var(--brand-primary);
+  box-shadow: var(--shadow-glow);
+}
+
+/* Inputs */
+.pod-input-group {
+  background: rgba(2, 6, 23, 0.5);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-lg);
+  padding: 4px;
+  transition: all var(--transition-speed-fast);
+}
+
+.pod-input-group:focus-within {
+  border-color: var(--brand-accent);
+  box-shadow: var(--shadow-glow);
+  background: rgba(2, 6, 23, 0.8);
+}
+
+.pod-textarea {
+  background: transparent;
+  color: var(--text-heading);
+  border: none;
+  outline: none;
+  width: 100%;
+  font-family: var(--font-body);
+  font-weight: 300;
+  resize: none;
+  padding: 8px;
+}
+
+.pod-input {
+  background: transparent;
+  color: var(--text-heading);
+  border: none;
+  outline: none;
+  width: 100%;
+  font-family: var(--font-body);
+  font-weight: 300;
+  padding: 8px;
+  height: 100%;
+}
+
+.pod-textarea::placeholder, .pod-input::placeholder {
+  color: var(--text-muted);
+}
+
+/* Cards */
+.pod-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-base);
+  padding: 12px;
+  transition: all var(--transition-speed-fast);
+}
+
+.pod-card:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--brand-primary);
+}
+
+.pod-card.active {
+  background: rgba(20, 184, 166, 0.1);
+  border-color: var(--brand-primary);
+  box-shadow: var(--shadow-glow);
+}
+
+/* Scrollbars */
+.pod-scrollbar-x {
+  scrollbar-width: thin;
+  scrollbar-color: var(--brand-dark) transparent;
+}
+.pod-scrollbar-x::-webkit-scrollbar {
+  height: 6px;
+}
+.pod-scrollbar-x::-webkit-scrollbar-track {
+  background: transparent;
+}
+.pod-scrollbar-x::-webkit-scrollbar-thumb {
+  background-color: var(--brand-dark);
+  border-radius: 20px;
+}
+.pod-scrollbar-x::-webkit-scrollbar-thumb:hover {
+  background-color: var(--brand-primary);
+}
+
+/* Panels */
+.pod-panel {
+  background: var(--bg-component);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-base);
+}
+
+.pod-panel-transparent {
+  background: var(--bg-component);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-color);
+}
+
+.pod-panel-rounded-xl {
+  border-radius: var(--border-radius-lg);
+}
+
+.pod-card-glass {
+  background: var(--bg-component);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-glass);
+}
+
+/* Branding Badge */
+.pod-branding-badge {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: var(--bg-page-glass);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border-color);
+  border-radius: 9999px;
+  color: var(--brand-accent);
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+  opacity: 0.7;
+  transition: all 0.3s ease;
+  z-index: 100;
+}
+
+.pod-branding-badge:hover {
+  opacity: 1;
+  box-shadow: var(--shadow-glow);
+  transform: translateY(-2px);
+}
+
+/* Utilities */
+.text-glow {
+  text-shadow: 0 0 10px rgba(45, 212, 191, 0.5);
+}
+
+.glass-panel {
+  @apply pod-glass;
+}
+
+.pod-rounded-none {
+  border-radius: 0;
+}
+
+.pod-rounded-base {
+  border-radius: var(--border-radius-base);
+}
+
+.pod-rounded-lg {
+  border-radius: var(--border-radius-lg);
+}
+
+.pod-rounded-full {
+  border-radius: 9999px;
+}
+
+/* Animations */
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 10px rgba(45, 212, 191, 0.2); }
+  50% { box-shadow: 0 0 25px rgba(45, 212, 191, 0.5); }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 3s infinite;
+}
+
+/* Toolbar Theme (Agewell Agent Style) */
+.pod-toolbar-theme {
+  background-color: var(--bg-component-strong);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border-active);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); /* shadow-2xl equivalent */
+  color: white;
+}
+
+/* Form Controls */
+.pod-select {
+  background: var(--bg-component-solid);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-base);
+  padding: 8px;
+  outline: none;
+  transition: all var(--transition-speed-fast);
+}
+.pod-select:focus {
+  border-color: var(--brand-accent);
+  box-shadow: var(--shadow-glow);
+}
+
+.pod-slider {
+  -webkit-appearance: none;
+  height: 4px;
+  background: var(--border-color);
+  border-radius: 2px;
+  outline: none;
+}
+.pod-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--brand-primary);
+  cursor: pointer;
+  box-shadow: var(--shadow-glow);
+  transition: transform var(--transition-speed-fast);
+}
+.pod-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+.pod-color-swatch-circle {
+    overflow: hidden;
+}
+.pod-color-swatch-circle::-webkit-color-swatch-wrapper {
+    padding: 0; 
+}
+.pod-color-swatch-circle::-webkit-color-swatch {
+    border: none;
+    border-radius: 50%;
+}
+
+.pod-shadow-layered {
+    box-shadow: 
+        0 4px 6px -1px rgba(0, 0, 0, 0.1), 
+        0 2px 4px -1px rgba(0, 0, 0, 0.06),
+        0 0 0 1px rgba(45, 212, 191, 0.1);
+}
+
+.pod-btn-secondary {
+    background: transparent;
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 9999px;
+    padding: 8px 20px;
+    transition: all var(--transition-speed-fast);
+}
+.pod-btn-secondary:hover {
+    color: var(--text-heading);
+    border-color: var(--text-heading);
+    background: rgba(255,255,255,0.05);
+}
